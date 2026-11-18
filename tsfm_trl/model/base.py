@@ -47,6 +47,14 @@ class Pred:
     levels: list[float] = field(default_factory=lambda: list(LEVELS))
     meta: dict = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        # the contract says every interval says how it was made. Adapters that go to the
+        # trouble of naming their method (empirical from k sampled paths, temperature AR
+        # decode, median-rollback rollout) are left alone; the rest get the plain truth
+        if self.quantiles is not None and "how" not in self.meta:
+            self.meta["how"] = ("native quantile head" if self.samples is None
+                                else "empirical from sampled paths")
+
     def median(self) -> np.ndarray:
         if self.quantiles is None:
             return self.point

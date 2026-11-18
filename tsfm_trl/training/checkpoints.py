@@ -72,8 +72,15 @@ def load_finetuned(model, path: str | Path, *, strict: bool = True, map_location
     if missing or unexpected:
         raise ValueError(f"state_dict mismatch: {len(missing)} missing, {len(unexpected)} "
                          f"unexpected (first: {(missing or unexpected)[:4]})")
-    for m in getattr(module, "modules", lambda: [])():
-        for p in getattr(m, "parameters", []):
-            p.requires_grad_(bool(meta.get("train", False)))
+    # restore *which* parameters are trainable. The checkpoint stores the peft mode, not
+    # the full name list (that is truncated for wide heads), and re-deriving it from the
+    # mode is what make_trainable does at train time — so call the same function rather
+    # than guessing from a partial list. (Iterating ``getattr(m, "parameters", [])`` — a
+    # method, un-called — used to raise "'method' object is not iterable".)
+    from .peft import set_trainable
+    restored = set_trainable(module, str(meta.get("peft") or "full"),
+                             getattr(model, "head_prefixes", ()) or ())
+    if not restored:
+        module.requires_grad_(bool(meta.get("train", False)))
     model.provenance = dict(meta, checkpoint=str(path))
     return model

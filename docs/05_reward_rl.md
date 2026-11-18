@@ -91,6 +91,8 @@ that CUDA *toolchain* failures are environment problems: the run retries cheaper
 writes `fallbacks: [...]` into the checkpoint, so a table never hides the fact that a
 row ran at `bs=1 bf16 heads_only`.
 
+Runnable shape of the call: `examples/04_reward.py` (core env, one GPU, ~1 minute).
+
 ## Demonstrators (what was actually run)
 
 Two models, small data (16 windows, `fs64` budget), LoRA, one GPU. Both are recorded

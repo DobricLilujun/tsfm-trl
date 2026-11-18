@@ -75,6 +75,21 @@ tsfm-trl ckpt reports/ft_smoke/…              # inspect a checkpoint's provena
 tsfm-trl doctor --all-envs --md COMPATIBILITY.md
 ```
 
+## Runnable examples
+
+All four run in the `core` environment on one GPU with the bundled tiny fixture — no
+weights beyond the core set, no dataset downloads:
+
+```bash
+python examples/01_forecast.py     # zero-shot forecast + CRPS/MASE/coverage table
+python examples/02_finetune.py     # LoRA fine-tune, checkpoint provenance, reload checks
+python examples/03_classify.py     # probe / head / native routes, train-vs-test gap
+python examples/04_reward.py       # GRPO (token model) and reward descent (quantile head)
+```
+
+`toto-2-22m` (the RFT demonstrator) needs the `toto` environment; `docs/05_reward_rl.md`
+carries all three curves, including the one that did not improve.
+
 ## Documentation
 
 | doc | |

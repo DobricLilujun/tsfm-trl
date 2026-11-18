@@ -13,7 +13,7 @@ from tsfm_trl.data.fixtures import tiny_finance
 from tsfm_trl.eval.evaluate import forecast_eval
 
 model_key = sys.argv[1] if len(sys.argv) > 1 else "chronos-2"
-ds = tiny_finance(600)
+ds = tiny_finance(3000, 600)
 KEYS = ("rmse", "mae", "mase", "smape", "nd", "relative_skill", "pinball", "crps")
 
 
