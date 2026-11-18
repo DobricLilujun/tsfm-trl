@@ -26,7 +26,12 @@ notes = "MOMENT from git; forward() returns samples, so reward uses the point-he
 [env.toto]
 python = "3.12"   # the lock comes from a 3.12 venv (contourpy/matplotlib pins)
 lock = "toto.lock.txt"
-notes = "safetensors==0.4.5 (0.4.6 breaks its deserializer), betatool/llamacode"
+notes = """safetensors==0.4.5 (0.4.6 breaks its deserializer), tokenizers==0.22.2,
+transformers==5.10.1 (Toto 2.0 needs it), torchmetrics (Moirai-free but the shared
+backbone imports it), setuptools<81 for pkg_resources, toto-ts for Toto 1.0.
+On aarch64 do NOT install the x86 lock file: build from this machine's core lock and
+add those pins, otherwise the venv ends up without transformers at all and every row
+reports 'missing package'."""
 
 [env.tirex]
 python = "3.11"
@@ -67,9 +72,17 @@ notes = "Kairos, Aurora, VisionTS++ remote code on the core stack"
 
 [env.sundial]
 python = "3.11"   # the upstream repo predates 3.12; 3.11 is the ceiling for its deps
-deps = ["torch", "transformers==4.42.4", "numpy<2", "einops==0.8.1", "pandas", "scikit-learn"]
+deps = ["torch", "transformers==4.40.1", "accelerate", "numpy<2", "einops==0.8.1",
+        "pandas", "scikit-learn"]
 git = [{ repo = "https://github.com/thuml/Sundial", dir = "Sundial" }]
-notes = "no wheel; the repo code is imported from $TSFMTRL_THIRD_PARTY"
+notes = """no wheel: inference runs on the Hub repo's own remote code, so
+transformers==4.40.1 (the version its Quickstart names) is what makes the Auto path
+resolve SundialForPrediction; 4.42.x mis-builds the causal mask for patched inputs.
+`accelerate` is required because the loader touches device_map paths, but the adapter
+must not pass device_map (accelerate re-dispatches through the Auto mapping, which does
+not know model_type=sundial). The repo ships no tokenizer and none is needed:
+generate() takes raw values. The third-party checkout is only for their training
+scripts, which are the supported fine-tune route."""
 
 [env.vendor]
 python = "3.11"

@@ -39,6 +39,29 @@ r.status, r.loss_first, r.loss_last # 'smoke', 3.027, 3.111
 | **Honesty** | one canonical quantile grid (`LEVELS`), coverage measured only on bands the model actually emits, per-model `Pred.meta` recording *how* an interval was produced |
 | **Proof** | `tsfm-trl doctor` → `COMPATIBILITY.md`, one subprocess per family environment, reason strings captured for every non-✅ |
 
+### Where the matrix stands
+
+`COMPATIBILITY.md` in this repo is the merged output of one run per machine —
+an x86_64 laptop (RTX 1000 Ada, 6 GB) and an aarch64 DGX Spark (GB10, unified
+memory) — over all 46 registered models:
+
+| task | ok | declined by the model | failed |
+|---|---|---|---|
+| load | 45 | 0 | 1 (VisionTS++ ships `.ckpt` only) |
+| forecast | 44 | 0 | 1 (TiRex-2 kernels, both machines) |
+| quantiles | 35 | 9 | 0 |
+| fine-tune | 20 | 14 | 3 |
+| classify (probe / head / native) | 44 | 0 | 1 |
+| anomaly | 44 | 1 | 0 |
+| reward post-training | 21 | 22 | 2 |
+
+The failures are named in the file with their captured reason: TiRex-2 (Triton
+kernel will not compile on either machine), VisionTS++ (no HF weights), Kairos
+fine-tune (the vendor `forward` branches on tensor truthiness), PatchTST-FM
+fine-tune (the installed build declares no target argument), and
+Chronos-T5-base on the 6 GB card (an out-of-memory, which is why the same row
+is ✅ on the other machine).
+
 ## Quick tour
 
 ```bash

@@ -70,11 +70,13 @@ def cmd_info(a):
 
 
 def cmd_doctor(a):
-    from .doctor import Row, dedupe, merge, run_all_envs, run_matrix, write_markdown
+    from .doctor import (dedupe, merge, row_from_dict, run_all_envs, run_matrix,
+                         write_markdown)
     if a.merge:
         rows = []
         for f in a.merge:
-            rows += [Row(**r) for r in json.loads(Path(f).read_text()).get("rows", [])]
+            rows += [row_from_dict(r) for r in
+                     json.loads(Path(f).read_text()).get("rows", [])]
         raw = len(rows)
         # a row whose env no longer matches the registry is a stale artifact of an
         # earlier run (the model was moved to a different environment); reporting it

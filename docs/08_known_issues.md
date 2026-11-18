@@ -218,3 +218,51 @@ GB10 unified memory) and merged. What that surfaced:
   `reward_late_mean`), not first step vs last step. First-vs-last called a run that
   improved (1.72 → 1.83 across quartiles) a regression, because step 1 happened to be a
   lucky batch.
+
+## Third pass: Sundial, Toto 1.0, and what a moving repository does to a matrix
+
+* **Sundial's Hub repo changed under us.** The current revision has no
+  `prepare_input_ids`, ships **no tokenizer files**, and its model card's Quickstart is
+  the truth: `model.generate(torch.randn(B, lookback), max_new_tokens=H, num_samples=k)`
+  → `(B, k, H)` de-normalised samples (the mixin does revin itself). The older
+  `prepare_input_ids(X=…, system="forecast")` + `tokenizer=` call is still in a lot of
+  second-hand examples and no longer exists; the adapter prefers whichever API the
+  loaded code provides. Two version facts, both verified on the matrix machine:
+  `transformers==4.40.1` is required (4.42.x mis-builds the causal mask for patched
+  inputs and `generate` dies with a 256-vs-16 shape error), and `device_map=` must not be
+  passed to this remote code (accelerate re-dispatches through the Auto mapping, which
+  does not know `model_type: sundial`, and raises "Unrecognized configuration class").
+* **Sundial fine-tune is declined, not failed.** `forward(labels=…)` reaches their
+  TimeFlow loss, whose packing (`output_token_lens`, `diffusion_batch_mul`, `mask_y`) is
+  set by the training scripts rather than the checkpoint config. Calling it with the
+  checkpoint's own config fails on shape (`addmm: (8x17664) @ (768x768)`). Writing an
+  invented objective to turn that row green is exactly what this repository is not for,
+  so the row says `—` and points at `thuml/Sundial`'s `scripts/`.
+* **Toto-Open-1.0 does not go through `transformers` at all** — the repo has no remote
+  code and no `model_type`, so the Auto path raises "Should have a `model_type` key".
+  The vendor package `toto-ts` is the implementation:
+  `Toto.from_pretrained(repo, map_location=...)` (a `ModelHubMixin` loader — no
+  `device_map`/`dtype` kwargs, they get forwarded into the model config and crash the
+  constructor), then `TotoForecaster(model=model.model)` — it wants the **backbone** —
+  and a `MaskedTimeseries` built exactly like their own `evaluation/fev` pipeline
+  (relative timestamps, `time_interval_seconds=1`, `id_mask` ones). `num_samples` must be
+  divisible by `samples_per_batch`; intervals are empirical quantiles of the sampled
+  paths and `Pred.meta` says so. Fine-tune uses their `CombinedLoss` (NLL + general
+  robust loss) on the causally-scaled window, which is the pretraining objective.
+* **PatchTST-FM (tsfm_public) declares no target argument** in the installed build
+  (`forward(past_values, past_observed_mask, pad_mask, prediction_length, quantile_levels,
+  return_loss)`), so a fine-tune that passed `future_values=` used to be a `TypeError`.
+  The adapter now picks the target kwarg from the signature and, when there is none,
+  declines with the signature in the reason. Its head is `backbone.out_layer`, so
+  `head_prefixes` had to be declared — `heads_only` (the reward ladder profile) was
+  failing with "matched no parameters" against generic prefixes.
+* **TiRex-2 fails on both machines, for different reasons**, and the matrix says so:
+  x86 (sm8.9, no nvcc) → neither Triton nor the CUDA fallback is available
+  (`UnavailableError`); aarch64 GB10 → Triton *starts* compiling their recurrent kernel
+  and raises `CompilationError` inside it. It is the only registered model that does not
+  forecast anywhere here, and it stays ❌ rather than being dropped from the table.
+* **`tsfm_trl` now fixes the HF dynamic-module cache at import** if
+  `~/.cache/huggingface/modules` is not writable (someone ran a pipeline as root on the
+  box). Without it, *every* `trust_remote_code` model fails with `PermissionError`, which
+  a compatibility matrix would file as 6 model failures. The redirect prints one line to
+  stderr rather than happening silently.

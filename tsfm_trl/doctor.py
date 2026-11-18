@@ -276,14 +276,21 @@ def run_matrix(keys=None, *, tier=None, env=None, tasks=("load", "predict", "fin
     for s in specs:
         r = check(s, tasks=tasks, clf_windows=clf_windows, **kw)
         want = kw.get("device", "auto")
-        if r.load == "fail" and want != "cpu" and _oom_in(r.reasons.get("load", "")):
+        # an out-of-memory is a statement about the machine, not the model, whether it
+        # happened while loading the weights or while running the first forecast
+        oom_task = None
+        if (r.load == "fail" or r.predict == "fail"):
+            oom_task = next((k for k in ("load", "predict") if _oom_in(r.reasons.get(k, ""))),
+                            None)
+        if oom_task and want != "cpu":
             # "the model does not fit next to the eleven others in this process" is a
             # statement about the machine, not about the model: re-run it where it does
             # fit and say which device produced the row
             r2 = check(s, tasks=tasks, clf_windows=clf_windows, **{**kw, "device": "cpu"})
             r2.reasons = dict(r2.reasons or {})
-            r2.reasons["device"] = (f"cpu (retried after a GPU out-of-memory on "
-                                    f"{want}: {(r.reasons.get('load') or '')[:90]})")
+            r2.reasons["device"] = (f"cpu (retried after a GPU out-of-memory during "
+                                    f"{oom_task} on {want}: "
+                                    f"{(r.reasons.get(oom_task) or '')[:90]})")
             out.append(r2)
         else:
             out.append(r)
@@ -295,11 +302,35 @@ def _oom_in(msg: str) -> bool:
     return "out of memory" in m or "oom" in m or "cannot allocate" in m
 
 
+def row_from_dict(d: dict) -> Row:
+    """Rebuild a stored row, restoring the *declined* vs *not attempted* distinction.
+
+    Older reports flattened a declined capability into the same ``skip`` value as a task
+    that was never requested. The reasons say which is which: a decline always leaves a
+    reason behind, an unattempted task does not.
+    """
+    r = Row(**d)
+    reasons = r.reasons or {}
+    for t in ("load", "predict", "quantiles", "embed", "finetune", "classify",
+              "anomaly", "reward"):
+        if getattr(r, t) == "skip" and any(k == t or k.startswith(f"{t}:")
+                                           for k in reasons):
+            setattr(r, t, "skipped")
+    routes = (r.clf_metrics or {}).get("routes") or {}
+    for k, v in list(routes.items()):
+        if v == "skip" and any(kt.split(":", 1)[1] == k for kt in reasons
+                               if kt.startswith("classify:")):
+            routes[k] = "skipped"
+    return r
+
+
 def _st(status: str) -> str:
     """TrainResult.status and Row.status must be one vocabulary in the matrix:
     ok / skip / fail / prepared / partial. "failed" next to "fail" renders as two
     symbols for the same thing."""
-    return {"failed": "fail", "skipped": "skip", "smoke": "ok"}.get(status, status)
+    # "skipped" is kept, not folded into "skip": the matrix renders "skipped" as —
+    # (the model declines the task) and "skip" as · (the task was never attempted)
+    return {"failed": "fail", "smoke": "ok"}.get(status, status)
 
 
 def dedupe(rows: list[Row]) -> list[Row]:
@@ -312,7 +343,15 @@ def dedupe(rows: list[Row]) -> list[Row]:
     tasks = ("load", "predict", "finetune", "classify", "anomaly", "reward")
 
     def score(r: Row):
-        return (r.load == "ok", r.predict == "ok", r.finetune == "ok", r.classify == "ok")
+        # a row that ran more tasks wins a tie: re-running one model with a subset of
+        # tasks must not replace the row that has the full picture
+        routes = ((r.clf_metrics or {}).get("routes") or {})
+        return (r.load == "ok", r.predict == "ok",
+                sum(1 for t in tasks if getattr(r, t) == "ok"),
+                # classification has three routes; a row where two of them ran beats one
+                # where an out-of-memory on a small card killed one of them
+                sum(1 for v in routes.values() if v == "ok"),
+                r.finetune == "ok", r.classify == "ok")
 
     best: dict = {}
     for r in rows:
@@ -321,7 +360,9 @@ def dedupe(rows: list[Row]) -> list[Row]:
             best[(r.model, r.env)] = r
             continue
         win, lose = (r, cur) if score(r) > score(cur) else (cur, r)
-        bad = [f"{t}={getattr(lose, t)}" for t in tasks if getattr(lose, t) != "ok"]
+        # only an actual failure is worth a footnote: a task the other run never
+        # attempted is not evidence of anything
+        bad = [f"{t}={getattr(lose, t)}" for t in tasks if getattr(lose, t) == "fail"]
         if bad:
             win.reasons = dict(win.reasons or {})
             win.reasons.setdefault("other machine", f"{lose.machine}: " + ", ".join(bad))
@@ -366,15 +407,43 @@ def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> st
             ft += f" ({r.ft_loss_first:.3f}→{r.ft_loss_last:.3f})"
         out.append(f"| {r.model} | {r.tier} | {'✅' if r.weights_present else '❌'} | "
                    f"{m(r.load)} | {m(r.predict)} | {m(r.quantiles)} | {m(r.embed)} | {ft} | "
-                   f"{cl} | {m(r.anomaly)} | {m(r.reward)} | {r.seconds} |"
+                   f"{cl} | {m(r.anomaly)} | {m(r.reward)} | "
+                   f"{round(float(r.seconds or 0.0), 1)} |"
                    + (f" {r.machine} |" if multi else ""))
+    tasks = ("load", "predict", "quantiles", "embed", "finetune", "classify",
+             "anomaly", "reward")
+    # "skip" is the untouched default (the task was not requested); only "skipped",
+    # "none" and "n/a" mean the model or its package declined the task
+    declined = lambda r, t: getattr(r, t) in ("skipped", "none", "n/a")
+    failed = lambda r, t: getattr(r, t) in ("fail", "failed")
+    out += ["", "## Summary", "",
+            "| task | ok | declined by the model | failed | not checked |", "|---|---|---|---|---|"]
+    for t in tasks:
+        out.append(f"| {t} | {sum(1 for r in rows if getattr(r, t) == 'ok')} "
+                   f"| {sum(1 for r in rows if declined(r, t))} "
+                   f"| {sum(1 for r in rows if failed(r, t))} "
+                   f"| {sum(1 for r in rows if getattr(r, t) == 'skip')} |")
+    out += ["", "'declined' means the model or its vendor package offers no path for that "
+                "task in this environment (a `—` in the table): Moirai 1.1 `forward` draws "
+                "samples instead of returning differentiable quantiles, TimesFM's public "
+                "build ships inference only, Aurora's flow-matching head has no public "
+                "training step. 'failed' means something was attempted and broke, with the "
+                "reason captured below. A declined row is a statement about the model "
+                "package; a failed row is a statement about this environment or our adapter.",
+            ""]
     fails = [r for r in rows if r.reasons]
     if fails:
         out += ["", "## Captured failures", ""]
         for r in fails:
             out.append(f"- **{r.model}** ({r.family}, python {r.python}): "
                        + "; ".join(f"{k}: {v}" for k, v in r.reasons.items()))
-    Path(path).write_text("\n".join(out) + "\n")
+    text = "\n".join(out) + "\n"
+    if str(path) == "-":
+        # `--md -` means "print the table", not "create a file called -"; stdout is a
+        # data channel here, so this stays the one place a report goes to stdout
+        sys.stdout.write(text)
+        return "-"
+    Path(path).write_text(text)
     return str(path)
 
 
@@ -426,7 +495,8 @@ def run_all_envs(envs_dir: str = "envs", **kw) -> list[Row]:
                                timeout=kw.get("timeout", 7200))
             report = Path(tmp)
             if report.exists() and report.stat().st_size:
-                got = [Row(**r) for r in json.loads(report.read_text()).get("rows", [])]
+                got = [row_from_dict(r) for r in
+                       json.loads(report.read_text()).get("rows", [])]
                 rows += got
                 print(f"   {len(got)} rows, "
                       f"{sum(1 for r in got if r.ok('predict'))} forecast ok, "

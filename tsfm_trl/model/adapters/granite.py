@@ -44,6 +44,11 @@ def _load_keep_info(cls, checkpoint: str, kw: dict | None = None):
         return cls.from_pretrained(checkpoint, **(kw or {})), {}
 
 
+# the target kwarg name differs across transformers releases
+_FUTURE_KW = ("future_values", "future_patches", "target_patches", "future_target",
+              "target_values", "labels")
+
+
 class _GraniteBase(TSFMModel):
     caps = frozenset({"forecast", "finetune"})
     max_context = 512
@@ -107,7 +112,18 @@ class _GraniteBase(TSFMModel):
             kw["frequency"] = torch.zeros((past.shape[0], 1), dtype=torch.long,
                                           device=self.device)
         if future is not None:
-            kw["future_values"] = future
+            # the target kwarg is not the same name across transformers releases
+            # ("future_values" through 4.x, renamed again in 5.x); passing a kwarg the
+            # installed forward does not declare turns a fine-tune row into a TypeError,
+            # so pick the one the signature actually has
+            name = next((k for k in _FUTURE_KW if k in self._fwd_params), None)
+            if name is None:
+                from ...errors import CapabilityError
+                raise CapabilityError(
+                    self.key, "finetune",
+                    f"forward({sorted(self._fwd_params)}) declares no target argument in "
+                    f"transformers {__import__('transformers').__version__}")
+            kw[name] = future
         if self._wants_loss and future is not None:
             kw["return_loss"] = True
         return self.model(past_values=past, **kw)
@@ -253,7 +269,10 @@ class FlowState(_GraniteBase):
 class PatchTSTFM(_GraniteBase):
     key, family = "patchtst-fm-r2", "patchtst"
     caps = frozenset({"forecast", "quantiles", "finetune"})
-    head_prefixes = ("head", "decoder")
+    # tsfm_public's PatchTSTFMForPrediction is one child ("backbone") whose head is
+    # "backbone.out_layer"; the generic ("head","decoder") prefixes match nothing, so
+    # peft="heads_only" (the reward ladder profile) failed with a misleading message
+    head_prefixes = ("out_layer", "in_layer", "head", "decoder")
 
     def __init__(self, checkpoint: str = "ibm-granite/granite-timeseries-patchtst", **kw):
         super().__init__(**kw)

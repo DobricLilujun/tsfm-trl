@@ -165,9 +165,10 @@ models:
      loss: token, license: apache-2.0, max_context: 4096, max_horizon: 512}
   sundial-base-128m:
     {family: sundial, adapter: sundial:Sundial, env: sundial, tier: A,
-     weights: thuml/sundial-base-128m, caps: [forecast, finetune, paths],
-     loss: token, license: apache-2.0, max_context: 512, max_horizon: 192,
-     notes: "causal next-token (continuous tokens) model; token CE trainer + GRPO-style track"}
+     weights: thuml/sundial-base-128m,
+     caps: [forecast, quantiles, paths],
+     loss: none, license: apache-2.0, max_context: 2880, max_horizon: 720,
+     notes: "continuous patch tokens + TimeFlow head; generate(values) API, no tokenizer; env pins transformers==4.40.1; fine-tune only via the vendor scripts"}
 
   # ------------------------------------------------------------------ Kronos
   kronos-mini:

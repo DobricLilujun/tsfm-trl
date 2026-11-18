@@ -14,6 +14,35 @@ and classification), and post-train it against a reward.
 Every capability question ("can this model be fine-tuned? does it emit quantiles?")
 is answered by the registry + adapters with a *reason*, never a silent skip.
 """
+
+
+def _usable_hf_modules_cache() -> None:
+    """Point HF's dynamic-module cache somewhere writable, if the default is not.
+
+    ``trust_remote_code`` models (Chronos-Bolt variants, Sundial, VisionTS, Time-MoE,
+    Granite-TTM heads) write python into ``~/.cache/huggingface/modules``. On a box where
+    somebody once ran a pipeline as root, that directory is root-owned and *every* such
+    model fails with ``PermissionError`` — which a compatibility matrix would file as a
+    model failure. Redirecting the cache is the whole fix, so it happens at import,
+    with the reason printed once on stderr (never silently).
+    """
+    import os as _os
+    import sys as _sys
+    if _os.environ.get("HF_MODULES_CACHE"):
+        return
+    default = _os.path.join(_os.path.expanduser("~"), ".cache", "huggingface", "modules")
+    if not _os.path.isdir(default) or _os.access(default, _os.W_OK):
+        return
+    alt = _os.path.join(_os.environ.get("TSFMTRL_HOME") or _os.getcwd(),
+                        ".cache", "hf_modules")
+    _os.makedirs(alt, exist_ok=True)
+    _os.environ["HF_MODULES_CACHE"] = alt
+    print(f"tsfm-trl: {default} is not writable (root-owned?); "
+          f"using HF_MODULES_CACHE={alt}", file=_sys.stderr)
+
+
+_usable_hf_modules_cache()
+
 from .errors import CapabilityError, TSFMTRLError, UnknownModelError, UnavailableError
 from .model import ModelHub
 from .model.base import LEVELS, Pred, TSFMModel
