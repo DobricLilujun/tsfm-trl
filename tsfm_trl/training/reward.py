@@ -270,7 +270,8 @@ class RewardTrainer:
                            seconds=time.time() - t0,
                            extra={"mode": mode, "fallbacks": fallbacks + tried_fallbacks,
                                   "reward_first_last":
-                                  [rhist[0][1], rhist[-1][1]] if rhist else []})
+                                  [rhist[0][1], rhist[-1][1]] if rhist else [],
+                                  **_trend(rhist)})
 
     # ------------------------------------------------------------------ steps
     def _point_step(self, cs, ys_t, anchor):
@@ -359,6 +360,25 @@ class RewardTrainer:
         lv = getattr(self.model, "levels", LEVELS)
         med = int(np.argmin(np.abs(np.asarray(lv, float) - 0.5)))
         return (torch.sign(q[..., med] - anchor) * torch.sign(y - anchor)).mean()
+
+
+def _trend(rhist: list) -> dict:
+    """Reward over time, stated the way it can actually be read.
+
+    A reward curve on a handful of windows is noisy batch-to-batch: first step vs
+    last step says mostly nothing (a 96-step GRPO run can read 1.73 -> 1.60 while
+    the *late* steps sit clearly above the *early* ones). The report therefore gives
+    quartile means, and "improved" compares the last quartile with the first — the
+    honest version of "did post-training help".
+    """
+    if len(rhist) < 4:
+        return {}
+    vals = [v for _, v in rhist]
+    q = max(1, len(vals) // 4)
+    early = sum(vals[:q]) / q
+    late = sum(vals[-q:]) / q
+    return {"reward_early_mean": round(early, 5), "reward_late_mean": round(late, 5),
+            "improved": late > early}
 
 
 def _has_point_head(model) -> bool:

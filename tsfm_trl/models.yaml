@@ -135,8 +135,9 @@ models:
   # -------------------------------------------------------------------- Toto
   toto-open-1.0:
     {family: toto1, adapter: toto:Toto1, env: toto, tier: B,
-     weights: Datadog/Toto-Open-Base-1.0, caps: [forecast, quantiles, multivariate],
-     loss: none, license: apache-2.0, max_context: 4096}
+     weights: Datadog/Toto-Open-Base-1.0,
+     caps: [forecast, quantiles, multivariate, finetune],
+     loss: quantile, license: apache-2.0, max_context: 4096}
   toto-2-22m:
     {family: toto2, adapter: toto:Toto2, env: toto, tier: A,
      weights: Datadog/Toto-2.0-22m, caps: [forecast, quantiles, multivariate, finetune],

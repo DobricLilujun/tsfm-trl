@@ -1,42 +1,46 @@
-#!/usr/bin/env python3
-"""Reward post-training, both demonstrator cases.
-    python examples/04_reward.py
+"""Minimal reward post-training: one token model, one quantile model.
 
-* token model     -> Chronos-T5   : GRPO (sample K candidates, group-relative
-  advantages, -A*logp with a KL anchor to the frozen reference weights)
-* quantile model  -> Chronos-Bolt : reward descent (direct gradient through the
-  differentiable quantile head)
+    python examples/04_reward.py            # both, on GPU if present
+    python examples/04_reward.py grpo       # just the GRPO path
 
-The custom reward is a P&L-shaped one: `anchor` (last observed price) is part of the
-signature precisely so a trading reward cannot be written to reward "predict the
-context mean". This is a capability demo: a handful of steps on a few dozen windows.
+Both runs are small (16 windows, ~1 minute) and log a reward curve. The point is the
+shape of the call, not the result: a reward run reports which *mode* it used
+(`grpo` / `reward_descent` / `reward_descent_point` / `rft`) and whether the late steps
+beat the early ones. Read the "not improved" verdicts in docs/05_reward_rl.md before
+drawing conclusions from the numbers.
 """
-import numpy as np
+import json
 
-from tsfm_trl import ModelHub, RewardSpec, RewardTrainer, TrainingConfig
+from tsfm_trl import ModelHub, RewardTrainer, TrainingConfig
 from tsfm_trl.data.fixtures import tiny_finance
+from tsfm_trl.training.reward import RewardSpec
 
+device = "cuda"
+only = __import__("sys").argv[1] if len(__import__("sys").argv) > 1 else None
 
-def pnl_reward(candidates, truth, anchor, cost=2e-4):
-    """candidates (B,K,H), truth (B,H), anchor (B,1) -> (B,K), higher is better."""
-    c = np.asarray(candidates, float)
-    t = np.asarray(truth, float)
-    a = np.asarray(anchor, float)
-    pos = np.sign(np.median(c, axis=2) - a)                       # (B,K)
-    realised = np.sign(t[:, -1:] - a)                             # (B,1) -> (B,K)
-    return pos * realised - cost * (pos != 0)
+cases = [
+    # (model, why it is here)
+    ("chronos-t5-small", "token model -> GRPO over sampled continuations"),
+    ("toto-2-22m", "quantile model trained through its inference path -> RFT"),
+]
 
-
-ds = tiny_finance(600)
-cfg = TrainingConfig(ctx=256, horizon=16, budget="fs16", steps=4, bs=2,
-                     peft="heads_only", seed=0, out_dir="reports/ft_examples",
-                     tag="reward_example")
-
-for key, expect in (("chronos-t5-small", "grpo"), ("chronos-bolt-small", "reward_descent")):
-    m = ModelHub.load(key, device="auto", ctx_cap=512, batch=2)
-    tr = RewardTrainer(m, cfg, spec=RewardSpec(w_pinball=1.0, w_dir=0.5, w_cross=0.2),
-                       reward=pnl_reward, n_candidates=6, kl=1e-3)
+ds = tiny_finance(400)
+for model_name, why in cases:
+    if only and only not in ("all", model_name.split("-")[0]):
+        continue
+    model = ModelHub.load(model_name, device=device, ctx_cap=512, batch=8)
+    cfg = TrainingConfig(ctx=256, horizon=16, steps=48, bs=4, budget="fs64",
+                         peft="lora", device=device, out_dir="/tmp/trl_reward",
+                         tag=model_name, log_every=12)
+    tr = RewardTrainer(model, cfg, spec=RewardSpec(w_pinball=1.0, w_dir=0.5, w_cross=0.2),
+                       kl=0.01, n_candidates=8)
     res = tr.fit(ds)
-    print(f"{key:20s} wanted {expect:14s} got {str(res.extra.get('mode')):16s} "
-          f"status={res.status:6s} steps={res.steps} "
-          f"reward {res.first_loss:.3f} -> {res.final_loss:.3f}  {res.reason}")
+    print(json.dumps({
+        "model": model_name, "why": why,
+        "status": res.status, "mode": res.extra.get("mode"), "steps": res.steps,
+        "reward_early_mean": res.extra.get("reward_early_mean"),
+        "reward_late_mean": res.extra.get("reward_late_mean"),
+        "improved": res.extra.get("improved"),
+        "fallbacks": res.extra.get("fallbacks"),
+        "checkpoint": res.checkpoint,
+    }, indent=1))

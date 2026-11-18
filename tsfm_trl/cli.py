@@ -212,7 +212,9 @@ def cmd_reward(a):
     rf, rl = (res.extra.get("reward_first_last") or [None, None])
     print(json.dumps({"status": res.status, "mode": res.extra.get("mode"), "steps": res.steps,
                       "reward_first": rf, "reward_last": rl,
-                      "improved": (rl is not None and rf is not None and rl > rf),
+                      "reward_early_mean": res.extra.get("reward_early_mean"),
+                      "reward_late_mean": res.extra.get("reward_late_mean"),
+                      "improved": res.extra.get("improved"),
                       "fallbacks": res.extra.get("fallbacks"),
                       "mean_loss": res.final_loss, "reason": res.reason,
                       "trainable_parameters": res.trainable_parameters,

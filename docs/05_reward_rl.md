@@ -90,3 +90,30 @@ The same ladder as fine-tuning (`bs/amp/peft` stepped down on OOM), and the same
 that CUDA *toolchain* failures are environment problems: the run retries cheaper and
 writes `fallbacks: [...]` into the checkpoint, so a table never hides the fact that a
 row ran at `bs=1 bf16 heads_only`.
+
+## Demonstrators (what was actually run)
+
+Two models, small data (16 windows, `fs64` budget), LoRA, one GPU. Both are recorded
+with the *quartile-mean* comparison described above rather than first-step-vs-last-step.
+
+| model | family | mode | steps | reward early → late | verdict |
+|---|---|---|---|---|---|
+| `chronos-t5-small` | token (encoder-decoder) | `grpo` (8 sampled continuations, group-relative advantage) | 96 | **1.721 → 1.827** | improved |
+| `toto-2-22m` | quantile head, inference path only | `rft` (rejection-sampling filtered fine-tune) | 48 | **−2.232 → −1.914** | improved |
+| `flowstate-r1` | differentiable quantile head | `reward_descent` | 96 | −1.296 → −1.387 | **not improved** |
+
+The FlowState row is kept as a negative result (re-run with quartile reporting: early
+mean −1.296, late mean −1.387). What it shows: the run fell to the ladder profile
+`bs=1, amp=bf16, peft=heads_only` under memory pressure, and gradient descent on the
+pinball-plus-direction reward at that profile drifts the reward down instead of up. A reward *path* is demonstrated (the mode runs, the curve is logged);
+a reward *gain* on a differentiable head is not demonstrated at this budget. Anyone
+concluding "reward post-training helps TSForecasters" from this repo would be
+over-reading it.
+
+Reproduce:
+
+```bash
+tsfm-trl reward --model chronos-t5-small --steps 96 --bs 8 --lr 2e-5 \
+                --budget fs64 --peft lora --device cuda
+tsfm-trl reward --model toto-2-22m      --steps 48 --budget fs64 --peft lora --device cuda
+```

@@ -164,3 +164,57 @@ returning `failed` — which is how Toto-2.0-313m trains.
 * **VisionTS++ / t0-α/β/γ base weights**: the authors host them outside the Hub; the
   rows carry `weights: null` plus a pointer instead of pretending they are fetchable.
 * Any model whose weights require a login we do not have.
+
+## Second pass: per-machine matrix, three classify levels
+
+The matrix is now run on two machines (x86 laptop, RTX 1000 Ada 6 GB; aarch64 DGX Spark,
+GB10 unified memory) and merged. What that surfaced:
+
+* **One row per (model, env), the working row wins.** When the two machines disagree —
+  TiRex-2 compiles on sm8.9 but its Triton kernel raises `CompilationError` on the GB10;
+  MOMENT-large fine-tunes on 6 GB fp16 but OOMs then recovers on unified memory —
+  `dedupe()` keeps the row that ran and records the other machine's reason under
+  `other machine:`, so a failure never disappears, it moves to a footnote. `--keep-both`
+  opts out. A row whose `env` no longer matches the registry is dropped at merge time:
+  the model moved environments, and listing it twice double-counts it.
+* **Machine gap ≠ model failure.** `UnavailableError: needs Triton and an sm10.0+ GPU, or
+  nvcc for the MLSTM fallback` is an *environment* statement. The same model is ✅ on the
+  other machine. The matrix prints both columns; the prose in this file is where the
+  difference is explained.
+* **`trust_remote_code` on a shared box**: `HF_MODULES_CACHE` must point somewhere
+  writable, or every custom-code model (Chronos-Bolt variants, VisionTS, Sundial, Kairos)
+  fails identically at import time.
+* **Vendor envs are architecture-specific.** A `freeze.txt` generated on x86_64 cannot be
+  installed on aarch64. On the DGX the Toto env had to be rebuilt from the *local* core
+  freeze plus the Toto delta (`transformers==5.10.1`, `safetensors==0.4.5`,
+  `tokenizers==0.22.2`, `torchmetrics`, `setuptools<81`); with the frozen x86 file it
+  silently ends up without `transformers` at all and every row says `missing package`.
+* **TimesFM 2.0/2.5 are v1-API models** (`timesfm==1.2.9` + JAX). The PyPI package's 2.x
+  and 3.x lines are different checkpoints with a different API; the adapter pins the arch
+  dict (`num_layers=50, num_heads=16, model_dims=1280, input_patch_len=32,
+  output_patch_len=128`) because the config in the repo doesn't carry it.
+* **Aurora's `load_model()` returns a model in train mode**, so its norm layers raise
+  `Expected more than 1 value per channel` on the batch of one that inference is made of;
+  the adapter calls `.eval()`. Its flow-matching head has no public training path, so
+  fine-tune and reward report `—`, not `❌`.
+* **Hirondel fine-tunes in its own normalised space.** `HirondelModel.forward(x,
+  observed, horizon)` returns quantiles after mean/sd + `asinh` scaling; the adapter's
+  `training_step` applies `_scale` to the context and the same transform to the target
+  before the pinball loss, so the optimised objective is the one the forecaster inverts.
+  Reward runs as `rft` (its head is not a differentiable quantile head in the sense
+  `reward_descent` needs).
+* **Kairos emits 128 steps for a 16-step request** (its `prediction_length` is fixed by
+  the checkpoint). The adapter slices; fine-tune remains open because the vendor forward
+  branches on tensor truthiness — reported as `❌ Boolean value of Tensor ...`, not hidden.
+* **MOMENT's native classification head** takes `num_class` (not `n_class`), and its
+  pipeline `forward` is keyword-only (`x_enc=`). Both appear in `fit_native`, which now
+  tries positional then keyword. The pipeline object is cached: calling `pipeline()` per
+  step re-downloads.
+* **Reward: `--steps` beats `reward_steps`.** `reward_steps` is the *matrix* cap (a
+  reward row checks that post-training runs, in seconds). Silently trimming a requested
+  48-step demonstrator to 6 was how a run "did not improve". The cap now applies only
+  when no step count was given.
+* **Reward trend is reported by quartile means** (`reward_early_mean` vs
+  `reward_late_mean`), not first step vs last step. First-vs-last called a run that
+  improved (1.72 → 1.83 across quartiles) a regression, because step 1 happened to be a
+  lucky batch.

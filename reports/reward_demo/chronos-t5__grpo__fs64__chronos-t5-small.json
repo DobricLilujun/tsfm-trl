@@ -13,7 +13,7 @@
   "kl": 0.02,
   "dataset": "tiny_fin",
   "split_end": "2017-05-31 00:00:00",
-  "steps": 48,
+  "steps": 96,
   "budget": "fs64",
   "smoke": false,
   "trainable_parameters": 3195392,
@@ -59,10 +59,10 @@
    "model.decoder.block.0.layer.0.SelfAttention.v",
    "model.decoder.block.0.layer.0.SelfAttention.o"
   ],
-  "reward_first": 2.05962,
-  "reward_last": 1.59802,
-  "loss_first": 112.199997,
-  "loss_last": 144.772034,
+  "reward_first": 1.54489,
+  "reward_last": 1.60393,
+  "loss_first": 140.436203,
+  "loss_last": 105.701973,
   "fallbacks": []
  },
  "config": {
@@ -70,11 +70,11 @@
   "horizon": 21,
   "budget": "fs64",
   "split": "train",
-  "steps": 48,
+  "steps": 96,
   "epochs": null,
   "n_windows": null,
-  "lr": null,
-  "bs": 4,
+  "lr": 2e-05,
+  "bs": 8,
   "amp": "fp32",
   "device": "cuda",
   "seed": 0,
@@ -111,11 +111,11 @@
  "loss_first_last": [
   [
    1,
-   112.199997
+   140.436203
   ],
   [
-   48,
-   144.772034
+   96,
+   105.701973
   ]
  ]
 }
