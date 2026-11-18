@@ -50,6 +50,7 @@ memory) — over all 46 registered models:
 | load | 45 | 0 | 1 (VisionTS++ ships `.ckpt` only) |
 | forecast | 44 | 0 | 1 (TiRex-2 kernels, both machines) |
 | quantiles | 35 | 9 | 0 |
+| embedding probe features | 44 | 0 | 1 |
 | fine-tune | 20 | 14 | 3 |
 | classify (probe / head / native) | 44 | 0 | 1 |
 | anomaly | 44 | 1 | 0 |

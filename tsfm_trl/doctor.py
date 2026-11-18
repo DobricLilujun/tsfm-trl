@@ -362,6 +362,22 @@ def dedupe(rows: list[Row]) -> list[Row]:
         win, lose = (r, cur) if score(r) > score(cur) else (cur, r)
         # only an actual failure is worth a footnote: a task the other run never
         # attempted is not evidence of anything
+        # a task the winner never attempted but the loser did is filled in from the
+        # loser: partial re-runs (an embed-only pass, one model re-checked after a fix)
+        # must not cost the table the coverage they produced
+        for t in tasks + ("quantiles", "embed"):
+            if getattr(win, t) == "skip" and getattr(lose, t) != "skip":
+                setattr(win, t, getattr(lose, t))
+                if (lose.reasons or {}).get(t):
+                    win.reasons = dict(win.reasons or {})
+                    win.reasons.setdefault(t, lose.reasons[t])
+        wroutes = (win.clf_metrics or {}).get("routes") or {}
+        lroutes = (lose.clf_metrics or {}).get("routes") or {}
+        for k, v in lroutes.items():
+            if wroutes.get(k, "skip") == "skip" and v != "skip":
+                win.clf_metrics = dict(win.clf_metrics or {})
+                win.clf_metrics["routes"] = dict(wroutes, **{k: v})
+                wroutes = win.clf_metrics["routes"]
         bad = [f"{t}={getattr(lose, t)}" for t in tasks if getattr(lose, t) == "fail"]
         if bad:
             win.reasons = dict(win.reasons or {})
