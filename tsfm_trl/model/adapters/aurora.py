@@ -30,6 +30,11 @@ class Aurora(TSFMModel):
         super().__init__(**kw)
         self.checkpoint, self.num_samples = checkpoint, int(num_samples)
         self.model = self._load(checkpoint)
+        # the vendor's load_model() hands back a model in train mode, and its norm
+        # layers then raise "Expected more than 1 value per channel" on the batch of
+        # one that inference runs are made of
+        if hasattr(self.model, "eval"):
+            self.model.eval()
 
     @staticmethod
     def _load(checkpoint: str):

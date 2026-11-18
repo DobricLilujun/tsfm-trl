@@ -173,7 +173,7 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
                     row.reasons["finetune"] = (f"loss did not fall: {res.first_loss} -> "
                                                f"{res.final_loss}")
             else:
-                row.finetune = res.status
+                row.finetune = _st(res.status)
                 row.reasons["finetune"] = res.reason
         except Exception as e:                                     # noqa: BLE001
             row.finetune = "fail"
@@ -239,8 +239,7 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
                                  smoke=True, tag=spec.key)
             res = RewardTrainer(model, cfg, n_candidates=4).fit({"windows": _wins(train, ctx, horizon, 4),
                                                                  "info": {"series": "fixture"}})
-            row.reward = ("ok" if res.status in ("ok", "smoke")
-                          else "skip" if res.status == "skipped" else res.status)
+            row.reward = "ok" if res.status in ("ok", "smoke") else _st(res.status)
             if res.status not in ("ok", "smoke"):
                 row.reasons["reward"] = res.reason
         except Exception as e:                                     # noqa: BLE001
@@ -294,6 +293,13 @@ def run_matrix(keys=None, *, tier=None, env=None, tasks=("load", "predict", "fin
 def _oom_in(msg: str) -> bool:
     m = (msg or "").lower()
     return "out of memory" in m or "oom" in m or "cannot allocate" in m
+
+
+def _st(status: str) -> str:
+    """TrainResult.status and Row.status must be one vocabulary in the matrix:
+    ok / skip / fail / prepared / partial. "failed" next to "fail" renders as two
+    symbols for the same thing."""
+    return {"failed": "fail", "skipped": "skip", "smoke": "ok"}.get(status, status)
 
 
 def dedupe(rows: list[Row]) -> list[Row]:

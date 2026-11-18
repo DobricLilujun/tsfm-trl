@@ -234,7 +234,13 @@ class ClassificationTrainer:
             xb = torch.tensor(np.stack([np.asarray(Xtr[j], float) for j in i]),
                               dtype=torch.float32, device=dev)[:, None, :]
             yb = torch.tensor(ytr[i], dtype=torch.long, device=dev)
-            out = head(xb) if xb.shape[0] > 0 else None
+            out = None
+            if xb.shape[0] > 0:
+                try:
+                    out = head(xb)
+                except TypeError:
+                    # MOMENT's pipeline forward is keyword-only (x_enc=), not positional
+                    out = head(x_enc=xb)
             logits = getattr(out, "class_predictions", None)
             if logits is None:
                 logits = out if torch.is_tensor(out) else getattr(out, "logits", None)
@@ -251,7 +257,11 @@ class ClassificationTrainer:
         with torch.no_grad():
             for i in range(0, len(X), 16):
                 chunk = np.stack([np.asarray(v, float) for v in X[i:i + 16]])
-                out = head(torch.tensor(chunk, dtype=torch.float32, device=dev)[:, None, :])
+                xc = torch.tensor(chunk, dtype=torch.float32, device=dev)[:, None, :]
+                try:
+                    out = head(xc)
+                except TypeError:
+                    out = head(x_enc=xc)          # MOMENT's keyword-only pipeline forward
                 lg = getattr(out, "class_predictions", None)
                 lg = lg if lg is not None else (out if torch.is_tensor(out) else out.logits)
                 scores.append(torch.softmax(lg[:, :n_cls], -1).cpu().numpy())

@@ -83,6 +83,14 @@ Some families cannot be fine-tuned through an HF-style `forward` at all. They re
   adapter disables it (otherwise torch aborts with *"different number of tensors was
   saved"*).
 
+## The ladder: memory *and* numerics
+
+The fine-tune ladder walks `keep → bf16 → fp16 → fp32 → lr×0.1 → ctx/2 → bs=1 → CPU`.
+The first rungs are memory; the `fp32` and `lr×0.1` rungs are numerical, because a
+non-finite loss on step 1 is a property of that profile, not of the family (Toto-2.0-313m
+trains at a tenth of the fine-tuning rate). A run that fell off the ladder says which
+profile it actually trained on.
+
 ## Memory ladder
 
 `ForecastTrainer.fit` (and `RewardTrainer.fit`) retry on OOM with progressively

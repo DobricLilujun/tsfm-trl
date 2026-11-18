@@ -76,6 +76,21 @@ def cmd_doctor(a):
         for f in a.merge:
             rows += [Row(**r) for r in json.loads(Path(f).read_text()).get("rows", [])]
         raw = len(rows)
+        # a row whose env no longer matches the registry is a stale artifact of an
+        # earlier run (the model was moved to a different environment); reporting it
+        # next to the current one would double-count the model
+        from tsfm_trl import ModelHub
+        cur = {}
+        for r in rows:
+            try:
+                cur[r.model] = ModelHub.lookup(r.model).env
+            except Exception:                                      # noqa: BLE001
+                cur[r.model] = r.env
+        moved = [r.model for r in rows if cur.get(r.model) and r.env != cur[r.model]]
+        if moved and not a.keep_both:
+            rows = [r for r in rows if r.env == cur.get(r.model)]
+            print(f"dropped {len(moved)} row(s) whose env moved in the registry: "
+                  f"{sorted(set(moved))}")
         rows = dedupe(rows) if not a.keep_both else rows
         Path(a.json).parent.mkdir(parents=True, exist_ok=True)
         Path(a.json).write_text(json.dumps(merge(rows), indent=1, default=str))
@@ -194,8 +209,13 @@ def cmd_reward(a):
     tr = RewardTrainer(model, cfg, spec=RewardSpec(w_pinball=a.pinball_weight),
                        kl=a.kl, n_candidates=a.candidates, mode=a.mode)
     res = tr.fit({"windows": w, "info": info})
+    rf, rl = (res.extra.get("reward_first_last") or [None, None])
     print(json.dumps({"status": res.status, "mode": res.extra.get("mode"), "steps": res.steps,
-                      "mean_reward": res.final_loss, "reason": res.reason,
+                      "reward_first": rf, "reward_last": rl,
+                      "improved": (rl is not None and rf is not None and rl > rf),
+                      "fallbacks": res.extra.get("fallbacks"),
+                      "mean_loss": res.final_loss, "reason": res.reason,
+                      "trainable_parameters": res.trainable_parameters,
                       "checkpoint": res.checkpoint}, indent=1, default=float))
     return 0 if res.status in ("ok", "smoke") else 1
 

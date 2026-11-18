@@ -57,8 +57,17 @@ class Moment(TSFMModel):
             elif task in ("reconstruction", "imputation"):
                 kw["seq_len"] = ctx
             else:                                        # classification / named tasks
-                kw["n_class"] = int(n_class)
-            p = MOMENTPipeline.from_pretrained(self.checkpoint, model_kwargs=kw)
+                # MOMENT's own spelling is num_class; "n_class must be specified" and
+                # "num_class must be specified" are the two errors its versions raise
+                kw["num_class"] = int(n_class)
+            try:
+                p = MOMENTPipeline.from_pretrained(self.checkpoint, model_kwargs=kw)
+            except Exception:                                        # noqa: BLE001
+                if "num_class" in kw:
+                    kw2 = {**kw, "n_class": kw.pop("num_class")}
+                    p = MOMENTPipeline.from_pretrained(self.checkpoint, model_kwargs=kw2)
+                else:
+                    raise
             p.init()
             # MOMENT's backbone turns gradient checkpointing on by default, and its
             # recomputation is not deterministic (the token-embedding branch draws a

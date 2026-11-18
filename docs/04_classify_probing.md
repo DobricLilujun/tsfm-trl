@@ -64,7 +64,9 @@ series are an information leak that makes every number in the table meaningless.
 ## What is refused
 
 * Panel-only families (Kronos) cannot take plain 1-D contexts for a head; the row says
-  `— (needs OHLCV panels)`, and the honest route for them is the statistical probe.
+  `— (needs OHLCV panels)` — except Kronos, whose adapter writes the flat
+  `open=high=low=close, volume=amount=0` panel its own `finetune_csv` format uses, so
+  its model-feature probe does run and says so in `Pred.meta`.
 * Models with no trunk output (TimesFM inference builds, TiRex) decline
   `model_matrix` with a `CapabilityError`; the statistical probe still runs, and the
   table labels it `stat`, so nobody mistakes it for a representation result.

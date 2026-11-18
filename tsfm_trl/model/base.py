@@ -229,6 +229,13 @@ class TSFMModel:
             # numpy reads the trailing 4 as the horizon and refuses to broadcast
             return np.nanmean(np.abs(y - p.point) / scale[:, None], axis=1)
         lo, hi = p.quantile(0.1), p.quantile(0.9)
+        if lo is None or hi is None or lo.shape != p.point.shape:
+            # the model has an interval head but not at the band we asked for: score
+            # against the context scale instead of producing a None-minus-float error
+            self.supports["anomaly"] = "residual z-score (no 0.1/0.9 band in the grid)"
+            scale = np.stack([np.std(c[-min(len(c), 60):]) for c in ctx])
+            scale = np.where(scale > 0, scale, 1.0)
+            return np.nanmean(np.abs(y - p.point) / scale[:, None], axis=1)
         scale = np.where(hi > lo, hi - lo, 1.0)
         return np.nanmean(np.abs(y - p.point) / scale, axis=1)
 

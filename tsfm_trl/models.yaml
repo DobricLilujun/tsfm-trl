@@ -239,7 +239,7 @@ models:
      weights: birlaailabs/yug, caps: [forecast, quantiles, covariates],
      loss: quantile, license: "cc-by-nc-4.0 (weights)", max_context: 4096, install: "pip install yug"}
   aurora:
-    {family: aurora, adapter: aurora:Aurora, env: core, tier: B,
+    {family: aurora, adapter: aurora:Aurora, env: vendor, tier: B,
      weights: DecisionIntelligence/Aurora, caps: [forecast, finetune],
      loss: none, license: mit, max_context: 512,
      notes: "multimodal (text tower + flow-matching head): own loss family, not pinball"}

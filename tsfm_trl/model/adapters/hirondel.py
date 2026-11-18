@@ -72,31 +72,42 @@ class Hirondel(TSFMModel):
         if q is None:
             return Pred(point=P)
         Q = _as_array(q)[:, :horizon, :]
-        return Pred(point=P, quantiles=to_levels(Q, lv), levels=LEVELS if lv != self.levels
-                    else None, meta={"levels_emitted": len(lv)})
+        # to_levels() moves the grid onto the canonical LEVELS either way, so that is
+        # what the Pred must declare — levels=None would make Pred.quantile() answer
+        # None, and the anomaly score would be a None arithmetic error
+        return Pred(point=P, quantiles=to_levels(Q, lv), levels=LEVELS,
+                    meta={"levels_emitted": len(lv), "levels_native": lv})
 
     def trainable(self):
         return self.model
 
     def training_step(self, contexts, truth, horizon):
+        """Pinball on the model's *own* normalised quantiles.
+
+        ``HirondelModel.forward(x, observed, horizon)`` returns ``[B, horizon, nq]`` in
+        normalised units (mean/sd over the observed context, then asinh) — the exact
+        scaling its forecaster inverts. So the loss is computed after applying
+        ``_scale`` to the context and the *same* transform to the target: optimising
+        anything else would train a different objective than the one it is scored on.
+        """
         import torch
+        from ...training.losses import pinball_loss
         if self.model is None:
             from ...errors import CapabilityError
             raise CapabilityError(self.key, "finetune",
                                   "the installed hirondel build does not expose a model module")
-        params = set(inspect.signature(self.model.forward).parameters)
-        x = torch.tensor(np.asarray(contexts, dtype=np.float32), device=self.device)
-        y = torch.tensor(np.asarray(truth, dtype=np.float32), device=self.device)
-        for kw in ("target", "future_target", "labels"):
-            if kw in params:
-                out = self.model(x, **{kw: y})
-                loss = getattr(out, "loss", None) or (out.get("loss") if isinstance(out, dict) else None)
-                if loss is not None:
-                    return loss
-        from ...errors import CapabilityError
-        raise CapabilityError(self.key, "finetune",
-                              f"hirondel.forward({sorted(params)}) has no supervised target "
-                              f"argument in the installed version")
+        x = torch.tensor(np.stack(self.trim(contexts)), dtype=torch.float32,
+                         device=self.device)
+        xs, obs, mu, sg = self.f._scale(x)
+        y = torch.tensor(np.stack(np.asarray(truth, dtype=np.float32).reshape(
+            len(contexts), -1)), dtype=torch.float32, device=self.device)
+        ys = torch.asinh((y - mu) / sg)
+        q = self.model(xs, obs, horizon=int(horizon))
+        q = q[:, : y.shape[1], :]
+        nq = q.shape[-1]
+        lv = (self.levels or [])[:nq] if self.levels and len(self.levels) >= nq else \
+            [0.1 * (i + 1) for i in range(nq)]
+        return pinball_loss(q.float(), ys.float(), lv)
 
 
 def _as_array(out):

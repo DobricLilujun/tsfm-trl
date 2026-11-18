@@ -176,8 +176,10 @@ class RewardTrainer:
         opt = torch.optim.AdamW([p for p in module.parameters() if p.requires_grad],
                                 lr=cfg.eff_lr(), weight_decay=cfg.weight_decay)
         steps = cfg.eff_steps(len(windows))
-        if getattr(cfg, "reward_steps", 0):
-            # the matrix checks that reward post-training *runs*; it is not a training run
+        if getattr(cfg, "reward_steps", 0) and cfg.steps is None:
+            # the matrix cap: it checks that reward post-training *runs*, in seconds.
+            # An explicit --steps request is authoritative — silently trimming a
+            # 48-step run to 6 is how a demonstrator "did not improve"
             steps = min(steps, int(cfg.reward_steps))
         self.n_candidates = max(2, min(self.n_candidates, 8 if dev == "cuda" else 4))
         log = StepLog(cfg.log_every)
@@ -373,8 +375,14 @@ def _draw_from_grid(q, levels, K, rng):
     (B,H,nq) -> (B,K,H). A cheap way to get on-manifold candidates from a quantile
     head that cannot sample paths."""
     q = np.asarray(q, dtype=float)
-    lv = np.asarray(levels, dtype=float)
+    lv = np.asarray(levels, dtype=float).reshape(-1)
     B, H, nq = q.shape
+    if lv.size != nq:
+        # the grid the caller named is not the grid the head emitted (a Pred built
+        # without levels, or a model whose knots were remapped). np.interp would raise
+        # "fp and xp are not of the same length"; a uniform grid over what is actually
+        # there is the honest reading for candidate *sampling*
+        lv = (np.arange(1, nq + 1) / (nq + 1))
     ext = np.r_[0.0, lv, 1.0]
     qs = np.concatenate([q[..., :1], q, q[..., -1:]], axis=-1)
     out = np.empty((B, K, H))

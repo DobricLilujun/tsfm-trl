@@ -14,7 +14,7 @@ import inspect
 import numpy as np
 
 from ...errors import CapabilityError, UnavailableError
-from ..base import Pred, TSFMModel, to_levels
+from ..base import LEVELS, Pred, TSFMModel, to_levels
 
 
 class Kairos(TSFMModel):
@@ -97,12 +97,21 @@ class Kairos(TSFMModel):
         if raw is None:
             raise UnavailableError(self.key, "forward returned no prediction_outputs")
         q, _ = self._reshape_out(raw, horizon)
+        if q.shape[1] != horizon:
+            # some Kairos releases ignore prediction_length and emit their configured
+            # horizon; slice it rather than returning a (n, 128) array under a
+            # request for 16, which the matrix would (rightly) call bad-shape
+            q = q[:, :horizon, :] if q.shape[1] > horizon else q
+            meta_note = f"model emitted {q.shape[1]} steps for a {horizon}-step request"
+        else:
+            meta_note = ""
         nq = q.shape[-1]
         lv = (self.levels or [])[:nq] if self.levels and len(self.levels) >= nq else \
             [0.1 * (i + 1) for i in range(nq)]
         med = int(np.argmin(np.abs(np.asarray(lv) - 0.5)))
         return Pred(point=q[:, :, med], quantiles=(to_levels(q, lv) if nq > 1 else None),
-                    levels=lv)
+                    levels=(LEVELS if nq > 1 else None),
+                    meta={"horizon_note": meta_note} if meta_note else {})
 
     def training_step(self, contexts, truth, horizon):
         """Try the model's own supervised forward (``future_target`` / ``labels``);
