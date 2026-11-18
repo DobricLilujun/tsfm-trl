@@ -1,0 +1,16 @@
+# Compatibility matrix
+
+Generated 2026-11-18 01:16:20 on ubadmin-Precision-3591 (x86_64), python 3.12.13.
+
+✅ ok · ❌ failed (see `reports/compat_matrix.json` for the captured reason) · — not offered by the model · ◐ partial · · not checked
+
+| model | tier | weights | load | forecast | quantiles | embed | fine-tune | classify | anomaly | reward | s |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| toto-2-22m | A | ✅ | ✅ | ✅ | ✅ | · | ✅ (0.710→0.714) | ✅ | ✅ | ✅ | 13.1 |
+| toto-open-1.0 | B | ✅ | ❌ | · | · | · | · | · | · | · | 0.15378403663635254 |
+| toto-2-313m | B | ✅ | ✅ | ✅ | ✅ | · | ❌ | ✅ | ✅ | ✅ | 22.3 |
+
+## Captured failures
+
+- **toto-open-1.0** (toto1, python 3.12.13): load: UnavailableError: toto-open-1.0: ValueError: Unrecognized model in Datadog/Toto-Open-Base-1.0. Should have a `model_type` key in its config.json.
+- **toto-2-313m** (toto2, python 3.12.13): finetune: RuntimeError: non-finite loss at step 1: nan

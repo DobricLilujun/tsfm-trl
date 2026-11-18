@@ -1,0 +1,166 @@
+# 8 · Known issues, pins and the reasons behind them
+
+Everything here was measured, not read. Where a family is broken, the entry says what
+the library does about it: **fix**, **work around**, or **report honestly**.
+
+## The pins that decide whether a family runs
+
+| family | pin | what happens if you ignore it |
+|---|---|---|
+| Time-MoE | **`transformers==4.40.2`**, `numpy<2` | 4.42 introduced `Cache` objects → `DynamicCache has no attribute from_legacy_cache`; 4.44 removed `standardize_cache_format` → the released remote code dies. 4.38 is too old (`EosTokenCriteria` missing). Only 4.40.x works. |
+| TTM-r1 | `transformers==4.44.0` | 4.5x removed `PatchTSMEncoderLayer`. r2/r3 are fine on 4.57, which is why they live in `core`. |
+| Sundial | `transformers==4.42.4`, `numpy<2`, `einops==0.8.1` | its repo code predates the 4.5x generation refactor. |
+| peft everywhere | **`peft==0.19.1`** | 0.20.x removed the `base_model` keyword our LoRA path passes. |
+| Toto | `safetensors==0.4.5` | 0.4.6 changed the deserializer its loader expects. |
+| TimesFM 2.0-500M | **`timesfm==1.2.9` + jax** (env `timesfm20`) | PyPI's `timesfm` 2.0.x and 3.x are the **2.5/3.0** models; only 1.2.x still ships the v1 API (`TimesFm`, `TimesFmHparams`). 1.2.x imports `jax` at package import even for the torch backend. |
+| TiRex-2 | Triton ≥ 3.4 **and** sm ≥ 10.0, else a CUDA toolchain (nvcc) | Triton kernels die on older archs; the *native* fallback JIT-compiles a CUDA extension through `flashrnn`, so it needs `nvcc` — a runtime-only CUDA install (no toolchain) fails with `Ninja is required…`. On a laptop that is a machine gap, and `TiRex2` raises `UnavailableError` naming both requirements rather than pretending the model is broken. |
+| datasets | `datasets>=3,<4` | 4.x needs an ABI-matched pyarrow. |
+
+## Model-level behaviour the adapters encode
+
+* **TimesFM 2.0-500M is 50 layers × 1280 dims × 16 heads.** Building it with the 2.5
+  shape loads a state_dict with 700 "unexpected keys". A mismatch is reported as
+  *architecture*, with the layer count, not a key dump. Forecast comes from
+  `TimesFm.forecast(inputs) -> (point, quantiles)`; there is no public training code,
+  so fine-tune and reward are `—`.
+* **Time-MoE's `generate(do_sample=True)` is broken in the released remote code**
+  (its `prepare_inputs_for_generation` hands transformers a 3-D tensor and `_sample`
+  unpacks 2-D). Greedy works; sampling does not, in every transformers we tested.
+  The adapter therefore does its own AR decode with a KV cache
+  (`_ar_decode`), and the sampled paths are recorded in `Pred.meta`.
+* **Time-MoE's `forward` mutates the tensor you pass it** (in-place `unsqueeze`), so
+  the decode loop clones on entry — otherwise the second step dies on a shape error
+  that blames your own tensor.
+* **Moirai 1.1 / Moirai-MoE cannot be fine-tuned through this API.** Their `forward()`
+  *draws samples* from the predicted distribution and `_get_distr` returns a
+  distribution over the whole padded window, not the prediction slice: a gradient
+  through "the quantiles of a sample" would be a no-op dressed as a fine-tune. The
+  honest answer is `skipped`, with the reason, and the note that a real fine-tune
+  needs uni2ts' own Lightning stack (`MoiraiForecast` + packed masked dataset).
+  Moirai **2.0** exposes a differentiable quantile head → fine-tune ✅.
+* **MOMENT fixes `seq_len`/`pred_len` at `init()`.** Trainers call
+  `prepare_training(ctx, horizon)` before asking for the module, and pipelines are
+  cached per `(task, horizon, seq_len)` — rebuilding a 1 B backbone per call would
+  dominate any fine-tune. MOMENT also turns gradient checkpointing on by default and
+  its recomputation is not deterministic (`different number of tensors was saved`);
+  the adapter disables it.
+* **MOMENT has no quantile head** (`forward` returns mean + samples), so reward
+  post-training uses the `reward_descent_point` path (scale-free accuracy + direction),
+  with the interval terms switched off rather than silently reported as zero.
+* **FlowState/Granite**: `prediction_length = -1` in the config means *flexible*; the
+  adapter discovers the real chunk length with one dry forward (`_probe_head_len`).
+  Vendor models keep tensors in plain attributes, so LoRA/offload uses
+  `peft.move_deep` to walk non-registered tensor buffers. CUDA toolchain failures
+  (nvrtc, arch mismatch) are treated as environment, and the trainer retries on CPU.
+* **Chronos-T5** tokenizes on CPU and moves the ids; label windows are truncated to
+  `config.prediction_length`.
+* **TiRex's loader validates a model *id*, not a path** (`Invalid model id` when it is
+  given a directory). `ModelHub` therefore passes `source_id=` (the registry id) to
+  adapters so resolution to a local directory does not destroy the id.
+* **Kronos needs an OHLCV panel**, not a target series: `SeriesDataset.panel_window`
+  re-attaches the target column (its `close`) because the panel drops it. A 1-D series
+  is still accepted: the adapter writes the flat panel the vendor's own `finetune_csv`
+  format uses (`open = high = low = close`, `volume = amount = 0`) — that is their
+  convention for a single price series, not an invention here.
+* **Kronos' `predictor.predict` returns a DataFrame of six OHLCV columns, averaged over
+  its internal samples** — so `sample_count` decodes happen and then the spread is
+  thrown away. The adapter draws them itself through `predict_batch` (series × draws in
+  one batched decode; 32 sequential calls turned a matrix run into an hour) and keeps
+  `Pred.samples`, which is the only honest interval a sampler has.
+* **Kronos fine-tunes in-process**: `training_step` is the vendor's own next-token
+  cross-entropy (frozen `KronosTokenizer.encode` → `head.compute_loss`), so LoRA, the
+  memory ladder and the loss curve apply like every other family. `vendor_fit` still
+  exports their CSV + config and prints the command for anyone who wants the script.
+* **Kairos ships weights but no remote code** (`architectures: ["KairosModel"]`, no
+  `.py` in the repo). It needs `pip install git+https://github.com/foundation-model-research/Kairos`
+  which provides `tsfm.model.kairos.AutoModel`.
+* **TTM r2/r3 declare no quantile levels.** Their configs carry
+  `distribution_output=student_t` and no `quantiles` list, so the head emits
+  distribution *parameters*; inventing a 9-level grid from the parameter count would
+  print an interval the model never predicted. `_load_keep_info` keeps the
+  `from_pretrained` loading report, and where head tensors are **newly initialised**
+  (ttm-r3 ships 80 of them that its released config does not describe) the adapter
+  *removes* the `quantiles` capability and says why. Those rows are point-only, and
+  reward post-training uses `reward_descent_point`.
+* **`f1_score` does not take a `beta`.** The recall-weighted F2 the finance framing
+  needs lives in `fbeta_score`; passing `beta=` to `f1_score` raised and was swallowed
+  by the except, so `f1_beta2` was silently `nan` for every run. For >2 classes it is
+  now the macro average of each occurring class's one-vs-rest F2.
+* **PR-AUC and ROC-AUC need scores, not argmax.** `classification_report` computes them
+  one-vs-rest (weighted) when handed the score matrix, and reports `nan` — not a
+  number — when the caller only has hard labels. All three classification routes now
+  pass softmax scores.
+* **A from-scratch head needs a from-scratch learning rate.** The budget lr (1e-5) is a
+  fine-tuning rate; at that step size a fresh MLP never leaves its initial bias, which
+  reads as accuracy *below* chance. `fit_head` uses 1e-3 for the head with the trunk
+  still on the fine-tuning rate (AdamW param groups).
+* **stdout is a data channel.** `StepLog` writes its JSON lines to stderr, and the
+  per-env matrix children write their report to a temp file: a parent parsing a
+  child's stdout for "the JSON" silently dropped every row once the step lines started
+  sharing the stream.
+* **statsmodels never shipped `ThetaModel`** (absent in every release through 0.14/0.15,
+  promised since 0.12). The theta baseline is implemented in-house (SES + drift).
+
+## Design decisions that look like quirks
+
+* `CAPS` is a **frozenset** — `set(caps) <= CAPS` in the registry tests is a subset
+  check, and a tuple would make it silently wrong.
+* `quantile_coverage` reports **only the bands a model actually emits**. Reporting 95 %
+  coverage for a model whose grid stops at 0.9 is an interval lie.
+* `Pred.meta` always says how an interval was produced (native head, empirical from
+  *n* sampled paths, temperature-sampled AR decode, median-rollback rollout for
+  horizons longer than one output patch).
+* `skipped` ≠ `failed`: `—` means the model/adapter declines the task (with a reason),
+  `❌` means it tried and broke.
+* `smoke` counts as ok: the matrix checks that a capability *runs*, not that training
+  converged. Loss curves are still printed (`✅ (0.587→0.612)`) so a fine-tune that
+  diverges is visible.
+
+## Vendor packages: the exact installs
+
+These families publish no wheel on the index their model card names, and the matrix
+rows say which one is missing. On the laptop they live in `.venv-vendor` / `.venv-toto`
+(registered in `envs/local.json`):
+
+| family | install | import |
+|---|---|---|
+| t0-α/β/γ | `pip install "tfc-t0[torch]>=0.6.1"` | `from t0 import T0Forecaster` (it *is* the nn.Module) |
+| Timestral 5/28/123/209M | `pip install git+https://github.com/mistralai/timestral.git` | `from timestral import TimestralForecaster` |
+| Hirondel-7M | `pip install git+https://github.com/tncrd/hirondel.git` | `HirondelForecaster.from_pretrained(...).forecast([...])` |
+| Yug | `pip install yug` | `from yug import YugPipeline` |
+| Aurora | `pip install aurora-model` | `from aurora import load_model` |
+| Toto 2.0 | `pip install toto-models` | `from toto2.model import Toto2Model` |
+| Toto 1.0 | `pip install toto-ts` (+ `setuptools<81` for `pkg_resources`) | `from toto.model.toto import Toto` |
+
+* **Vendor forecaster objects keep outputs on the GPU.** `np.asarray` on a CUDA tensor
+  raises `can't convert cuda:0 device type tensor to numpy`, which the matrix used to
+  file as a failure of the model; `base.to_numpy` handles torch/jax/pandas.
+* **Hirondel's forecaster is constructed from a model object**, not a repo id:
+  `HirondelForecaster.from_pretrained(repo)` then `.forecast(list_of_contexts,
+  prediction_length=)` → `.median (N,H)`, `.quantiles (N,H,L)`, `.quantile_levels`.
+* **Toto-Open-1.0 (`toto-ts`) is the one row still open.** Its `TotoForecaster` takes
+  the *backbone* (`Toto(...).model`) and a `MaskedTimeseries(series, padding_mask,
+  id_mask, timestamp_seconds, time_interval_seconds, num_exogenous_variables)` built by
+  their own dataset pipeline; the naive construction reaches `einops` shape errors.
+  The adapter wiring is pending and the row reports that, rather than scoring an
+  unverified path. Toto **2.0** (22m/313m) — the current generation — loads, forecasts,
+  classifies and fine-tunes.
+* **`~/.cache/huggingface/modules/transformers_modules` owned by root** (someone ran a
+  pipeline as root on that box) makes every `trust_remote_code` model fail with
+  `PermissionError`. Fix without sudo: `export HF_MODULES_CACHE=$PWD/.cache/hf_modules`.
+
+## Numerical ladder
+
+A non-finite loss on step 1 is a property of *that profile*, not of the family. The
+fine-tune ladder now runs `keep → bf16 → fp16 → fp32 → lr×0.1 → ctx/2 → bs=1 → CPU`,
+and `_is_unstable` (nan/inf in the message) admits a run to the ladder instead of
+returning `failed` — which is how Toto-2.0-313m trains.
+
+## Out of scope (and why)
+
+* **Moirai 2.0-R-base / -large**: the repositories do not exist (404), gated or not.
+* **Yug-1 (commercial)**: no weights. `birlaailabs/yug` (CC-BY-NC) is registered instead,
+  with the license recorded in the row.
+* **VisionTS++ / t0-α/β/γ base weights**: the authors host them outside the Hub; the
+  rows carry `weights: null` plus a pointer instead of pretending they are fetchable.
+* Any model whose weights require a login we do not have.
