@@ -408,6 +408,11 @@ def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> st
            f"{socket.gethostname()} ({platform.machine()}), python {sys.version.split()[0]}.",
            "", "✅ ok · ❌ failed (see the JSON report for the captured reason) · "
            "— not offered by the model · ◐ partial · · not checked",
+           "", "A ✅ *fine-tune* cell means a differentiable objective ran, gradients were "
+           "feasible and loss logging worked at smoke size. The `(a→b)` in that cell is the "
+           "loss across the **two** smoke steps: it is a capability check, not a claim that "
+           "fine-tuning improves out-of-sample error (`docs/03_fine_tune.md`). "
+           "`classify n/m` counts the probe / head+LoRA / native routes that ran.",
            "", f"Machines: {', '.join(sorted({r.machine for r in rows if r.machine})) or '-'}. "
            "One row per (model, environment); when two machines disagree the row that "
            "ran is kept and the other is recorded under *other machine* in the reasons.",

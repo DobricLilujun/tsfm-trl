@@ -1,8 +1,10 @@
 # Compatibility matrix
 
-Generated 2026-11-20 00:17:52 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
+Generated 2026-11-20 00:21:11 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
 
 ✅ ok · ❌ failed (see the JSON report for the captured reason) · — not offered by the model · ◐ partial · · not checked
+
+A ✅ *fine-tune* cell means a differentiable objective ran, gradients were feasible and loss logging worked at smoke size. The `(a→b)` in that cell is the loss across the **two** smoke steps: it is a capability check, not a claim that fine-tuning improves out-of-sample error (`docs/03_fine_tune.md`). `classify n/m` counts the probe / head+LoRA / native routes that ran.
 
 Machines: gpu7/aarch64, ubadmin-Precision-3591/x86_64. One row per (model, environment); when two machines disagree the row that ran is kept and the other is recorded under *other machine* in the reasons.
 
