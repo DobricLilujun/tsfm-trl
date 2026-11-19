@@ -16,8 +16,14 @@ from ..base import to_numpy, Pred, TSFMModel, to_levels
 
 class T0(TSFMModel):
     key, family = "t0-gamma", "t0"
-    caps = frozenset({"forecast", "quantiles", "covariates"})
-    loss_kind = None
+    caps = frozenset({"forecast", "quantiles", "covariates", "finetune"})
+    loss_kind = "quantile"
+    #: t0's output side is ``head`` (per-patch quantile head) and ``decoder``;
+    #: ``patch_encoder``/``transformer`` are input/trunk.
+    head_prefixes = ("head", "decoder")
+    #: the generic attention names (q_proj/k_proj/…) do not exist here: t0's attention is
+    #: one fused ``wQKV`` plus ``wO``, and its MLP is a positional ``mlp.0``/``mlp.2``
+    lora_targets = ("wQKV", "wO", "mlp")
     max_context = 4096
     max_horizon = 1024
     levels = [0.01, 0.05] + [round(0.05 * i, 2) for i in range(2, 19)] + [0.95, 0.99]
@@ -31,7 +37,8 @@ class T0(TSFMModel):
             self.f = self.f.to(self.device)
         except Exception:                                          # noqa: BLE001
             pass
-        self.supports["finetune"] = hasattr(self.f, "fit")
+        self.patch_len = int(getattr(self.f, "patch_size", 32))
+        self.t_levels = tuple(getattr(self.f.config, "quantile_levels", ()) or ())
 
     def predict(self, contexts, horizon, *, panels=None, future=None) -> Pred:
         import torch
@@ -51,14 +58,47 @@ class T0(TSFMModel):
         return Pred(point=(med[:, :horizon] if med is not None else q[:, :, q.shape[-1] // 2]),
                     quantiles=to_levels(q, lv), meta={"levels_emitted": len(lv)})
 
+    def prepare_training(self, ctx: int, horizon: int) -> None:
+        """t0 patches the window, so the training window is rounded to whole patches."""
+        ps = self.patch_len
+        self._ft_ctx = (max(int(ctx), 2 * ps) // ps) * ps
+        self._ft_note = None
+        if int(horizon) > ps:
+            # one pass supervises the patch *after* the last context patch, i.e. at most
+            # ``patch_size`` steps; past that the vendor's own rollout (multi-step graph)
+            # is needed, so the supervised block is capped rather than faked
+            self._ft_note = f"supervised block capped to one patch ({ps} of {horizon} steps)"
+
     def trainable(self):
-        if not self.supports.get("finetune"):
-            return None
-        return getattr(self.f, "model", None)
+        # ``T0Forecaster`` is itself the nn.Module (children: head, patch_encoder,
+        # transformer, decoder) — there is no ``.model`` attribute, which is why this
+        # used to report no trainable module
+        return self.f
 
     def training_step(self, contexts, truth, horizon):
-        from ...errors import CapabilityError
-        raise CapabilityError(self.key, "finetune",
-                              "tfc-t0 ships inference only (no public training forward as of the "
-                              "installed version); ask for the vendor recipe before claiming a "
-                              "t0 fine-tune")
+        """Teacher-free next-patch quantile loss on the vendor's own differentiable pass.
+
+        ``_single_pass`` is ``scaler.scale_input → forward → scaler.rescale_predictions``,
+        so its output is in **data space** and carries a graph — the same pass
+        ``predict`` runs, minus the sampling and the level extrapolation. t0's head is
+        next-patch AR: ``_predict_step`` takes ``predictions[:, context_patches - 1]``,
+        i.e. the patch after the last observed one, which fixes the alignment used here.
+        The future is never fed, so nothing leaks: the model sees the context and is
+        scored on the steps that follow it.
+        """
+        import torch
+        from ...training.losses import quantile_loss
+        x = torch.tensor(np.asarray(self.trim(contexts), dtype=np.float32),
+                         device=self.device)
+        if x.shape[1] != self._ft_ctx:
+            x = x[:, -self._ft_ctx:]                  # whole patches only
+        from t0.data import TimeSeries
+        ts = TimeSeries.from_array(targets=x, horizon=0)
+        pred = self.f._single_pass(ts)                # (rows, patches, patch, levels)
+        q = pred[:, -1, : min(int(horizon), self.patch_len), :].float()
+        y = torch.tensor(np.asarray(truth, dtype=np.float32), device=self.device)
+        y = y[:, : q.shape[1]]
+        lv = list(self.t_levels)[: q.shape[-1]]
+        if len(lv) != q.shape[-1]:                    # levels must match the head
+            lv = [round((i + 1) / (q.shape[-1] + 1), 4) for i in range(q.shape[-1])]
+        return quantile_loss(q, y[:, : q.shape[1]].float(), lv)

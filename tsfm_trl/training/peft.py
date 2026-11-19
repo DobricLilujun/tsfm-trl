@@ -126,6 +126,13 @@ def make_trainable(model, module, peft: str = "heads_only", *, r: int = 8,
     """The one entry point both trainers use, so ``peft='lora'`` cannot mean
     'inject adapters' in one trainer and 'train the head' in another."""
     if peft == "lora":
+        # Freeze the trunk *first*. ``_inject`` freezes the Linear layers it wraps and
+        # enables their adapters, but it never touches everything else — and every HF
+        # checkpoint loads with requires_grad=True, so without this pass "lora" quietly
+        # meant "full fine-tune, plus a few adapters": t0-gamma reported 156 M trainable
+        # parameters, which is its trunk, not an adapter budget.
+        for _name, prm in module.named_parameters():
+            prm.requires_grad_(False)
         tg = tuple(targets or ()) + tuple(getattr(model, "lora_targets", ()) or ())
         trained = apply_lora(module, r=r, targets=tg or DEFAULT_LORA_TARGETS)
         if getattr(model, "lora_trains_head", False):
