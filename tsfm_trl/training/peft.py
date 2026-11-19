@@ -139,10 +139,9 @@ def make_trainable(model, module, peft: str = "heads_only", *, r: int = 8,
             # a head the adapter *re-initialises* (Sundial rebuilds its TimeFlow head at
             # the training horizon) has no adapter and no pretrained weights to nudge:
             # it has to be trained outright next to the trunk adapters
-            import torch
-            prefixes = tuple(getattr(model, "head_prefixes", ()) or ())
+            prefixes = tuple(getattr(model, "head_prefixes", ()) or ()) or DEFAULT_HEAD_PREFIXES
             for name, prm in module.named_parameters():
-                if _matches_any(name, prefixes):
+                if any(_match(name, h) for h in prefixes):
                     prm.requires_grad_(True)
                     trained.append(name)
         return trained

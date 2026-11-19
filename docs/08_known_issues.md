@@ -300,3 +300,19 @@ One more honesty note that came out of this pass: the loss *curve* of a 2-step s
 nothing — `smoke=True` caps the run at two steps, and Moirai's packed NLL swings ±0.9
 between random batches. The matrix ✅ means "a differentiable vendor objective ran and
 logged"; direction needs ≥20 steps (`docs/03_fine_tune.md`).
+
+## `peft="lora"` used to include the trunk
+
+Worth its own heading because it inflates every LoRA number recorded before the fix:
+`apply_lora._inject` froze the `nn.Linear`s it wrapped and enabled their adapters, but
+froze nothing else, and HF models load with `requires_grad=True`. `make_trainable` now
+freezes all parameters before injecting, then re-enables the adapters (and, for adapters
+that *re-initialise* a head — `lora_trains_head`, used by Sundial — that head). Two
+symptoms that were easy to misread as model behaviour: t0-gamma's 156 M "trainable"
+parameters, and a t0 LoRA loss that rose from 2.2 to 6.0 in two steps because the trunk
+was being moved at the fine-tuning rate.
+
+Related: the `lora_trains_head` branch called a helper that did not exist
+(`_matches_any` instead of `_match`), which is a NameError waiting inside a path only
+Sundial takes. `ruff check tsfm_trl --select F,E9` catches it; `check.sh` runs that
+before the matrix, which is exactly why `check.sh` exists.

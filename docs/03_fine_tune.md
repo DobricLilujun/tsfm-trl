@@ -58,7 +58,14 @@ TrainingConfig(peft="full")         # everything (fine on ≤300 M at smoke size
 * `heads_only` uses the adapter's `head_prefixes` (e.g. `("decoder", "projection",
   "head", "p21")` for Kairos) — the names come from the vendor modules, and the list
   that actually became trainable is stored in the checkpoint.
-* `lora` goes through `training.peft.apply_lora`; `merge_lora` is available for export.
+* `lora` goes through `training.peft.apply_lora`, and it **freezes the trunk first**.
+  It did not always: `_inject` froze only the `nn.Linear`s it wrapped, while every HF
+  checkpoint loads with `requires_grad=True`, so `peft="lora"` had been "full fine-tune
+  plus a few adapters" for most families — `t0-gamma` reported 156 M trainable
+  parameters, which is its trunk, not an adapter budget. A frozen trunk plus adapters is
+  what a LoRA budget means; the current counts are 1.08 M for `chronos-t5-small`,
+  2.57 M for `MOMENT-1-large`, 59.6 k for `TTM-r2`. `merge_lora` folds adapters into the
+  base weights for export.
 * `full` is refused for families where the backbone cannot take a gradient (see below).
 
 Loss follows the model: `loss_kind = "quantile"` families are trained with pinball on
@@ -76,6 +83,16 @@ trainer via `vendor_fit`. Two families train on an objective that is neither:
   training patch length (**re-initialised, ~11.4 M params**) while the 12-layer trunk
   carries over. The trunk transfers; the head does not. That is a real limitation of
   the public checkpoint, not of the harness, and it is why `prepare_training` logs it.
+* **t0 (α/β/γ)** supervises the vendor's own differentiable pass: `_single_pass` is
+  `scaler.scale_input → forward → scaler.rescale_predictions`, so its output is in data
+  space and carries a graph, and `forward` is documented as "predict per-patch quantiles
+  for every patch position (one differentiable pass)". The alignment is t0's own —
+  `_predict_step` reads `predictions[:, context_patches - 1]`, i.e. the patch *after* the
+  last observed one — so the step scores the model on the steps that follow the context,
+  with the future never fed. Its layers are named nothing like the usual ones (`wQKV`,
+  `wO`, positional `mlp.0`/`mlp.2`), so the adapter declares `lora_targets` and
+  `head_prefixes=("head","decoder")`; `T0Forecaster` is itself the `nn.Module` (there is
+  no `.model` attribute, which is why this family used to report no trainable module).
 * **Kairos** uses the supervised forward's own loss, which comes back as **one value per
   window**; the trainer reduces it to its mean. (Before that reduction existed, the
   trainer's own `if not torch.isfinite(loss)` took the truthiness of the vector, and the
