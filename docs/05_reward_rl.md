@@ -95,14 +95,31 @@ Runnable shape of the call: `examples/04_reward.py` (core env, one GPU, ~1 minut
 
 ## Demonstrators (what was actually run)
 
-Two models, small data (16 windows, `fs64` budget), LoRA, one GPU. Both are recorded
-with the *quartile-mean* comparison described above rather than first-step-vs-last-step.
+Small data (16 windows, `fs64` budget), one GPU. Every row is recorded with the
+*quartile-mean* comparison described above rather than first-step-vs-last-step, and with
+the parameter budget it actually trained — because a reward gain earned by 22 M free
+parameters and one earned by 0.3 M adapters are different claims.
 
-| model | family | mode | steps | reward early → late | verdict |
+| model | mode | steps | trainable | reward early → late | verdict |
 |---|---|---|---|---|---|
-| `chronos-t5-small` | token (encoder-decoder) | `grpo` (8 sampled continuations, group-relative advantage) | 96 | **1.721 → 1.827** | improved |
-| `toto-2-22m` | quantile head, inference path only | `rft` (rejection-sampling filtered fine-tune) | 48 | **−2.232 → −1.914** | improved |
-| `flowstate-r1` | differentiable quantile head | `reward_descent` | 96 | −1.296 → −1.387 | **not improved** |
+| `chronos-t5-small` | `grpo` (8 sampled continuations, group-relative advantage) | 96 | 1,081,344 (LoRA) | **1.741 → 1.839** | improved |
+| `toto-2-22m` | `rft` (rejection-sampling filtered fine-tune) | 48 | 295,296 (LoRA) | −1.488 → −1.670 | **not improved** |
+| `toto-2-22m` | `rft` | 48 | 21,915,584 (full) | −1.488 → −1.669 | **not improved** |
+| `flowstate-r1` | `reward_descent` | 96 | heads_only at `bs=1 bf16` (ladder) | −1.296 → −1.387 | **not improved** |
+
+The Toto row previously read **−2.232 → −1.914, improved**. It no longer does, and the
+reason is worth writing down rather than quietly fixing. Two things moved since that
+number was recorded: the reward's quantile-level grid (when the emitted head has a
+different number of levels than the caller asked for, the candidate grid is now the
+uniform one — the old scale is not comparable), and `peft="lora"` stopped training the
+trunk (`docs/08_known_issues.md`). Re-run at the current revision with both a 295 k
+adapter budget and the full 21.9 M-parameter model, the answer is the same in both
+cases: the reward drifts down. So RFT is a working *path* on Toto — the mode runs, the
+curve is logged, no fallback was needed — and a **negative result** at this budget.
+
+The `chronos-t5-small` GRPO gain is the one positive claim here, and it survived the LoRA
+fix, which strengthens it: +0.10 reward from 1.08 M adapter parameters, no ladder
+fallback.
 
 The FlowState row is kept as a negative result (re-run with quartile reporting: early
 mean −1.296, late mean −1.387). What it shows: the run fell to the ladder profile

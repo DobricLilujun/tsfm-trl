@@ -81,8 +81,11 @@ resolve SundialForPrediction; 4.42.x mis-builds the causal mask for patched inpu
 `accelerate` is required because the loader touches device_map paths, but the adapter
 must not pass device_map (accelerate re-dispatches through the Auto mapping, which does
 not know model_type=sundial). The repo ships no tokenizer and none is needed:
-generate() takes raw values. The third-party checkout is only for their training
-scripts, which are the supported fine-tune route."""
+generate() takes raw values. Fine-tune needs no third-party checkout: the objective is
+``flow_loss.FlowLoss`` imported from the checkpoint's own repo files (the snapshot
+directory is put on ``sys.path``), rebuilt at ``input_token_len`` because the shipped
+``output_token_lens=[720]`` is a generation setting that cannot supervise a short
+window. The trunk transfers; that head does not."""
 
 [env.vendor]
 python = "3.11"

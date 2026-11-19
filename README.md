@@ -45,23 +45,32 @@ r.status, r.loss_first, r.loss_last # 'smoke', 3.027, 3.111
 an x86_64 laptop (RTX 1000 Ada, 6 GB) and an aarch64 DGX Spark (GB10, unified
 memory) — over all 46 registered models:
 
-| task | ok | declined by the model | failed |
-|---|---|---|---|
-| load | 45 | 0 | 1 (VisionTS++ ships `.ckpt` only) |
-| forecast | 44 | 0 | 1 (TiRex-2 kernels, both machines) |
-| quantiles | 35 | 9 | 0 |
-| embedding probe features | 44 | 0 | 1 |
-| fine-tune | 20 | 14 | 3 |
-| classify (probe / head / native) | 44 | 0 | 1 |
-| anomaly | 44 | 1 | 0 |
-| reward post-training | 21 | 22 | 2 |
+| task | ok | declined by the model | failed | not checked |
+|---|---|---|---|---|
+| load | 45 | 0 | 1 (VisionTS++ ships `.ckpt` only) | 0 |
+| forecast | 44 | 0 | 1 (TiRex-2 kernels, both machines) | 1 |
+| quantiles | 35 | 9 | 0 | 2 |
+| embedding probe features | 44 | 0 | 1 | 1 |
+| fine-tune | 29 | 9 | 0 | 8 (statistical baselines, and the models that never loaded) |
+| classify (probe / head / native) | 44 | 0 | 1 | 1 |
+| anomaly | 44 | 1 | 0 | 1 |
+| reward post-training | 30 | 15 | 0 | 1 |
 
-The failures are named in the file with their captured reason: TiRex-2 (Triton
-kernel will not compile on either machine), VisionTS++ (no HF weights), Kairos
-fine-tune (the vendor `forward` branches on tensor truthiness), PatchTST-FM
-fine-tune (the installed build declares no target argument), and
-Chronos-T5-base on the 6 GB card (an out-of-memory, which is why the same row
-is ✅ on the other machine).
+The failures are named in the file with their captured reason: TiRex-2 (Triton kernel
+will not compile on either machine), VisionTS++ (no HF weights), and Chronos-T5-base on
+the 6 GB card (an out-of-memory, which is why the same row is ✅ on the other machine).
+The declined fine-tunes are TimesFM 2.0/3.0, TiRex and Yug and Aurora (public builds
+expose inference only), Timestral (same), and PatchTST-FM (the installed build's
+`forward` declares no target argument). "Not checked" is used literally: the task was not
+attempted for that row, not refused.
+
+Fine-tune went 20 → 29 ✅ in the last pass because three refusals turned out to be
+ours, not the models' — Moirai 1.1/MoE train on uni2ts' own packed NLL, Sundial trains a
+TimeFlow head rebuilt at the training patch length, and Kairos' per-window loss vector
+was tripping our own finiteness check. t0 α/β/γ came along the same way (`_single_pass`
+is differentiable and returns data-space quantiles). Fixing `peft="lora"` to actually
+freeze the trunk also moved the numbers: what was recorded as a LoRA budget had been
+full fine-tuning plus a few adapters (`docs/08_known_issues.md`).
 
 ## Quick tour
 

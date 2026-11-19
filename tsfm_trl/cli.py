@@ -306,7 +306,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help="merge existing report JSONs into one matrix instead of running models")
     p.add_argument("--reward-steps", type=int, default=6,
                    help="cap on reward/GRPO steps in the matrix (capability check, not a training run)")
-    p.add_argument("--md", default="COMPATIBILITY.md")
+    p.add_argument("--md", default="")
     p.add_argument("--all-envs", action="store_true",
                    help="dispatch one subprocess per family env (see envs/local.json)")
     p.add_argument("--envs-dir", default="envs")

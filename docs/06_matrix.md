@@ -93,3 +93,7 @@ tsfm-trl doctor --all-envs --tasks load,predict,finetune,classify,anomaly,reward
 
 Keep the JSON next to the markdown: the markdown shows the symbol, the JSON carries the
 reason string, and a table without reasons is decoration.
+
+`--md` defaults to **no file**, not to `COMPATIBILITY.md`. A single-env run used to
+overwrite the merged table with its two rows; pass `--md` explicitly when that is what
+you want (the `--merge` invocation still defaults to `COMPATIBILITY.md`).

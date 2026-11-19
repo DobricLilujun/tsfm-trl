@@ -225,13 +225,15 @@ models:
      install: 'pip install "hirondel @ git+https://github.com/tncrd/hirondel@v1.1.0"'}
   t0-alpha:
     {family: t0, adapter: t0:T0, env: vendor, tier: B,
-     weights: theforecastingcompany/t0-alpha, caps: [forecast, quantiles, covariates],
+     weights: theforecastingcompany/t0-alpha, caps: [forecast, quantiles, covariates, finetune],
      loss: quantile, license: apache-2.0, max_context: 4096,
+     notes: "torch backend's _single_pass (scale→forward→rescale) is differentiable and returns data-space per-patch quantiles; the head is next-patch AR, so fine-tune supervises the patch after the last context patch. LoRA targets wQKV/wO/mlp",
      install: 'pip install "tfc-t0[torch]"'}
   t0-beta:
     {family: t0, adapter: t0:T0, env: vendor, tier: B,
-     weights: theforecastingcompany/t0-beta, caps: [forecast, quantiles, covariates],
+     weights: theforecastingcompany/t0-beta, caps: [forecast, quantiles, covariates, finetune],
      loss: quantile, license: apache-2.0, max_context: 4096,
+     notes: "torch backend's _single_pass (scale→forward→rescale) is differentiable and returns data-space per-patch quantiles; the head is next-patch AR, so fine-tune supervises the patch after the last context patch. LoRA targets wQKV/wO/mlp",
      install: 'pip install "tfc-t0[torch]"'}
   t0-gamma:
     {family: t0, adapter: t0:T0, env: vendor, tier: A,
