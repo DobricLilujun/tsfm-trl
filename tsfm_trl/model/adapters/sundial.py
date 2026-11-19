@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import numpy as np
 
-from ...errors import CapabilityError
 from ..base import Pred, TSFMModel, quantiles_from_samples, to_numpy
 
 
@@ -39,8 +38,12 @@ class Sundial(TSFMModel):
     """
 
     key, family = "sundial-base-128m", "sundial"
-    caps = frozenset({"forecast", "paths"})
+    caps = frozenset({"forecast", "quantiles", "paths", "finetune"})
+    # None, not "vendor": the objective is the checkpoint repo's own FlowLoss, but the
+    # *loop* is ours (ladder, LoRA, provenance), so it goes through the generic path
+    # rather than the vendor_fit escape hatch.
     loss_kind = None
+    lora_trains_head = True
     max_context = 2880                       # the model card's Quickstart lookback
     max_horizon = 720                        # one TimeFlow token block
     head_prefixes = ("flow_loss", "embed_layer", "norm")
@@ -85,13 +88,64 @@ class Sundial(TSFMModel):
                     meta={"n_paths": S.shape[1], "how": "TimeFlow samples (revin-normalised)",
                           "api": "generate(values)"})
 
+    def prepare_training(self, ctx: int, horizon: int) -> None:
+        """Re-build the TimeFlow head at the *training* window length.
+
+        The released checkpoint's ``output_token_lens=[720]`` is a generation setting:
+        ``forward(labels=…)`` trims its labels to ``seq_len - input_token_len + 720``, a
+        length an input window never reaches, so the shipped 720-wide flow MLP literally
+        cannot supervise a short window. Their fine-tuning configures the output token
+        length per run; we do the same, and say plainly what that costs: the head is
+        **re-initialised** (~11.4M params) while the 12-layer trunk carries over — which
+        is precisely the transfer a fine-tune of this family measures. The objective is
+        ``flow_loss.FlowLoss`` from the checkpoint's own repo, not an invented loss.
+        """
+        import torch                                   # noqa: F401 (device handling)
+        cfg = self.model.config
+        self.t_out = int(getattr(cfg, "input_token_len", 16))
+        cfg.output_token_lens = [self.t_out]
+        fl = self._flow_loss_cls()
+        self.model.flow_loss = fl(self.t_out, cfg.hidden_size, cfg.flow_loss_depth,
+                                  cfg.hidden_size, cfg.num_sampling_steps).to(self.device)
+
+    def _flow_loss_cls(self):
+        import importlib
+        import os
+        import sys
+        root = self.checkpoint if os.path.isdir(self.checkpoint) else None
+        if root is None:
+            from huggingface_hub import snapshot_download
+            root = snapshot_download(self.checkpoint)
+        if root not in sys.path:
+            sys.path.insert(0, root)              # the repo's files import each other
+        return importlib.import_module("flow_loss").FlowLoss
+
     def training_step(self, contexts, truth, horizon):
-        raise CapabilityError(
-            self.key, "finetune",
-            "the TimeFlow supervised loss (forward(labels=...)) needs the vendor's "
-            "training-script packing of output_token_lens/diffusion_batch_mul/mask_y; "
-            "with the checkpoint's own config it fails on shape, so no objective is "
-            "invented here — fine-tune via thuml/Sundial's scripts/ instead")
+        """Teacher-forced next-patch TimeFlow loss, AR-aligned the way ``generate``
+        behaves: the hidden state after patch *i* supervises patch *i+1*. revin uses the
+        model's own statistics (mean/std over the window, std floored at 1e-2), which is
+        what the mixin inverts at inference."""
+        import torch
+        cs = self.trim(contexts)
+        y = np.asarray(truth, dtype=np.float32).reshape(len(cs), -1)
+        window = np.concatenate([cs, y], axis=1)
+        t = torch.tensor(window, dtype=torch.float32, device=self.device)
+        means = t.mean(1, keepdim=True)
+        stdev = t.std(1, keepdim=True, unbiased=False).clamp_min(1e-2)
+        x = (t - means) / stdev
+        T = getattr(self, "t_out", None) or int(getattr(self.model.config,
+                                                        "input_token_len", 16))
+        out = self.model.model(input_ids=x, use_cache=False, return_dict=True)
+        hid = out.last_hidden_state                              # (B, n_patches, hidden)
+        nxt = torch.cat([x[:, T:], torch.zeros(x.shape[0], T, device=self.device)], 1)
+        lab = nxt.unfold(dimension=-1, size=T, step=T)           # (B, n, T)
+        n = min(hid.shape[1], lab.shape[1])
+        hid, lab = hid[:, :n], lab[:, :n]
+        mask = torch.ones(hid.shape[0], n, device=self.device)
+        mask[:, -1] = 0.0                       # nothing follows the last patch
+        return self.model.flow_loss(lab.reshape(-1, T), hid.reshape(-1, hid.shape[-1]),
+                                    mask.reshape(-1),
+                                    torch.ones(1, T, device=self.device))
 
     def trainable(self):
         return self.model

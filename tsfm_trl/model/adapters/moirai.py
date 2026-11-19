@@ -219,16 +219,10 @@ class _MoiraiBase(TSFMModel):
         import torch
         from ...training.losses import quantile_loss
         if not self._differentiable_head:
-            from ...errors import CapabilityError
-            raise CapabilityError(self.key, "finetune",
-                                  "this uni2ts release exposes Moirai 1.1/MoE inference only "
-                                  "through sample paths (``forward`` draws from the predicted "
-                                  "distribution), and its ``_get_distr`` returns a distribution "
-                                  "over the whole padded window, not the prediction slice. "
-                                  "A differentiable step therefore needs uni2ts' own training "
-                                  "stack (MoiraiForecast + PackedMaskedGlueTabDataset, see "
-                                  "docs/03_fine_tune.md) — optimising quantiles of samples "
-                                  "would be a no-op dressed as a fine-tune")
+            # Moirai 1.1 / MoE: the head returns a *distribution*, and ``predict`` has to
+            # sample from it — which is why reading quantiles off the samples made a
+            # "fine-tune" gradient-free. The supervised route is uni2ts' own packed loss.
+            return self._packed_step(contexts, truth, horizon)
         clen = self._clen(contexts, horizon)
         f = self._predictor(horizon, clen)
         pt, obs, pad = self._inputs(contexts, clen)
@@ -238,6 +232,54 @@ class _MoiraiBase(TSFMModel):
         lv = self.levels[: q.shape[-1]] if len(self.levels) == q.shape[-1] else \
             levels_from_count(q.shape[-1])
         return quantile_loss(q, y, lv)
+
+    def _packed_step(self, contexts, truth, horizon):
+        """Moirai 1.1 / MoE: supervise with uni2ts' own packed distribution loss.
+
+        ``MoiraiForecast._val_loss(patch_size, target, observed_target, is_pad)`` is the
+        vendor's own supervised path: it takes the whole window (context ++ future),
+        splits it at the predictor's ``context_length``, runs the module, and returns the
+        packed NLL over the prediction-masked patches — the objective the checkpoint was
+        pretrained on, differentiable, with no sampling anywhere in the graph. The
+        context is left-padded to the predictor's fixed geometry with the pad/observed
+        masks set accordingly, exactly as ``predict`` does, so the tensors being optimised
+        are the same ones inference sees.
+        """
+        import torch
+        clen = self._clen(contexts, horizon)
+        f = self._predictor(horizon, clen)
+        ps = int(getattr(f.hparams, "patch_size", None) or self.patch_size)
+        CL, PL = int(f.hparams.context_length), int(f.hparams.prediction_length)
+        pt, obs, pad = self._inputs(contexts, clen)
+        y = np.asarray(truth, dtype=np.float32).reshape(len(pt), -1)
+        fut = np.zeros((len(pt), PL), dtype=np.float32)
+        take = min(PL, y.shape[1])
+        fut[:, :take] = y[:, :take]
+        dt = pt.dtype
+        target = torch.cat([pt, torch.tensor(fut[:, :, None], device=self.device).to(dt)], 1)
+        observed = torch.cat([obs, torch.ones(len(pt), PL, 1, dtype=torch.bool,
+                                              device=self.device)], 1)
+        is_pad = torch.cat([pad, torch.zeros(len(pt), PL, dtype=torch.bool,
+                                             device=self.device)], 1)
+        fut_obs = torch.ones(len(pt), PL, 1, dtype=torch.bool, device=self.device)
+        fut_pad = torch.zeros(len(pt), PL, dtype=torch.bool, device=self.device)
+        try:
+            from uni2ts.loss.packed import PackedNLLLoss
+            packed = f._convert(ps, pt, obs, pad, future_target=target[:, CL:],
+                                future_observed_target=fut_obs, future_is_pad=fut_pad)
+            tgt, obs_m, sample_id, time_id, variate_id, pred_mask = packed
+            distr = f.module(tgt, obs_m, sample_id, time_id, variate_id, pred_mask,
+                             torch.ones_like(time_id, dtype=torch.long) * ps)
+            loss = PackedNLLLoss()(pred=distr, target=tgt, prediction_mask=pred_mask,
+                                   observed_mask=obs_m, sample_id=sample_id,
+                                   variate_id=variate_id)
+        except (ImportError, AttributeError, TypeError):
+            # the fallback is the vendor's evaluation loss, whose SampleNLLLoss is a
+            # Monte-Carlo estimate: unbiased, but noisy enough that a short run's curve
+            # says nothing. Recorded, never silently used.
+            self._loss_note = "SampleNLLLoss via _val_loss (PackedNLLLoss unavailable)"
+            loss = f._val_loss(ps, target, observed, is_pad)
+        return loss.mean() if loss.ndim else loss
 
     def trainable(self):
         # the predictor wrapper holds the module; training through it matches the

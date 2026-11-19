@@ -62,19 +62,31 @@ TrainingConfig(peft="full")         # everything (fine on ≤300 M at smoke size
 * `full` is refused for families where the backbone cannot take a gradient (see below).
 
 Loss follows the model: `loss_kind = "quantile"` families are trained with pinball on
-their own head, `"token"` families (Chronos-T5, Time-MoE, Sundial, Kronos) with
-cross-entropy on their discrete tokens, and vendor-loop families (Kronos) delegate to
-the vendor's own trainer via `vendor_fit`.
+their own head, `"token"` families (Chronos-T5, Time-MoE, Kronos) with cross-entropy on
+their discrete tokens, and vendor-loop families (Kronos) delegate to the vendor's own
+trainer via `vendor_fit`. Two families train on an objective that is neither:
+
+* **Sundial** trains its **TimeFlow head** — the checkpoint repo's own `FlowLoss`
+  (velocity matching over patches), fed teacher-forced hidden states so that the state
+  after patch *i* supervises patch *i+1*, which is what `generate` actually consumes.
+  One thing has to be said plainly: the released checkpoint ships
+  `output_token_lens=[720]`, a *generation* setting — `forward(labels=…)` trims its
+  labels to a length an input window never reaches, so the shipped 720-wide flow MLP
+  cannot supervise a short window. Fine-tuning therefore rebuilds the flow head at the
+  training patch length (**re-initialised, ~11.4 M params**) while the 12-layer trunk
+  carries over. The trunk transfers; the head does not. That is a real limitation of
+  the public checkpoint, not of the harness, and it is why `prepare_training` logs it.
+* **Kairos** uses the supervised forward's own loss, which comes back as **one value per
+  window**; the trainer reduces it to its mean. (Before that reduction existed, the
+  trainer's own `if not torch.isfinite(loss)` took the truthiness of the vector, and the
+  resulting *"Boolean value of Tensor with more than one value is ambiguous"* was filed
+  in the matrix as a Kairos limitation. It never was one.)
 
 ## What "not fine-tunable" means, honestly
 
 Some families cannot be fine-tuned through an HF-style `forward` at all. They report
 `— (skipped)` with the reason, and it is a statement about the model:
 
-* **Moirai 1.1 / Moirai-MoE** — `forward()` *draws samples*; `_get_distr` covers the
-  whole padded window. A real fine-tune needs uni2ts' Lightning stack
-  (`MoiraiForecast` + packed masked dataset). Optimising "quantiles of a sample" would
-  be a no-op dressed as a fine-tune.
 * **TimesFM 2.0/2.5/3.0, TiRex, FlowState inference builds** — no public training code;
   `trainable()` returns `None`, so the fine-tune column is `—`.
 * **Kronos** — the vendor loop only *prepares* the CSV unless
@@ -82,6 +94,35 @@ Some families cannot be fine-tuned through an HF-style `forward` at all. They re
 * **MOMENT** — trainable, but its gradient checkpointing is non-deterministic, so the
   adapter disables it (otherwise torch aborts with *"different number of tensors was
   saved"*).
+
+## Three rows that used to be wrong in the other direction
+
+The matrix refused Moirai 1.1, Moirai-MoE and Sundial fine-tunes for a while, and on
+inspection all three refusals were ours, not the models'. They are worth keeping in the
+docs because each is a trap that looks like a model limitation:
+
+* **Moirai 1.1 / Moirai-MoE**: reading quantiles off `forward()`'s samples gave a
+  gradient-free "fine-tune", so the honest answer at the time was *no differentiable
+  head*. The head *is* differentiable — it returns a distribution, and sampling is what
+  `predict` does with it afterwards. The supervised step is uni2ts' own packed loss:
+  `MoiraiForecast._convert(patch_size, past…, future_target=truth…)` → module →
+  `PackedNLLLoss` over the prediction-masked patches, i.e. the objective the checkpoint
+  was pretrained on. No dataset pipeline, no Lightning trainer, ~20 lines.
+  One caution: `MoiraiForecast.per_sample_loss_func` is `SampleNLLLoss` (an evaluation
+  loss); `MoiraiFinetune`'s default is `PackedNLLLoss`. Both came back with the same
+  number in testing, so don't assume the cheap one is a sampling estimator — check which
+  tensor in the graph is stochastic before blaming the estimator for a noisy curve.
+* **Sundial**: the first attempt called `forward(labels=…)` with the checkpoint's own
+  config and correctly reported "needs the vendor's training-script packing". What the
+  vendor's fine-tune config actually does is *choose the output token length for the
+  run*. Do that (rebuild `flow_loss.FlowLoss` at `input_token_len`) and the objective is
+  theirs, the shapes are ours.
+* **Kairos**: see above — a scalar-reduction bug in our own trainer, mistaken for a
+  gradient-unsafe vendor forward.
+
+The lesson the ladder and the reason strings exist for: a fine-tune refusal must name
+the missing piece ("no target kwarg in `forward`", "labels trimmed to `output_token_lens`")
+so it can be checked rather than believed.
 
 ## The ladder: memory *and* numerics
 

@@ -150,6 +150,14 @@ class ForecastTrainer:
                 raise CapabilityError(model_key, "finetune", "training_step returned None")
             if not torch.is_tensor(loss):
                 loss = torch.as_tensor(float(loss), device=device)
+            if loss.ndim:
+                # some vendors hand back a per-window loss vector (Kairos does). Reducing
+                # it to its mean is the only step that can be optimised; doing the truth
+                # test on the vector instead is what used to raise the "Boolean value of
+                # Tensor" error that got filed as a model limitation.
+                self._notes = getattr(self, "_notes", []) + \
+                    [f"per-element loss ({tuple(loss.shape)}) reduced to its mean"]
+                loss = loss.mean()
             if not torch.isfinite(loss):
                 raise RuntimeError(f"non-finite loss at step {step}: {loss.item()}")
             opt.zero_grad(set_to_none=True)

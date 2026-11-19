@@ -86,11 +86,12 @@ models:
   moirai-1.1-R-small:
     {family: moirai, adapter: moirai:Moirai, env: moirai, tier: A,
      weights: Salesforce/moirai-1.1-R-small, caps: [forecast, quantiles, multivariate, finetune],
-     loss: quantile, license: cc-by-nc-4.0, max_context: 2048}
+     loss: vendor, license: cc-by-nc-4.0, max_context: 2048,
+     notes: "1.1/MoE heads emit a distribution, so predict samples from it; the fine-tune step is uni2ts' own PackedNLLLoss over prediction-masked patches (its pretraining objective), not pinball on samples. Moirai 2 keeps a differentiable quantile head"}
   moirai-1.1-R-base:
     {family: moirai, adapter: moirai:Moirai, env: moirai, tier: B,
      weights: Salesforce/moirai-1.1-R-base, caps: [forecast, quantiles, multivariate, finetune],
-     loss: quantile, license: cc-by-nc-4.0, max_context: 2048}
+     loss: vendor, license: cc-by-nc-4.0, max_context: 2048}
   moirai-2.0-R-small:
     {family: moirai2, adapter: moirai:Moirai2, env: moirai, tier: A,
      weights: Salesforce/moirai-2.0-R-small, caps: [forecast, quantiles, multivariate, covariates, finetune],
@@ -99,7 +100,7 @@ models:
   moirai-moe-1.0-R-base:
     {family: moirai_moe, adapter: moirai:MoiraiMoE, env: moirai, tier: B,
      weights: Salesforce/moirai-moe-1.0-R-base, caps: [forecast, quantiles, multivariate, finetune],
-     loss: quantile, license: cc-by-nc-4.0, max_context: 2048}
+     loss: vendor, license: cc-by-nc-4.0, max_context: 2048}
 
   # ------------------------------------------------------------------ Granite
   ttm-r2:
@@ -166,9 +167,9 @@ models:
   sundial-base-128m:
     {family: sundial, adapter: sundial:Sundial, env: sundial, tier: A,
      weights: thuml/sundial-base-128m,
-     caps: [forecast, quantiles, paths],
-     loss: none, license: apache-2.0, max_context: 2880, max_horizon: 720,
-     notes: "continuous patch tokens + TimeFlow head; generate(values) API, no tokenizer; env pins transformers==4.40.1; fine-tune only via the vendor scripts"}
+     caps: [forecast, quantiles, paths, finetune],
+     loss: vendor, license: apache-2.0, max_context: 2880, max_horizon: 720,
+     notes: "continuous patch tokens + TimeFlow head; generate(values) API, no tokenizer; env pins transformers==4.40.1; fine-tune rebuilds the flow head at the training horizon (trunk transfers)"}
 
   # ------------------------------------------------------------------ Kronos
   kronos-mini:
@@ -193,7 +194,8 @@ models:
     {family: kairos, adapter: kairos:Kairos, env: vendor, tier: A,
      weights: mldi-lab/Kairos_10m, caps: [forecast, quantiles, finetune],
      loss: quantile, license: apache-2.0, max_context: 2048, max_horizon: 64,
-     notes: "encoder-decoder, tokenization decouples heterogeneity from capacity"}
+     notes: "encoder-decoder, tokenization decouples heterogeneity from capacity; its
+      supervised forward returns one loss per window, the trainer optimises the mean"}
   kairos-50m:
     {family: kairos, adapter: kairos:Kairos, env: vendor, tier: B,
      weights: mldi-lab/Kairos_50m, caps: [forecast, quantiles, finetune],

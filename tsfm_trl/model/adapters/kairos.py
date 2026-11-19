@@ -126,7 +126,9 @@ class Kairos(TSFMModel):
                                  **{kwname: y})
                 loss = out.get("loss") if isinstance(out, dict) else getattr(out, "loss", None)
                 if loss is not None:
-                    return loss
+                    # their supervised forward returns one loss per window; the optimiser
+                    # needs a scalar, and the mean is what their own loop minimises
+                    return loss.mean() if loss.ndim else loss
         raise CapabilityError(self.key, "finetune",
                               f"forward({sorted(self._fwd_params)}) exposes no supervised "
                               f"target/loss path (a differentiable head was not found); a "

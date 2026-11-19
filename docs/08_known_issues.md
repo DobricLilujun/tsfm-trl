@@ -266,3 +266,37 @@ GB10 unified memory) and merged. What that surfaced:
   box). Without it, *every* `trust_remote_code` model fails with `PermissionError`, which
   a compatibility matrix would file as 6 model failures. The redirect prints one line to
   stderr rather than happening silently.
+
+## Fourth pass: three fine-tune refusals that turned out to be ours
+
+The fine-tune column carried `—` for Moirai 1.1/MoE and Sundial, and ❌ for Kairos. All
+three were harness bugs wearing a model's face; each is now ✅, and the fix in each case
+was to stop inventing a step and go read what the vendor's own training does.
+
+* **Moirai 1.1 / MoE** — `forward()` returns a *distribution*; `predict` samples from it.
+  Because the sampled path is gradient-free, the adapter declared "no differentiable
+  head". The supervised step was in the same class the whole time: `MoiraiForecast` builds
+  packed fields (`target/observed_mask/sample_id/time_id/variate_id/prediction_mask`) and
+  scores them with `PackedNLLLoss` — uni2ts' own `MoiraiFinetune` default. The adapter now
+  calls `_convert(...)` with the true future as `future_target` and optimises that.
+  Trainable: 4.1 M (`heads_only`) / 5.9 M (LoRA) on `moirai-1.1-R-small`, 13.5 M on the
+  base, 7.2 M on MoE. `loss: vendor` in the registry now says what the objective is.
+* **Sundial** — supervised `forward(labels=…)` with the shipped config fails on shape
+  because `output_token_lens=[720]` is a *generation* setting: labels get trimmed to
+  `seq_len − input_token_len + 720`, a length a short window never reaches. Their
+  fine-tune config sets the output token length per run; `prepare_training` now does the
+  same and rebuilds `flow_loss.FlowLoss(16, 768, 3, 768, 50)` at `input_token_len`.
+  Cost, stated in the adapter docstring: that head is **re-initialised** (11.4 M params),
+  the 12-layer trunk transfers. Frozen trunk + new head on 12 steps: 3.77 → 0.25.
+  `peft.lora_trains_head` exists for exactly this case — a rebuilt head has no pretrained
+  weights for LoRA to nudge, so it trains outright next to the trunk adapters.
+* **Kairos** — `RuntimeError: Boolean value of Tensor with more than one value is
+  ambiguous` looked like a gradient-unsafe vendor forward. It was our own
+  `if not torch.isfinite(loss)` running on the **per-window loss vector** their supervised
+  forward returns. The trainer now reduces non-scalar losses to their mean (and says so in
+  the run notes); 10 M/50 M train at 2.97 M / 7.17 M LoRA parameters.
+
+One more honesty note that came out of this pass: the loss *curve* of a 2-step smoke says
+nothing — `smoke=True` caps the run at two steps, and Moirai's packed NLL swings ±0.9
+between random batches. The matrix ✅ means "a differentiable vendor objective ran and
+logged"; direction needs ≥20 steps (`docs/03_fine_tune.md`).

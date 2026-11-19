@@ -127,7 +127,18 @@ def make_trainable(model, module, peft: str = "heads_only", *, r: int = 8,
     'inject adapters' in one trainer and 'train the head' in another."""
     if peft == "lora":
         tg = tuple(targets or ()) + tuple(getattr(model, "lora_targets", ()) or ())
-        return apply_lora(module, r=r, targets=tg or DEFAULT_LORA_TARGETS)
+        trained = apply_lora(module, r=r, targets=tg or DEFAULT_LORA_TARGETS)
+        if getattr(model, "lora_trains_head", False):
+            # a head the adapter *re-initialises* (Sundial rebuilds its TimeFlow head at
+            # the training horizon) has no adapter and no pretrained weights to nudge:
+            # it has to be trained outright next to the trunk adapters
+            import torch
+            prefixes = tuple(getattr(model, "head_prefixes", ()) or ())
+            for name, prm in module.named_parameters():
+                if _matches_any(name, prefixes):
+                    prm.requires_grad_(True)
+                    trained.append(name)
+        return trained
     return set_trainable(module, peft, getattr(model, "head_prefixes", ()))
 
 
