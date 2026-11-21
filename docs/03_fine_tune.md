@@ -1,5 +1,14 @@
 # 3 · Fine-tuning
 
+> **Why this exists in a benchmark harness.** Fine-tuning is not the deliverable and the
+> matrix's fine-tune column is not a result. It is a **capability gate**: for each
+> architecture we prove there is a differentiable objective — the vendor's own where one
+> exists — that gradients flow through, that a trainable subset can be selected, and that
+> the run is checkpointable with provenance. That gate is what makes adapted rows in a
+> benchmark table auditable (which base, which PEFT level, which parameters, which split
+> boundary). Accuracy comparisons live in `docs/09_benchmark.md`; nothing in this file or
+> in the matrix claims fine-tuning improves out-of-sample skill.
+
 ```python
 from tsfm_trl import ForecastTrainer, ModelHub, TrainingConfig
 from tsfm_trl.data.fixtures import tiny_finance
@@ -179,3 +188,13 @@ base registry id, `trainable` parameter list, config, split index, loss curve, b
 smoke flag, and any fallbacks. `load_finetuned` raises if the target model's base id
 differs — a Chronos head loaded onto a Moirai is a silent nonsense machine otherwise.
 `tsfm-trl ckpt <path>` prints the same record.
+
+## Vendor training loops have no curve at smoke size
+
+Two families fine-tune through the vendor's own loop (`loss_kind = "vendor"`): Chronos-2
+(`Chronos2Pipeline.fit`, an HF `Trainer`) and Kronos (its `finetune_csv`). The adapter
+attaches a `TrainerCallback` so real runs surface their loss, but a vendor loop logs on
+*its* interval — at smoke size (a handful of steps) it never fires, so the matrix cell is
+a bare ✅ with no `(a→b)` pair. That is a logging gap in their loop, not a missing
+objective; the run's own stdout shows `train_loss`. Anything that must be compared
+side-by-side should be run with `--budget fs64` or larger.

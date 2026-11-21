@@ -111,19 +111,39 @@ class Chronos2(_ChronosBase):
                 return TSFMModel.encode(self, contexts)
 
     def training_step(self, contexts, truth, horizon):
+        """Chronos-2's own supervised forward, with the output length set per run.
+
+        ``num_output_patches`` is a **forward argument** in chronos ≥2.3 and the vendor
+        derives it from the prediction length
+        (``num_output_patches * output_patch_size >= future_length``). Its default of 1
+        caps a supervised window at one output patch — 16 steps — so a 21-step horizon
+        died inside ``_validate_input`` with an error that named neither the argument nor
+        the cap, and the channels-last retry below turned that into a still more
+        misleading "context must have shape (batch, context_length)". Deriving it here is
+        what their own fine-tuning does; nothing about the checkpoint is rebuilt, the
+        output embedding is applied per patch.
+        """
+        import math
         import torch
         m = self.pipe.model
         x = torch.tensor(np.asarray(contexts, dtype=np.float32), device=self.device)
         ft = torch.tensor(np.asarray(truth, dtype=np.float32), device=self.device)
+        if ft.ndim == 1:
+            ft = ft[None, :]
+        ops = int(getattr(getattr(m, "chronos_config", None), "output_patch_size", 0) or 0)
+        kw = {"num_output_patches": max(1, math.ceil(ft.shape[1] / ops))} if ops else {}
         try:
-            out = m(context=x, future_target=ft)
-        except (ValueError, RuntimeError):
-            # some chronos builds want (B, T, 1) channels-last input
-            out = m(context=x.unsqueeze(-1), future_target=ft.unsqueeze(-1))
+            out = m(context=x, future_target=ft, **kw)
+        except (ValueError, RuntimeError) as first:
+            try:                        # some chronos builds want (B, T, 1) channels-last
+                out = m(context=x.unsqueeze(-1), future_target=ft.unsqueeze(-1), **kw)
+            except Exception:
+                raise first             # the first error is the one worth reporting
         loss = getattr(out, "loss", None)
         if loss is None:
-            raise RuntimeError("Chronos2Model returned no loss for future_target")
-        return loss
+            raise RuntimeError(f"Chronos2Model returned no loss for future_target "
+                               f"(horizon {ft.shape[1]}, {kw or 'default output patches'})")
+        return loss.mean() if loss.ndim else loss
 
     def vendor_fit(self, windows, cfg):
         """The vendor loop: each sample is handed over as one series of exactly
@@ -132,6 +152,22 @@ class Chronos2(_ChronosBase):
         from chronos import Chronos2Pipeline
         from ...weights import resolve
         inputs = [{"target": torch.tensor(np.r_[w[0], w[1]], dtype=torch.float32)} for w in windows]
+        # their Trainer reports the curve through callbacks, so a long run's losses are
+        # captured instead of lost to stdout. At smoke size (a handful of steps) their
+        # default logging interval never fires, so a smoke cell stays a bare ✅ with no
+        # curve — recorded, not hidden: see the note in docs/03_fine_tune.md.
+        losses: list[float] = []
+        try:
+            from transformers.trainer_callback import TrainerCallback
+        except Exception:                                          # noqa: BLE001
+            TrainerCallback = object
+
+        class _Collect(TrainerCallback):
+            def on_log(self, args, state, control, logs=None, **kw):
+                v = (logs or {}).get("loss")
+                if v is not None:
+                    losses.append(float(v))
+
         steps = 2 if cfg.smoke else int(cfg.eff_steps(len(windows)))
         pipe = Chronos2Pipeline.from_pretrained(resolve(self.checkpoint) or self.checkpoint,
                                                 device_map=cfg.device if cfg.device != "auto"
@@ -140,15 +176,22 @@ class Chronos2(_ChronosBase):
         ft = pipe.fit(inputs, prediction_length=cfg.horizon,
                       finetune_mode=("full" if cfg.peft == "full" else "lora"),
                       context_length=cfg.ctx, learning_rate=cfg.eff_lr(), num_steps=steps,
-                      batch_size=cfg.bs, output_dir=out_dir, min_past=min(cfg.ctx, 32))
+                      batch_size=cfg.bs, output_dir=out_dir, min_past=min(cfg.ctx, 32),
+                      callbacks=[_Collect()])
         state = ft.model.state_dict()
         torch.save({"model": state,
                     "meta": {"model": self.key, "vendor_fit": True, "steps": steps,
                              "peft": cfg.peft, "budget": cfg.budget, "smoke": cfg.smoke,
                              "trainable_parameters": sum(p.numel() for p in ft.model.parameters())}},
                    cfg.ckpt_path(self.key))
+        # their HF Trainer keeps its own log; surface it, or the matrix cell shows a
+        # ✅ with no curve and a diverging vendor run would be invisible
+        ls = list(losses)
         return {"checkpoint": str(cfg.ckpt_path(self.key)), "steps": steps,
-                "trainable_parameters": sum(p.numel() for p in ft.model.parameters())}
+                "trainable_parameters": sum(p.numel() for p in ft.model.parameters()),
+                "first_loss": ls[0] if ls else float("nan"),
+                "final_loss": ls[-1] if ls else float("nan"),
+                "vendor_train_loss": ls[-1] if ls else float("nan")}
 
     def load_finetuned(self, path):
         """Chronos-2 fine-tunes are commonly kept as a whole pipeline directory."""

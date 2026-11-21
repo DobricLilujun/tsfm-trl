@@ -63,7 +63,7 @@ def cmd_info(a):
     print(json.dumps({"key": s.key, "family": s.family, "tier": s.tier, "env": s.env,
                       "weights": s.weights, "license": s.license, "caps": sorted(s.caps),
                       "loss_kind": s.loss, "trainable": s.trainable, "max_context": s.max_context,
-                      "max_horizon": s.max_horizon, "note": s.note,
+                      "max_horizon": s.max_horizon, "notes": s.notes,
                       "capabilities": sorted(__import__("tsfm_trl.model.base",
                                                         fromlist=["CAPS"]).CAPS)}, indent=1))
     return 0
@@ -226,11 +226,12 @@ def cmd_reward(a):
 
 def cmd_evaluate(a):
     from .eval.evaluate import forecast_eval
-    model = _load_model(a.model if a.adaptation == "zero" else f"{a.model}")
+    model = _load_model(a)
     if a.adaptation != "zero":
         from .training.checkpoints import load_finetuned
         model = load_finetuned(model, a.adaptation)
-    out = forecast_eval(model, _series_arg(a), horizons=(a.horizon,), ctx=a.ctx,
+    hs = tuple(int(x) for x in a.horizons.split(",") if x.strip()) or (a.horizon,)
+    out = forecast_eval(model, _series_arg(a), horizons=hs, ctx=a.ctx,
                         max_windows=a.max_windows, seed=a.seed)
     print(json.dumps(out, indent=1, default=float))
     return 0
@@ -343,6 +344,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("evaluate", help="metrics for a base or fine-tuned checkpoint")
     common(p, train=False)
     p.add_argument("--adaptation", default="zero", help="'zero' or a checkpoint path")
+    p.add_argument("--horizons", default="",
+                   help="comma list, e.g. 21,63,126 — one evaluation pass per horizon "
+                        "(defaults to the single --horizon)")
     p.set_defaults(fn=cmd_evaluate)
 
     p = sub.add_parser("ckpt", help="list fine-tuned checkpoints with provenance")

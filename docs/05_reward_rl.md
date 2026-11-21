@@ -93,6 +93,61 @@ row ran at `bs=1 bf16 heads_only`.
 
 Runnable shape of the call: `examples/04_reward.py` (core env, one GPU, ~1 minute).
 
+## Provenance: is this someone else's RL library?
+
+No. `RewardTrainer` is hand-written in `tsfm_trl/training/reward.py` (~435 lines), and
+the dependency graph proves it: core dependencies are
+`numpy/pandas/pyarrow/scikit-learn/scipy/pyyaml/tqdm`, the `[rl]` extra is `torch` only,
+and nothing in the tree imports `trl`, `trlx`, `verl`, `openrlhf` or `open_r1`. The
+*algorithm* `grpo` refers to is Group Relative Policy Optimization (Shao et al. 2024, the
+DeepSeek-R1 recipe); the code here is our own minimal implementation of it.
+
+**What is faithful to GRPO**
+
+* group-relative advantage, no value/critic network:
+  `adv = (r − r.mean(axis=group)) / (r.std(axis=group) + 1e-6)`;
+* K sampled continuations per window, scored by a reward that is not the loss;
+* a policy-gradient update on the model's **own** log-likelihood
+  (`Chronos` adapter's `path_logprob` = sum of next-token log-probs from
+  `model(input_ids, labels=…)`), so the objective is the model's own language, not a
+  re-derived one.
+
+**What is deliberately simplified** — say this out loud in any paper text:
+
+* only the **max-advantage path per group** gets the `−A·logp` term; standard GRPO
+  averages the term over all K samples;
+* **no PPO-style clipping and no π_old ratio** — the update is the plain REINFORCE-with-
+  group-baseline form;
+* the trust region is **weight-space** — a frozen clone of the trainable parameters taken
+  at step 0, penalised as `kl · Σ mean((p − p_ref)²)` (`kl` defaults to 1e-3 in the class and
+  0.02 on the CLI) — not the paper's
+  token-level KL to π_ref;
+* the reward is a forecast reward (scale-free accuracy + directional term + optional
+  quantile-crossing penalty), not a program verifier.
+
+So: *GRPO-style* is the accurate phrase; `mode="grpo"` in the matrix means
+"group-relative policy gradient over the model's own sampled token paths", and it is only
+reachable where an adapter exposes `sample_paths` + `path_logprob` — today the Chronos-T5
+adapters (2 registered models). Kronos and Time-MoE expose `sample_paths` but no token
+log-prob, so they run `rft`, which is the group-baseline limit of the same objective and
+needs no likelihood.
+
+**Why not HuggingFace TRL's `GRPOTrainer`?** It is bound to a causal-LM interface
+(`logits → per-token log-probs`, a `Trainer` training loop). Most TSFM architectures are
+not that: diffusion heads (Chronos-Bolt), masked-patch distribution heads (Moirai),
+quantile-regression heads (TTM, FlowState, Toto), flow-matching heads (Sundial, Aurora),
+RVQ tokens with a vendor training loop (Kronos). Adopting TRL would mean the RL half of
+the library only works for the two Chronos variants — and it would pin a `Trainer`
+dependency whose transitive requirements fight the per-family version pins that keep 11
+environments working (`docs/01_install.md`).
+
+**To make it canonical** (each step is small and localized):
+
+1. have `path_logprob` return the per-token sequence log-prob instead of the sum, and
+   average the `−A·logp` term over all K candidates;
+2. snapshot π_old per iteration and add the clipped ratio;
+3. replace the weight-space anchor with a token-level KL against a frozen π_ref forward.
+
 ## Demonstrators (what was actually run)
 
 Small data (16 windows, `fs64` budget), one GPU. Every row is recorded with the

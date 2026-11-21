@@ -212,6 +212,14 @@ class RewardTrainer:
             except CapabilityError:
                 raise
             except Exception as e:                                # noqa: BLE001
+                import os as _os
+                if _os.environ.get("TSFMTRL_DEBUG"):
+                    # the ladder deliberately retries with another mode, so the reason
+                    # that ends up in the matrix is the last attempt's, not the first
+                    # one's — with the switch on, every attempt prints its own trace
+                    import sys, traceback
+                    traceback.print_exc()
+                    sys.stderr.write(f"[TSFMTRL_DEBUG] reward mode {mode} failed\n")
                 # one graceful degradation ladder: reward_descent (needs a
                 # differentiable quantile head) -> rft (works on the inference path),
                 # then shrink the batch; anything else is reported, not swallowed

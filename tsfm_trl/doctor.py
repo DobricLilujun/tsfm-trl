@@ -58,6 +58,11 @@ class Row:
     clf_metrics: dict = field(default_factory=dict)
     anomaly: str = "skip"
     reward: str = "skip"
+    #: grpo | rft | reward_descent | reward_descent_point — what the model's own
+    #: architecture allowed, not what we preferred (RewardTrainer picks automatically)
+    reward_mode: str = ""
+    reward_early: float = float("nan")
+    reward_late: float = float("nan")
     seconds: float = 0.0
     reasons: dict = field(default_factory=dict)
     machine: str = ""
@@ -240,11 +245,19 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
             res = RewardTrainer(model, cfg, n_candidates=4).fit({"windows": _wins(train, ctx, horizon, 4),
                                                                  "info": {"series": "fixture"}})
             row.reward = "ok" if res.status in ("ok", "smoke") else _st(res.status)
+            ex = res.extra or {}
+            row.reward_mode = str(ex.get("mode") or "")
+            for k, attr in (("reward_early_mean", "reward_early"),
+                            ("reward_late_mean", "reward_late")):
+                v = ex.get(k)
+                if isinstance(v, (int, float)):
+                    setattr(row, attr, float(v))
             if res.status not in ("ok", "smoke"):
                 row.reasons["reward"] = res.reason
         except Exception as e:                                     # noqa: BLE001
             row.reward = "fail"
             row.reasons["reward"] = f"{type(e).__name__}: {e}"[:250]
+            _debug_tb("reward")
 
     # free the model before the next row: a 6 GB card cannot hold two stacks and the
     # matrix must be runnable on a laptop
@@ -257,6 +270,21 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
         pass
     row.seconds = round(time.time() - t0, 1)
     return row
+
+
+def _debug_tb(task: str) -> None:
+    """``TSFMTRL_DEBUG=1`` prints the traceback of a captured failure to stderr.
+
+    The matrix deliberately swallows exceptions (one bad model must not end a 46-model
+    run) and keeps only the message — which is right for the report and useless for
+    fixing anything when the message is a vendor shape check that only fires inside the
+    matrix. stdout stays the data channel; this goes to stderr.
+    """
+    import os
+    if os.environ.get("TSFMTRL_DEBUG"):
+        import traceback
+        traceback.print_exc()
+        sys.stderr.write(f"[TSFMTRL_DEBUG] {task} failed\n")
 
 
 def _wins(train, ctx, horizon, n=4):
@@ -371,6 +399,9 @@ def dedupe(rows: list[Row]) -> list[Row]:
                 if (lose.reasons or {}).get(t):
                     win.reasons = dict(win.reasons or {})
                     win.reasons.setdefault(t, lose.reasons[t])
+        if getattr(win, "reward", "skip") != "skip" and not getattr(win, "reward_mode", ""):
+            # a reward re-run carries the *mode*, which is the part a benchmark reads
+            win.reward_mode = getattr(lose, "reward_mode", "") or win.reward_mode
         wroutes = (win.clf_metrics or {}).get("routes") or {}
         lroutes = (lose.clf_metrics or {}).get("routes") or {}
         for k, v in lroutes.items():
@@ -392,6 +423,10 @@ def merge(rows: list[Row]) -> dict:
             "n": len(rows), "rows": [asdict(r) for r in rows]}
 
 
+_MODE_LABEL = {"grpo": "grpo", "rft": "rft", "reward_descent": "descent",
+               "reward_descent_point": "descent·pt"}
+
+
 def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> str:
     def m(v):
         # "skipped" = the model/adapter declines this task (a CapabilityError), which is
@@ -400,19 +435,30 @@ def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> st
                                                                     ("partial",) else "◐")
     multi = len({r.machine for r in rows if r.machine}) > 1
     tail_c = " machine |" if multi else ""
-    head = ("| model | tier | weights | load | forecast | quantiles | embed | fine-tune | "
-            "classify | anomaly | reward | s |" + tail_c)
+    head = ("| model | tier | weights | load | forecast | quantiles | embed | classify | "
+            "anomaly | reward (mode) | fine-tune (capability) | s |" + tail_c)
     line = "|---|---|---|---|---|---|---|---|---|---|---|---|" + ("---|" if multi else "")
     out = ["# Compatibility matrix", "",
            f"Generated {time.strftime('%Y-%m-%d %H:%M:%S')} on "
            f"{socket.gethostname()} ({platform.machine()}), python {sys.version.split()[0]}.",
            "", "✅ ok · ❌ failed (see the JSON report for the captured reason) · "
            "— not offered by the model · ◐ partial · · not checked",
-           "", "A ✅ *fine-tune* cell means a differentiable objective ran, gradients were "
-           "feasible and loss logging worked at smoke size. The `(a→b)` in that cell is the "
-           "loss across the **two** smoke steps: it is a capability check, not a claim that "
-           "fine-tuning improves out-of-sample error (`docs/03_fine_tune.md`). "
-           "`classify n/m` counts the probe / head+LoRA / native routes that ran.",
+           "", "**Benchmark columns** (the point of this table): load · forecast · quantiles "
+           "· embed · classify · anomaly. `classify n/m` counts the probe / head+LoRA / "
+           "native-head routes that ran.",
+           "", "**reward (mode)** names the RL path the *architecture* allows — "
+           "`grpo` (group-relative policy gradient over the model's own sampled token "
+           "paths, needs log-probs), `rft` (rejection-sampling best-of-K, the "
+           "group-baseline limit and the only path for sample-only heads), `descent` "
+           "(gradient ascent on a differentiable quantile head), `descent·pt` (same "
+           "through the point head). The trainer picks, not the caller; all four share one "
+           "reward spec. It is a hand-written trainer with no RL library "
+           "(`docs/05_reward_rl.md`).",
+           "", "**fine-tune (capability)** is a gate, not a result: it says a differentiable "
+           "vendor objective ran, gradients were feasible and loss logging worked, over the "
+           "**two** smoke steps shown as `(a→b)`. It is *not* evidence that fine-tuning "
+           "improves out-of-sample error — that is a benchmark run with a metric, and the "
+           "effectiveness question lives in `docs/09_benchmark.md`.",
            "", f"Machines: {', '.join(sorted({r.machine for r in rows if r.machine})) or '-'}. "
            "One row per (model, environment); when two machines disagree the row that "
            "ran is kept and the other is recorded under *other machine* in the reasons.",
@@ -426,13 +472,16 @@ def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> st
         ft = m(r.finetune)
         if r.ok("finetune") and np.isfinite(r.ft_loss_first) and np.isfinite(r.ft_loss_last):
             ft += f" ({r.ft_loss_first:.3f}→{r.ft_loss_last:.3f})"
+        rw = m(r.reward)
+        if r.ok("reward") and r.reward_mode:
+            rw += " " + _MODE_LABEL.get(r.reward_mode, r.reward_mode)
         out.append(f"| {r.model} | {r.tier} | {'✅' if r.weights_present else '❌'} | "
-                   f"{m(r.load)} | {m(r.predict)} | {m(r.quantiles)} | {m(r.embed)} | {ft} | "
-                   f"{cl} | {m(r.anomaly)} | {m(r.reward)} | "
+                   f"{m(r.load)} | {m(r.predict)} | {m(r.quantiles)} | {m(r.embed)} | "
+                   f"{cl} | {m(r.anomaly)} | {rw} | {ft} | "
                    f"{round(float(r.seconds or 0.0), 1)} |"
                    + (f" {r.machine} |" if multi else ""))
-    tasks = ("load", "predict", "quantiles", "embed", "finetune", "classify",
-             "anomaly", "reward")
+    tasks = ("load", "predict", "quantiles", "embed", "classify", "anomaly",
+             "reward", "finetune")
     # "skip" is the untouched default (the task was not requested); only "skipped",
     # "none" and "n/a" mean the model or its package declined the task
     declined = lambda r, t: getattr(r, t) in ("skipped", "none", "n/a")
@@ -452,6 +501,21 @@ def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> st
                 "reason captured below. A declined row is a statement about the model "
                 "package; a failed row is a statement about this environment or our adapter.",
             ""]
+    ran = [r for r in rows if r.reward == "ok" and r.reward_mode]
+    out += ["", "## RL reachability", "",
+            "Which post-training path each architecture exposes. `grpo` is the strictest "
+            "(token log-probs on its own sampled paths); `rft` is what a sample-only or "
+            "diffusion head can do; `descent` needs a differentiable head; the point-only "
+            "models get the point version. This is a property of the vendor's public build, "
+            "not a preference of the harness.", "",
+            "| path | models |", "|---|---|"]
+    for mode, label in (("grpo", "grpo"), ("rft", "rft"), ("reward_descent", "descent"),
+                        ("reward_descent_point", "descent·pt")):
+        names = sorted(r.model for r in ran if r.reward_mode == mode)
+        out.append(f"| {label} | {len(names)}: {', '.join(names) if names else '—'} |")
+    out += ["", f"declined by the package (no trainable path at all): "
+                f"{sum(1 for r in rows if declined(r, 'reward'))} · not checked: "
+                f"{sum(1 for r in rows if r.reward == 'skip')}", ""]
     fails = [r for r in rows if r.reasons]
     if fails:
         out += ["", "## Captured failures", ""]

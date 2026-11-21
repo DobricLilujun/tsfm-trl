@@ -8,12 +8,22 @@ One row per registry model, one column per capability. The point of the matrix i
 it is **produced by running**, so it can be re-run by anyone on their own hardware and
 disagree with ours.
 
+## What the table is for (and is not)
+
+This is an **architecture-compatibility** table, not a results table. Column order says
+so: the benchmark columns come first — `load · forecast · quantiles · embed · classify ·
+anomaly` — then the two *capability gates*: `reward (mode)` and `fine-tune (capability)`.
+A gate proves that a path exists and runs; it carries no accuracy claim. Effectiveness is
+measured by `evaluate`/`forecast_eval` and documented separately in
+[`docs/09_benchmark.md`](09_benchmark.md).
+
 ## How to read the symbols
 
 | symbol | meaning |
 |---|---|
 | ✅ | it ran, and the output was checked (shapes finite, on the canonical grid, loss finite) |
-| ✅ (0.587→0.612) | fine-tune: first and last loss from the recorded curve — a diverging run is visible |
+| ✅ grpo / rft / descent / descent·pt | reward: **which RL path the architecture allowed** — token log-probs (grpo), sample-and-filter (rft), differentiable quantile head (descent), point head (descent·pt). The trainer chooses; see `docs/05_reward_rl.md` |
+| ✅ (0.587→0.612) | fine-tune: first and last loss of the recorded curve. At matrix settings that is **two smoke steps**, so the pair proves the objective is differentiable and logging works — not that fine-tuning helps. A diverging run is still visible |
 | ✅ 2/2 | classify: how many of the **three levels** (probe / head+LoRA / native) ran. `native` is only counted when the vendor ships a classification head at all, so MOMENT reads `3/3` and a quantile-head model `2/2` |
 | — | the model/adapter **declines** this task, with a reason in the JSON (`skipped`) |
 | `prepared` | a vendor loop was set up but not executed (`vendor_fit` paths, e.g. Chronos-T5's or Kronos' optional CSV script) |
@@ -43,6 +53,29 @@ so a row costs seconds, not GPU-hours, and every model is measured at the same s
 `--clf-windows 192` caps the classification set the same way (evenly spaced, splits
 proportional): a sampler model's classification features cost ~draws× more per window
 than a quantile head's, and an uncapped feature pass turned one Kronos row into an hour.
+
+## Benchmark-shaped runs
+
+If the question is "which architectures can I benchmark here", leave the two capability
+gates out and it is a few minutes per machine:
+
+```bash
+tsfm-trl doctor --all-envs --tasks load,predict,quantiles,embed,classify,anomaly \
+                --ctx 512 --horizon 21 --json reports/matrix_bench.json
+```
+
+The reward pass is what fills the **mode** suffix in the `reward` column and the
+`## RL reachability` table at the bottom of the markdown (which architecture exposes
+token log-probs, which only sample-and-filter, which have a differentiable head, and
+which vendor build simply ships no trainable path):
+
+```bash
+tsfm-trl doctor --all-envs --tasks reward --json reports/matrix_reward.json
+```
+
+Both write partial reports; merge them with the full one and the dedupe step keeps the
+task coverage the partial runs produced (a reward-only re-run does not erase a model's
+forecast column).
 
 ## Environment dispatch
 
