@@ -1,0 +1,50 @@
+name: docs
+# Publishes the documentation site (mkdocs-material) to GitHub Pages.
+# The site is a view of the repo markdown plus a matrix page generated from
+# reports/compat_matrix.json, so it is only ever as current as the committed matrix.
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'mkdocs.yml', 'COMPATIBILITY.md', 'reports/compat_matrix.json',
+            'scripts/build_docs.sh', 'requirements-docs.txt', '.github/workflows/docs.yml']
+  pull_request:
+    paths: ['docs/**', 'mkdocs.yml', 'COMPATIBILITY.md', 'reports/compat_matrix.json',
+            'scripts/build_docs.sh']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+      - run: pip install -r requirements-docs.txt
+      - run: bash scripts/build_docs.sh          # strict: broken links/nav fail the build
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v3

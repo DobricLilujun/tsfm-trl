@@ -161,22 +161,49 @@ including the two that did **not** improve, kept as negative results.
 | [`docs/03_fine_tune.md`](docs/03_fine_tune.md) | training levels, LoRA budgets, checkpoints and provenance — and why fine-tuning is a *gate*, not the deliverable |
 | [`docs/04_classify_probing.md`](docs/04_classify_probing.md) | the three classification levels, embedding probes, statistical probes |
 | [`docs/05_reward_rl.md`](docs/05_reward_rl.md) | `RewardTrainer`: GRPO, reward-descent, rejection sampling — plus the provenance question (whose GRPO is this, and what is simplified) |
+| [`docs/10_trl_api.md`](docs/10_trl_api.md) | the post-training API: reward definition, the four RL paths, the mode ladder, what an adapter must expose, measured demonstrators including the negative ones |
 | [`docs/06_matrix.md`](docs/06_matrix.md) | reproducing `COMPATIBILITY.md`, how to read every symbol, benchmark-shaped vs full runs |
 | [`docs/07_finance_tasks.md`](docs/07_finance_tasks.md) | price panels, `dir5`/`extreme` labels, anchor-relative metrics |
 | [`docs/08_known_issues.md`](docs/08_known_issues.md) | the version archaeology: which pin breaks which family, and why |
 | [`docs/09_benchmark.md`](docs/09_benchmark.md) | the benchmark protocol: metrics, splits, budgets, reporting rules, and what has *not* been measured yet |
+
+### Documentation site
+
+The same markdown, as a site (mkdocs-material → GitHub Pages):
+
+```bash
+pip install -r requirements-docs.txt
+./scripts/build_docs.sh          # strict build into site/  (broken links/nav fail it)
+./scripts/build_docs.sh serve    # http://127.0.0.1:8000
+```
+
+`mkdocs.yml` is the nav; `.github/workflows/docs.yml` publishes on push to `main` by
+running **the same script**, which regenerates `docs/matrix.md` from
+`reports/compat_matrix.json` — so the published compatibility table cannot drift away
+from the machine-readable evidence. Enable Pages once per repo: **Settings → Pages →
+Source: GitHub Actions**, or
+
+```bash
+gh api --method POST repos/$OWNER/$REPO/pages -f build_type=workflow
+```
+
+There is no second copy of the documentation to keep in sync: every page is a file in
+`docs/`, and the site is optional — nothing about installing or benchmarking depends on
+it.
 
 ## Status
 
 * Machine-readable evidence in `reports/` (JSON, one row per model), rendered table in
   [`COMPATIBILITY.md`](COMPATIBILITY.md). Tier A = must work; Tier B = best effort;
   Tier C = documented-as-limited.
-* Tests: `pytest -q tests` (36) covers the data/label layer, the metric and loss
+* Tests: `pytest -q tests` (40) covers the data/label layer, the metric and loss
   contracts, the registry (every model has an adapter, an env, a legal loss kind and caps
-  that exist), and the **CLI surface** — `evaluate` and `info` were both broken and
-  completely untested when the CLI tests were added (`evaluate` died on
-  `'str' object has no attribute 'model'`; `info` on `ModelSpec.note`), which is why they
-  are in the suite now.
+  that exist), the **CLI surface**, and the **evaluation layer**. Both of the last two
+  were dead or wrong when they got coverage: `evaluate` and `info` crashed on attribute
+  names nobody had ever run, and the covariate panel fed to panel-consuming models
+  (Kronos) was sliced by a window's *position in a subsampled list* rather than its
+  offset — a benchmark row would have been scored on the wrong covariates and still
+  looked green.
 * `./scripts/check.sh` runs pytest, `ruff` and a three-model mini-matrix, so "the library
   imports" is never the whole claim.
 

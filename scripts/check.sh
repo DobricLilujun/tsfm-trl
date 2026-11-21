@@ -33,3 +33,9 @@ TSFM_WEIGHTS_ROOT=${TSFM_WEIGHTS_ROOT:-$HOME/models} $PY -m tsfm_trl.cli doctor 
     --device cpu --ctx 128 --horizon 8 --json reports/check_matrix.json --md - \
   || exit 1
 echo "OK"
+
+# Docs links/nav, if the docs toolchain is present. Not required for the library: the
+# site is a view, and CI on GitHub builds it anyway (docs.yml runs --strict).
+if [ -x .venv-docs/bin/python ]; then
+  DOCS_PY=.venv-docs/bin/python ./scripts/build_docs.sh >/dev/null && echo "docs: OK"
+fi

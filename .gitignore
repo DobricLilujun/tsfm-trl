@@ -16,3 +16,8 @@ __pycache__/
 .cache/
 -
 reports/check_matrix.json
+
+# docs site build
+site/
+docs/matrix.md
+.venv-docs/

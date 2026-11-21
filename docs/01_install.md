@@ -19,8 +19,8 @@ pyyaml pyarrow huggingface_hub safetensors tqdm
 ```
 
 Everything that *models* need lives in the per-family environments
-([`envs/README.md`](../envs/README.md), machine-readable in
-[`envs/envs.toml`](../envs/envs.toml)). `doctor --all-envs` runs each registry row in
+(described in `envs/README.md`, machine-readable in
+`envs/envs.toml`). `doctor --all-envs` runs each registry row in
 its declared env, so a resolver fight between `uni2ts`, `momentfm`, `betatool` and
 `neuralforecast` never happens.
 
