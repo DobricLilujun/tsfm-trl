@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-21 13:09:40",
+ "generated": "2026-11-21 16:31:32",
  "python": "3.11.15",
  "machine": "ubadmin-Precision-3591",
  "n": 46,
@@ -16,7 +16,7 @@
    "predict": "ok",
    "quantiles": "ok",
    "embed": "ok",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -46,7 +46,8 @@
    "reward_late": NaN,
    "seconds": 5.9,
    "reasons": {
-    "reward": "arima: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "arima: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",
@@ -64,7 +65,7 @@
    "predict": "ok",
    "quantiles": "none",
    "embed": "ok",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -94,7 +95,8 @@
    "reward_late": NaN,
    "seconds": 0.7,
    "reasons": {
-    "reward": "moving_average: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "moving_average: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",
@@ -112,7 +114,7 @@
    "predict": "ok",
    "quantiles": "none",
    "embed": "ok",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -142,7 +144,8 @@
    "reward_late": NaN,
    "seconds": 0.6,
    "reasons": {
-    "reward": "naive: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "naive: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",
@@ -160,7 +163,7 @@
    "predict": "ok",
    "quantiles": "none",
    "embed": "ok",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -190,7 +193,8 @@
    "reward_late": NaN,
    "seconds": 0.6,
    "reasons": {
-    "reward": "seasonal_naive: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "seasonal_naive: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",
@@ -208,7 +212,7 @@
    "predict": "ok",
    "quantiles": "none",
    "embed": "ok",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -238,7 +242,8 @@
    "reward_late": NaN,
    "seconds": 0.8,
    "reasons": {
-    "reward": "theta: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "theta: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",
@@ -1008,7 +1013,7 @@
    "predict": "ok",
    "quantiles": "ok",
    "embed": "ok",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -1038,7 +1043,8 @@
    "reward_late": NaN,
    "seconds": 17.1,
    "reasons": {
-    "reward": "tirex: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "tirex: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "tirex: no trainable module and no loss_kind in the installed package (nothing to fine-tune)"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",
@@ -1852,9 +1858,9 @@
    "weights_present": true,
    "load": "ok",
    "predict": "fail",
-   "quantiles": "skip",
+   "quantiles": "skipped",
    "embed": "fail",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
@@ -1877,7 +1883,9 @@
     "embed": "CompilationError: at 85:21:\n        # each thread block loads the scaMinter_initial\n        scaMinterinitial_ptr = scaMinter_initial + idx_b_BNH * str_scaMinterinitial_B_NH\n\n        # load initial sta",
     "other machine": "ubadmin-Precision-3591/x86_64: load=fail",
     "anomaly": "CompilationError: at 85:21:\n        # each thread block loads the scaMinter_initial\n        scaMinterinitial_ptr = scaMinter_initial + idx_b_BNH * str_scaMinterinitial_B_NH\n\n        # load initial sta",
-    "reward": "tirex-2: no 'finetune' support (adapter exposes no trainable module)"
+    "reward": "tirex-2: no 'finetune' support (adapter exposes no trainable module)",
+    "finetune": "tirex2: no trainable module and no loss_kind in the installed package (nothing to fine-tune)",
+    "quantiles": "not observed: the point forecast itself failed"
    },
    "machine": "gpu7/aarch64",
    "python": "3.12.14",
@@ -2133,24 +2141,29 @@
    "license": "mit",
    "weights_present": false,
    "load": "fail",
-   "predict": "skip",
+   "predict": "skipped",
    "quantiles": "skip",
    "embed": "skip",
-   "finetune": "skip",
+   "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
    "ft_params": 0,
-   "classify": "skip",
+   "classify": "skipped",
    "clf_metrics": {},
-   "anomaly": "skip",
-   "reward": "skip",
+   "anomaly": "skipped",
+   "reward": "skipped",
    "reward_mode": "",
    "reward_early": NaN,
    "reward_late": NaN,
    "seconds": 1.2298800945281982,
    "reasons": {
     "load": "UnavailableError: visiontspp-base: UnavailableError: visiontspp-base: VisionTS++ needs the upstream package (the Hub repo ships .ckpt weights only): No module named 'visiontspp'  [install: git clone the VisionTS/VisionTS++ upstream, then weights=/path/to/visiontspp_base.ckpt. clone it and point the ",
-    "other machine": "ubadmin-Precision-3591/x86_64: load=fail"
+    "other machine": "ubadmin-Precision-3591/x86_64: load=fail",
+    "predict": "not attempted: the model did not load",
+    "finetune": "not attempted: the model did not load",
+    "classify": "not attempted: the model did not load",
+    "anomaly": "not attempted: the model did not load",
+    "reward": "not attempted: the model did not load"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",

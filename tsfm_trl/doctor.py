@@ -120,6 +120,10 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
         except Exception as e:                                     # noqa: BLE001
             row.load = "fail"
             row.reasons["load"] = f"{type(e).__name__}: {e}"[:300]
+            for t in ("predict", "quantiles", "embed", "classify", "anomaly",
+                      "finetune", "reward"):
+                if t in tasks:
+                    row.reasons[t] = "not attempted: the model did not load"
             row.seconds = time.time() - t0
             return row
     if model is None:
@@ -147,6 +151,8 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
         except Exception as e:                                     # noqa: BLE001
             row.predict = "fail"
             row.reasons["predict"] = f"{type(e).__name__}: {e}"[:300]
+            # quantiles is read off the same call, so it was never observed
+            row.reasons["quantiles"] = "not observed: the point forecast itself failed"
 
     # ---------------------------------------------------------------- embed
     if "embed" in tasks:
@@ -159,6 +165,13 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
             row.reasons["embed"] = f"{type(e).__name__}: {e}"[:200]
 
     # ---------------------------------------------------------------- fine-tune
+    if "finetune" in tasks and not (spec.trainable or model.loss_kind):
+        # The statistical baselines and the inference-only vendors are not "untested"
+        # here: the package offers nothing trainable, which is the declined answer. Left
+        # blank, a reader cannot tell "we did not look" from "there is nothing there".
+        row.finetune = "skipped"
+        row.reasons["finetune"] = (f"{spec.family}: no trainable module and no loss_kind "
+                                   f"in the installed package (nothing to fine-tune)")
     if "finetune" in tasks and (spec.trainable or model.loss_kind):
         cfg = TrainingConfig(ctx=ctx, horizon=horizon, budget="fs16", steps=2, bs=2,
                              reward_steps=reward_steps,
