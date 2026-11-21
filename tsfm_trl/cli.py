@@ -130,7 +130,23 @@ def cmd_forecast(a):
     ds = _series_arg(a)
     out = forecast_eval(model, ds, horizons=(a.horizon,), ctx=a.ctx,
                         max_windows=a.max_windows, batch=a.batch, seed=a.seed)
-    print(json.dumps(out, indent=1, default=float))
+    if not a.md:
+        print(json.dumps(out, indent=1, default=float))
+        return 0
+    for r in out:
+        print(f"### {r['model']} · {r['series']} · {r['span']} · h={r['horizon']}\n")
+        print(f"probabilistic: {'yes' if 'crps' in r else 'no (point-only model)'} · ctx {r['ctx']}"
+              f"{(' (' + r['ctx_note'] + ')') if r.get('ctx_note') else ''} · "
+              f"{r['n_windows']} windows · {r['seconds']}s\n")
+        print("| RMSE | MAE | MASE | sMAPE | ND | dir-acc | rank_corr | skill vs "
+              "seasonal | CRPS | WQL | pinball |")
+        print("|---|---|---|---|---|---|---|---|---|---|---|")
+        def f(v):                    # nan/None render as an em dash rather than 'nan'
+            return "—" if v is None or not isinstance(v, (int, float)) or v != v else f"{v:.4g}"
+        print(f"| {f(r['rmse'])} | {f(r['mae'])} | {f(r['mase'])} | {f(r['smape'])} | "
+              f"{f(r['nd'])} | {f(r['dir_acc'])} | {f(r['rank_corr'])} | "
+              f"{f(r['relative_skill'])} | {f(r.get('crps'))} | {f(r.get('wql'))} | "
+              f"{f(r.get('pinball'))} |")
     return 0
 
 
@@ -315,7 +331,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(fn=cmd_doctor)
 
     p = sub.add_parser("forecast", help="zero-shot forecast + metrics")
-    common(p, train=False); p.set_defaults(fn=cmd_forecast)
+    common(p, train=False)
+    p.add_argument("--md", action="store_true", help="markdown instead of JSON")
+    p.set_defaults(fn=cmd_forecast)
 
     p = sub.add_parser("fit", help="fine-tune for forecasting")
     common(p); p.set_defaults(fn=cmd_fit)

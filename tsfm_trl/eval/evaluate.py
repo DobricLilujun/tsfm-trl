@@ -5,6 +5,7 @@ zero-shot and adapted models, so a delta is a delta.
 """
 from __future__ import annotations
 
+import sys
 import time
 
 import numpy as np
@@ -12,6 +13,23 @@ import numpy as np
 from ..data.series import SeriesDataset, windows
 from ..errors import DataError
 from .metrics import classification_report, forecast_report
+
+
+def _fit_ctx(model, ctx: int, span_len: int, h: int) -> tuple[int, str]:
+    """Largest usable context for this span, honouring the model's alignment step."""
+    step = int(getattr(model, "ctx_step", 1) or 1)
+    if ctx + h <= span_len:
+        return int(ctx), ""
+    fit = span_len - h
+    if step > 1:
+        fit = (fit // step) * step
+    if fit < max(2 * step, 8):
+        raise DataError(f"span holds {span_len} points: too short for horizon {h} "
+                        f"with any context a {getattr(model, 'key', '?')} accepts "
+                        f"(context step {step})")
+    print(f"note: context {ctx} doesn't fit a {span_len}-point span; "
+          f"evaluating at context {fit}", file=sys.stderr)
+    return int(fit), f"clamped from {ctx} to {fit} (span {span_len}, horizon {h})"
 
 
 def forecast_eval(model, dataset, *, horizons=(21,), spans=("test",), ctx: int | None = None,
@@ -25,22 +43,32 @@ def forecast_eval(model, dataset, *, horizons=(21,), spans=("test",), ctx: int |
         y_span = ds.values[a:b]
         train = ds.split("train")
         for h in horizons:
-            w = windows(y_span, h, ctx, stride=stride or h, max_windows=max_windows, seed=seed)
+            # A context longer than the span is a normal condition in a cross-family
+            # sweep (Kairos wants 2048, the built-in fixture has 135 test points), so it
+            # degrades instead of raising. Raising here meant the default
+            # `tsfm-trl forecast` demo could not run at all on its own fixture.
+            eff_ctx, ctx_note = _fit_ctx(model, ctx, len(y_span), h)
+            # a covariate panel must come from the SAME offsets as the context. windows()
+            # returns the offsets; ds.panel_window() then rebuilds the slice *including*
+            # the target column (the panel frame stores open/high/low/volume only, and a
+            # raw slice is missing exactly the column panel models ask for).
+            want_panel = ds.panel is not None and "panel_in" in set(getattr(model, "caps", ()))
+            w = windows(y_span, h, eff_ctx, stride=stride or h, max_windows=max_windows,
+                        seed=seed, with_offsets=want_panel)
             if not w:
                 raise DataError(f"{ds.name}/{span}: no evaluation windows "
-                                f"(need >= {ctx + h}, have {len(y_span)})")
+                                f"(need >= {eff_ctx + h}, have {len(y_span)})")
+            offs = [x[2] for x in w] if want_panel else None
             cs = [x[0] for x in w]
             ys = np.stack([x[1] for x in w])
-            panels = None
-            if "panel_in" in set(getattr(model, "caps", ())) and ds.panel is not None:
-                panels = [ds.panel_window(a + i, a + i + ctx) for i, _ in enumerate(w)]
+            panels = [ds.panel_window(a + o, a + o + eff_ctx) for o in offs] if want_panel else None
             t0 = time.time()
             pred = model.predict(cs, h, panels=panels)
             row = {"model": getattr(model, "key", "?"), "adaptation":
                    getattr(model, "adaptation", "zero"), "series": ds.name, "span": span,
-                   "horizon": int(h), "ctx": ctx, "n_windows": len(w),
+                   "horizon": int(h), "ctx": eff_ctx, "n_windows": len(w),
                    "seconds": round(time.time() - t0, 2),
-                   "no_leakage": True,
+                   "no_leakage": True, "ctx_note": ctx_note,
                    **forecast_report(ys, pred, train, season=season)}
             row["meta"] = {k: v for k, v in (pred.meta or {}).items() if isinstance(v, (int, float, str, bool))}
             rows.append(row)

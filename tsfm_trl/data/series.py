@@ -182,10 +182,16 @@ def _even_split(arr, tr=0.7, va=0.15):
 # --------------------------------------------------------------------- windows
 def windows(values: np.ndarray, horizon: int, ctx: int, *, stride: int | None = None,
             max_windows: int | None = None, seed: int = 0, drop_nonfinite: bool = True,
-            panel: pd.DataFrame | None = None):
+            panel: pd.DataFrame | None = None, with_offsets: bool = False):
     """Sliding ``(context, truth)`` pairs. With ``max_windows`` the subset is chosen
     uniformly at random but returned in time order (reproducibility: same seed,
-    same windows)."""
+    same windows).
+
+    ``with_offsets`` appends the window's start position in ``values`` as a third
+    element. Callers that need anything *aligned* to the context (a covariate panel, a
+    timestamp) must use this: after striding and random subsampling, the position of a
+    window in the returned list says nothing about where it came from.
+    """
     y = np.asarray(values, dtype=float)
     L = ctx + horizon
     if len(y) < L:
@@ -195,11 +201,12 @@ def windows(values: np.ndarray, horizon: int, ctx: int, *, stride: int | None = 
         c, t = y[i:i + ctx], y[i + ctx:i + L]
         if drop_nonfinite and not (np.all(np.isfinite(c)) and np.all(np.isfinite(t))):
             continue
-        item = (c.astype(np.float32), t.astype(np.float32))
+        item = [c.astype(np.float32), t.astype(np.float32)]
         if panel is not None:
-            out.append((item[0], item[1], panel.iloc[max(0, i - 0):i + ctx]))
-        else:
-            out.append(item)
+            item.append(panel.iloc[i:i + ctx])
+        if with_offsets:
+            item.append(i)
+        out.append(tuple(item))
     if max_windows and len(out) > max_windows:
         rng = np.random.RandomState(seed)
         idx = rng.choice(len(out), size=max_windows, replace=False)

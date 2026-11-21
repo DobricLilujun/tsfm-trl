@@ -264,13 +264,41 @@ def _f_beta2(y, pred, k):
 
 
 # ------------------------------------------------------------------- reports
-def forecast_report(y, pred, train, *, season: int = 1) -> dict:
+def _mean_window(y, p, fn) -> float:
+    vs = [fn(y[i], p[i]) for i in range(len(y))]
+    vs = [float(v) for v in vs if v is not None and np.isfinite(v)]
+    return float(np.mean(vs)) if vs else float("nan")
+
+
+def _dir_acc(y, p, anchor=None) -> float:
+    if anchor is None:
+        return _mean_window(np.diff(y, axis=1), np.diff(p, axis=1), directional_accuracy)
+    a = np.asarray(anchor, float).reshape(len(y))
+    vs = [directional_accuracy(y[i], p[i], anchor=float(a[i])) for i in range(len(y))]
+    vs = [float(v) for v in vs if np.isfinite(v)]
+    return float(np.mean(vs)) if vs else float("nan")
+
+
+def forecast_report(y, pred, train, *, season: int = 1, anchor=None) -> dict:
+    """The point-forecast block of an evaluation row, plus the probabilistic block when
+    the model produced quantiles.
+
+    ``dir_acc`` and ``rank_corr`` are per-window means: pooling them across windows at
+    different price levels would measure the level differences, not the forecast.
+    With ``anchor`` (usually each window's last observed value) dir_acc is "did the
+    forecast point the right way away from where the series stood"; without one it
+    compares step-to-step directions inside the horizon, which needs no context.
+    """
     y = np.asarray(y, float)
     p = np.asarray(pred.point if hasattr(pred, "point") else pred, float)
+    if y.ndim == 1:
+        y, p = y[None, :], p[None, :]
     q = getattr(pred, "quantiles", None) if hasattr(pred, "quantiles") else None
     out = {"rmse": rmse(y, p), "mae": mae(y, p), "mase": mase(y, p, train, season),
            "smape": smape(y, p), "nd": nd(y, p, train),
-           "relative_skill": relative_skill(y, p, train, season)}
+           "relative_skill": relative_skill(y, p, train, season),
+           "dir_acc": _dir_acc(y, p, anchor),
+           "rank_corr": _mean_window(y, p, rank_corr)}
     if q is not None:
         lv = getattr(pred, "levels", LEVELS)
         out["pinball"] = pinball(y, q, lv)
