@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-21 16:31:32",
+ "generated": "2026-11-21 16:33:48",
  "python": "3.11.15",
  "machine": "ubadmin-Precision-3591",
  "n": 46,
@@ -2142,8 +2142,8 @@
    "weights_present": false,
    "load": "fail",
    "predict": "skipped",
-   "quantiles": "skip",
-   "embed": "skip",
+   "quantiles": "skipped",
+   "embed": "skipped",
    "finetune": "skipped",
    "ft_loss_first": NaN,
    "ft_loss_last": NaN,
@@ -2163,7 +2163,9 @@
     "finetune": "not attempted: the model did not load",
     "classify": "not attempted: the model did not load",
     "anomaly": "not attempted: the model did not load",
-    "reward": "not attempted: the model did not load"
+    "reward": "not attempted: the model did not load",
+    "quantiles": "not attempted: the model did not load",
+    "embed": "not attempted: the model did not load"
    },
    "machine": "gpu7/aarch64",
    "python": "3.11.14",

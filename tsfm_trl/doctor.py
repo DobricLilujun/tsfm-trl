@@ -120,10 +120,11 @@ def check(spec: ModelSpec, *, ctx: int = 256, horizon: int = 21, device: str = "
         except Exception as e:                                     # noqa: BLE001
             row.load = "fail"
             row.reasons["load"] = f"{type(e).__name__}: {e}"[:300]
+            # every downstream cell, not just the requested ones: "this model does not
+            # load" is the reason those cells are empty whether or not the caller asked
             for t in ("predict", "quantiles", "embed", "classify", "anomaly",
                       "finetune", "reward"):
-                if t in tasks:
-                    row.reasons[t] = "not attempted: the model did not load"
+                row.reasons[t] = "not attempted: the model did not load"
             row.seconds = time.time() - t0
             return row
     if model is None:

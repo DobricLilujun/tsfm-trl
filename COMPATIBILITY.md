@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-Generated 2026-11-21 16:31:32 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
+Generated 2026-11-21 16:33:48 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
 
 ✅ ok · ❌ failed (see the JSON report for the captured reason) · — not offered by the model · ◐ partial · · not checked
 
@@ -59,7 +59,7 @@ Machines: gpu7/aarch64, ubadmin-Precision-3591/x86_64. One row per (model, envir
 | yug | B | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ 2/2 | ✅ | — | — | 9.3 | ubadmin-Precision-3591/x86_64 |
 | patchtst-fm-r2 | C | ✅ | ✅ | ✅ | — | ✅ | ✅ 2/2 | ✅ | ✅ descent·pt | — | 21.6 | gpu7/aarch64 |
 | timestral-209m | C | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ 2/2 | ✅ | — | — | 23.7 | ubadmin-Precision-3591/x86_64 |
-| visiontspp-base | C | ❌ | ❌ | — | · | · | — | — | — | — | 1.2 | gpu7/aarch64 |
+| visiontspp-base | C | ❌ | ❌ | — | — | — | — | — | — | — | 1.2 | gpu7/aarch64 |
 
 ## Summary
 
@@ -67,8 +67,8 @@ Machines: gpu7/aarch64, ubadmin-Precision-3591/x86_64. One row per (model, envir
 |---|---|---|---|---|
 | load | 45 | 0 | 1 | 0 |
 | predict | 44 | 1 | 1 | 0 |
-| quantiles | 35 | 10 | 0 | 1 |
-| embed | 44 | 0 | 1 | 1 |
+| quantiles | 35 | 11 | 0 | 0 |
+| embed | 44 | 1 | 1 | 0 |
 | classify | 44 | 1 | 1 | 0 |
 | anomaly | 44 | 2 | 0 | 0 |
 | reward | 30 | 16 | 0 | 0 |
@@ -131,4 +131,4 @@ declined by the package (no trainable path at all): 16 · not checked: 0
 - **yug** (yug, python 3.12.13): finetune: yug: no 'finetune' support (adapter exposes no trainable module); reward: yug: no 'finetune' support (adapter exposes no trainable module)
 - **patchtst-fm-r2** (patchtst, python 3.11.14): finetune: patchtst-fm-r2: no 'finetune' support (forward(['output_hidden_states', 'pad_mask', 'past_observed_mask', 'past_values', 'prediction_length', 'quantile_levels', 'return_dict', 'return_loss']) declares no target argument in transformers 5.22.1); other machine: gpu7/aarch64: finetune=fail
 - **timestral-209m** (timestral, python 3.12.13): finetune: timestral: no 'finetune' support (the released timestral package exposes the inference forecaster only; wire the vendor training forward (mistralai/timestral) before claiming a Timestral fine-tune); reward: timestral: no 'finetune' support (adapter exposes no trainable module)
-- **visiontspp-base** (visionts, python 3.11.14): load: UnavailableError: visiontspp-base: UnavailableError: visiontspp-base: VisionTS++ needs the upstream package (the Hub repo ships .ckpt weights only): No module named 'visiontspp'  [install: git clone the VisionTS/VisionTS++ upstream, then weights=/path/to/visiontspp_base.ckpt. clone it and point the ; other machine: ubadmin-Precision-3591/x86_64: load=fail; predict: not attempted: the model did not load; finetune: not attempted: the model did not load; classify: not attempted: the model did not load; anomaly: not attempted: the model did not load; reward: not attempted: the model did not load
+- **visiontspp-base** (visionts, python 3.11.14): load: UnavailableError: visiontspp-base: UnavailableError: visiontspp-base: VisionTS++ needs the upstream package (the Hub repo ships .ckpt weights only): No module named 'visiontspp'  [install: git clone the VisionTS/VisionTS++ upstream, then weights=/path/to/visiontspp_base.ckpt. clone it and point the ; other machine: ubadmin-Precision-3591/x86_64: load=fail; predict: not attempted: the model did not load; finetune: not attempted: the model did not load; classify: not attempted: the model did not load; anomaly: not attempted: the model did not load; reward: not attempted: the model did not load; quantiles: not attempted: the model did not load; embed: not attempted: the model did not load
