@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-Generated 2026-11-21 04:11:57 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
+Generated 2026-11-21 04:12:38 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
 
 ✅ ok · ❌ failed (see the JSON report for the captured reason) · — not offered by the model · ◐ partial · · not checked
 
@@ -74,7 +74,7 @@ Machines: gpu7/aarch64, ubadmin-Precision-3591/x86_64. One row per (model, envir
 | reward | 30 | 15 | 0 | 1 |
 | finetune | 29 | 9 | 0 | 8 |
 
-'declined' means the model or its vendor package offers no path for that task in this environment (a `—` in the table): Moirai 1.1 `forward` draws samples instead of returning differentiable quantiles, TimesFM's public build ships inference only, Aurora's flow-matching head has no public training step. 'failed' means something was attempted and broke, with the reason captured below. A declined row is a statement about the model package; a failed row is a statement about this environment or our adapter.
+'declined' means the model or its vendor package offers no path for that task in this environment (a `—` in the table): TimesFM's and TiRex's public builds ship inference only, Timestral and Yug likewise, Aurora's flow-matching head has no public training step, and the installed tsfm_public `PatchTSTFMForPrediction.forward` declares no target argument. 'failed' means something was attempted and broke, with the reason captured below. A declined row is a statement about the model package; a failed row is a statement about this environment or our adapter — and history says to check the second category before believing the first (`docs/08_known_issues.md`, fifth pass).
 
 
 ## RL reachability

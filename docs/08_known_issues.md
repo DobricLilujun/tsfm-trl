@@ -316,3 +316,32 @@ Related: the `lora_trains_head` branch called a helper that did not exist
 (`_matches_any` instead of `_match`), which is a NameError waiting inside a path only
 Sundial takes. `ruff check tsfm_trl --select F,E9` catches it; `check.sh` runs that
 before the matrix, which is exactly why `check.sh` exists.
+
+## Fifth pass: two dead CLI paths, and Chronos-2's output-patch cap
+
+* **`tsfm-trl evaluate` and `tsfm-trl info` were both broken and untested.** `evaluate`
+  called `_load_model(a.model)` where the function wants the whole namespace
+  (`'str' object has no attribute 'model'`); `info` printed `s.note` while the registry
+  field is `notes`. Neither path is used by the matrix or the examples, so 32 green tests
+  said nothing about them. `tests/test_cli.py` now drives the CLI surface on the
+  statistical baselines — no weights, no GPU, two seconds — which is exactly the layer
+  that had no coverage.
+* **Chronos-2's supervised forward is capped by `num_output_patches`, default 1.** The
+  adapter called `model(context=…, future_target=…)` without it, so any horizon above one
+  output patch (16 steps) died in `_validate_input`, and the channels-last retry below it
+  turned that into the still more misleading `context must have shape
+  (batch_size, context_length)`. The vendor derives the argument from the prediction
+  length; the adapter does the same now (`ceil(H / output_patch_size)`), so
+  fine-tune/reward work at 16/21/64. Nothing about the checkpoint is rebuilt — the output
+  embedding is applied per patch.
+* **A fallback must not eat the original error.** That row's captured reason was the
+  *retry's* message, which named neither the argument nor the cap. The retry now re-raises
+  the first exception.
+* **`TSFMTRL_DEBUG=1`** prints the traceback of anything the matrix swallows, from the
+  row capture and from every rung of the reward-mode ladder. The report keeps only
+  messages (one bad model must not end a 46-model run), which is right for the table and
+  useless for fixing a failure that only appears inside the matrix. It goes to stderr;
+  stdout stays the data channel.
+* **Vendor loops log on their own interval.** A Chronos-2/Kronos vendor fine-tune at smoke
+  size produces no loss pair in the matrix cell; recorded rather than hidden
+  (`docs/03_fine_tune.md`).
