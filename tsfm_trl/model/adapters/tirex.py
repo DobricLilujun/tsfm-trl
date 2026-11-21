@@ -146,11 +146,35 @@ def _triton_ok() -> tuple[bool, str]:
 
 
 def _nvcc() -> str | None:
+    """nvcc, even when it is only in a toolkit directory and not on PATH.
+
+    The native mLSTM fallback JIT-compiles through torch's cpp_extension, which looks at
+    CUDA_HOME; a CUDA install that is present but not on PATH therefore looked like a
+    machine gap. Reporting that as a model failure is wrong in both directions.
+    """
+    import glob
+    import os
     import shutil
-    return shutil.which("nvcc")
+    p = shutil.which("nvcc")
+    if p:
+        return p
+    cands = ([os.path.join(os.environ["CUDA_HOME"], "bin", "nvcc")]
+             if os.environ.get("CUDA_HOME") else [])
+    cands += sorted(glob.glob("/usr/local/cuda*/bin/nvcc"), reverse=True)
+    for c in cands:
+        if os.path.isfile(c) and os.access(c, os.X_OK):
+            os.environ.setdefault("CUDA_HOME", os.path.dirname(os.path.dirname(c)))
+            return c
+    return None
 
 
-def _force_native_mlstm_kernels() -> None:
+def _force_native_mlstm_kernels():
+    """Point the vendor's mLSTM backend at the native (non-Triton) kernels.
+
+    Returns an undo callable: the patch is process-wide, so an abandoned fallback would
+    otherwise decide how every later task in the same process behaves — which turns one
+    failed kernel into a row where every column blames the same wrong thing.
+    """
     import tirex2.model.component.mlstm_block as MB
     orig = MB.mLSTMBackendConfig
 
@@ -161,6 +185,11 @@ def _force_native_mlstm_kernels() -> None:
         return orig(*a, **k)
 
     MB.mLSTMBackendConfig = native
+
+    def undo():
+        MB.mLSTMBackendConfig = orig
+        return orig
+    return undo
 
 
 class TiRex2(TiRex):
@@ -205,6 +234,56 @@ class TiRex2(TiRex):
         self.max_context = int(getattr(self.model, "max_context_length", 2048))
         self.levels = TiRex._levels(self)
 
+    def predict(self, contexts, horizon, *, panels=None, future=None) -> Pred:
+        """One runtime fallback: the Triton mLSTM scan kernels are the failure mode, and
+        whether they compile depends on the GPU arch and the toolchain, not on the model.
+
+        The constructor probe (128 points) can pass while a real batch fails to compile,
+        which used to be reported as a TiRex-2 *model* failure. Retrying on the native
+        kernels answers the benchmark question instead: does this architecture run here.
+        """
+        import os
+        try:
+            return self._predict_impl(contexts, horizon, panels=panels, future=future)
+        except Exception as e:                                  # noqa: BLE001
+            msg = f"{type(e).__name__} {e}".lower()
+            if self.kernels != "triton" or not any(
+                    k in msg for k in ("compilationerror", "triton", "ptxas",
+                                       "no kernel image", "cuda extension", "ninja")):
+                raise
+            if not _nvcc():          # native mLSTM JIT-compiles; nothing to fall back to
+                raise
+            prev = os.environ.get("USE_TRITON_KERNELS")
+            os.environ["USE_TRITON_KERNELS"] = "0"
+            undo = _force_native_mlstm_kernels()
+            import tirex2
+            self.model = tirex2.load_model(ckpt_path=self.checkpoint, device=self.device)
+            self.kernels = "native"
+            self.kernel_reason = (f"triton kernels compiled at import but failed at "
+                                  f"runtime ({type(e).__name__}); native kernels tried")
+            try:
+                return self._predict_impl(contexts, horizon, panels=panels, future=future)
+            except Exception as e2:                             # noqa: BLE001
+                # leave the process as we found it: an abandoned fallback must not decide
+                # how the *next* task in this process behaves
+                if prev is None:
+                    os.environ.pop("USE_TRITON_KERNELS", None)
+                else:
+                    os.environ["USE_TRITON_KERNELS"] = prev
+                undo()
+                try:                    # rebuild the model under the kernels we left
+                    self.model = tirex2.load_model(ckpt_path=self.checkpoint,
+                                                   device=self.device)
+                except Exception:                                  # noqa: BLE001
+                    pass
+                self.kernels = "triton"
+                # the original error is the finding; the retry explains why there is no
+                # way around it here. Swapping them would blame the wrong thing.
+                raise RuntimeError(
+                    f"tirex-2 Triton kernels failed to compile ({type(e).__name__}: "
+                    f"{str(e)[:200]}); the native fallback needs a working JIT build and "
+                    f"failed too ({type(e2).__name__}: {str(e2)[:200]})") from e
+
     def _probe(self):
         import torch
         from tirex2.model.types import TimeseriesType
@@ -220,7 +299,7 @@ class TiRex2(TiRex):
         return [TimeseriesType(target=torch.tensor(c, dtype=torch.float32, device=self.device),
                                past_covariates=None, future_covariates=None) for c in cs]
 
-    def predict(self, contexts, horizon, *, panels=None, future=None) -> Pred:
+    def _predict_impl(self, contexts, horizon, *, panels=None, future=None) -> Pred:
         out = self.model.forecast(self._batch(contexts), prediction_length=int(horizon),
                                   output_type="numpy", batch_size=self.batch)
         q = np.asarray(out, float)

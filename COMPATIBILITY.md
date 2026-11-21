@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-Generated 2026-11-21 04:12:38 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
+Generated 2026-11-21 13:09:40 on ubadmin-Precision-3591 (x86_64), python 3.11.15.
 
 ✅ ok · ❌ failed (see the JSON report for the captured reason) · — not offered by the model · ◐ partial · · not checked
 

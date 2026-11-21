@@ -41,7 +41,7 @@ notes = "neuralforecast; its loader validates a model *id*, not a local path"
 [env.tirex2]
 python = "3.12"   # ditto: its mLSTM/triton stack lock is a 3.12 freeze
 lock = "tirex2.lock.txt"
-notes = "Triton mLSTM kernels need sm>=10.0 + Triton>=3.4; otherwise the native backend JIT-compiles a CUDA extension and needs nvcc"
+notes = "Triton mLSTM kernels need sm>=10.0 + Triton>=3.4; otherwise the native backend JIT-compiles a CUDA extension and needs nvcc (and ninja, installed on the DGX Spark). As of 2026-11-21 neither path works on the Spark: the Triton scan kernel raises CompilationError at runtime and the JIT-built slstm extension fails to import, so tirex-2 is a failed row, not a declined one"
 env = { USE_TRITON_KERNELS = "0" }
 
 [env.timemoe]
