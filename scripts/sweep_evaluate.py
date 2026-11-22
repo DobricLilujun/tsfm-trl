@@ -133,7 +133,7 @@ def sweep(args) -> int:
             fh.flush()
             skipped += 1
             continue
-        py_abs = str(Path(py).expanduser().resolve())
+        py_abs = _abspath(py)
         if py_abs != py:
             # provenance has to name the interpreter that ran, not one that happens to
             # share the name here
@@ -380,6 +380,14 @@ def report(args) -> int:
     if args.stdout:
         sys.stdout.write(text)
     return 0
+
+
+def _abspath(py: str) -> str:
+    """Absolute, but lexically: `.venv/bin/python` is a symlink to the base
+    interpreter, and Path.resolve() follows it out of the venv — the resulting path
+    starts in uv's python dir, has no site-packages, and dies on `import numpy` while
+    looking like a broken model environment. abspath() keeps the venv identity."""
+    return os.path.abspath(os.path.expanduser(py))
 
 
 def main() -> int:

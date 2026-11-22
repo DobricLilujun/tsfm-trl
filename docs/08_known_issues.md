@@ -345,6 +345,16 @@ before the matrix, which is exactly why `check.sh` exists.
 * **Vendor loops log on their own interval.** A Chronos-2/Kronos vendor fine-tune at smoke
   size produces no loss pair in the matrix cell; recorded rather than hidden
   (`docs/03_fine_tune.md`).
+## Normalising an interpreter path can leave the venv
+
+Recording *which* interpreter produced a row means storing its path, and the obvious
+`Path(py).resolve()` is a trap: `env/bin/python` is a symlink to the base interpreter that
+built the venv, so `resolve()` hands back something under uv's python directory with none
+of the family's pinned packages. The run then dies on `import numpy` in 0.0 s and the
+failure looks like a broken model environment. `scripts/sweep_evaluate.py` uses
+`os.path.abspath()` (lexical, no symlink following) and `tests/test_sweep_paths.py` keeps
+that true — the same distinction that makes `sys.executable` and `realpath(sys.executable)`
+different tools.
 
 ## A family env can silently lose its GPU
 
