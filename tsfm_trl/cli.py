@@ -248,8 +248,15 @@ def cmd_evaluate(a):
         model = load_finetuned(model, a.adaptation)
     hs = tuple(int(x) for x in a.horizons.split(",") if x.strip()) or (a.horizon,)
     out = forecast_eval(model, _series_arg(a), horizons=hs, ctx=a.ctx,
+                        spans=tuple(x.strip() for x in a.spans.split(",") if x.strip()),
                         max_windows=a.max_windows, seed=a.seed)
-    print(json.dumps(out, indent=1, default=float))
+    if getattr(a, "out", ""):
+        # the sweep driver collects many models: the child writes a file, and stdout
+        # stays a log channel that a stray tqdm line cannot corrupt
+        Path(a.out).write_text(json.dumps(out, indent=1, default=float))
+        print(f"wrote {a.out} ({len(out)} rows)", file=sys.stderr)
+    else:
+        print(json.dumps(out, indent=1, default=float))
     return 0
 
 
@@ -362,6 +369,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("evaluate", help="metrics for a base or fine-tuned checkpoint")
     common(p, train=False)
     p.add_argument("--adaptation", default="zero", help="'zero' or a checkpoint path")
+    p.add_argument("--out", default="", help="write the JSON rows to this file")
+    p.add_argument("--spans", default="test",
+                   help="comma list of spans to score: train,val,test,all — 'all' slides "
+                        "windows over the whole series, which is legitimate for zero-shot "
+                        "rows (the model saw no data) but NOT for adapted checkpoints")
     p.add_argument("--horizons", default="",
                    help="comma list, e.g. 21,63,126 — one evaluation pass per horizon "
                         "(defaults to the single --horizon)")

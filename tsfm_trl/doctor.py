@@ -550,14 +550,12 @@ def write_markdown(rows: list[Row], path: str | Path = "COMPATIBILITY.md") -> st
 
 
 # ------------------------------------------------------------------ multi-env runner
-def run_all_envs(envs_dir: str = "envs", **kw) -> list[Row]:
-    """Run the matrix once per family environment and merge. Each env is its own
-    subprocess: a segfault or an OOM in one family cannot take the run down.
+def env_interpreters(envs_dir: str = "envs") -> dict:
+    """env name -> interpreter, found the two sanctioned ways (see run_all_envs).
 
-    Interpreters are found two ways, and both are allowed at once:
-    ``<envs_dir>/<name>/bin/python`` (what ``scripts/make_envs.sh`` builds) and
-    ``<envs_dir>/local.json`` -- ``{"core": "/path/to/.venv2/bin/python", ...}`` -- for
-    machines where the working venvs already live somewhere else.
+    Exposed because the benchmark sweep (scripts/sweep_evaluate.py) must dispatch to
+    exactly the same interpreters the compatibility matrix used: a row measured in a
+    different environment than the matrix says is not the same experiment.
     """
     base = Path(envs_dir).expanduser()
     interpreters = {}
@@ -575,8 +573,19 @@ def run_all_envs(envs_dir: str = "envs", **kw) -> list[Row]:
                 interpreters[name] = str(p)
     except FileNotFoundError:
         pass
-    if not interpreters:
-        interpreters = {"core": sys.executable}
+    return interpreters
+
+
+def run_all_envs(envs_dir: str = "envs", **kw) -> list[Row]:
+    """Run the matrix once per family environment and merge. Each env is its own
+    subprocess: a segfault or an OOM in one family cannot take the run down.
+
+    Interpreters are found two ways, and both are allowed at once:
+    ``<envs_dir>/<name>/bin/python`` (what ``scripts/make_envs.sh`` builds) and
+    ``<envs_dir>/local.json`` -- ``{"core": "/path/to/.venv2/bin/python", ...}`` -- for
+    machines where the working venvs already live somewhere else.
+    """
+    interpreters = env_interpreters(envs_dir) or {"core": sys.executable}
     rows: list[Row] = []
     for name, py in interpreters.items():
         env = dict(os.environ)
