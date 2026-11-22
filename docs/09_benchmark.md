@@ -138,6 +138,42 @@ into `forecast_eval` without further adaptation work.
    `moving_average` are registered models with their own rows, so every effectiveness
    table can carry skill relative to them (`relative_skill`, MASE) rather than raw loss.
 
+## What pass 1 shows (and what it does not license)
+
+43 of 46 registry models have rows; the three that do not are named in the table with
+their reason (TimeMoE ran out of a 6 GB laptop GPU, TiRex-2's mLSTM kernels fail on this
+toolchain, VisionTS++ ships weights with no installable package). All numbers are
+zero-shot, one seed, 12 windows per pass, on three daily series.
+
+* **No published checkpoint beats the trivial scaler on point accuracy at these
+  horizons.** On `sp500_long` every model — statistical baseline or foundation model —
+  has MASE above ~4 at h=21 and above ~9 at h=126. MASE normalises by the in-sample mean
+  |Δ| of the training span, so this says: at three-week and half-year horizons on a daily
+  index, the level scale dominates and none of these weights produce point-forecast skill
+  over "tomorrow ≈ today".
+* **Directional accuracy sits at 0.5.** The best cells in the `dir-acc` column are
+  ~0.53–0.59 and many are below 0.5, which is what noise looks like. For a finance
+  benchmark that is the headline result, not a caveat.
+* **What does separate the models is calibration.** On `sp500_long` at h=21 TiRex's
+  nominal 80% band covers 0.81 (close to nominal), Chronos-T5-base's covers 0.74, and
+  ARIMA's covers 0.98 — ARIMA's intervals are simply too wide. At h=126 on
+  `btc_crypto`, coverage collapses for the same models (TiRex 0.27, ARIMA 0.30): long
+  crypto bands from these weights are not usable as stated. A point-only model cannot
+  even be charged with this failure, which is why the `pt` marker matters.
+* **Ranking is not stable across series or horizon.** TiRex and Moirai-1.1-R-base lead on
+  the index; Moirai-2.0-R-small and t0-gamma lead on crypto at h=126. Anyone quoting "X
+  is the best TSFM" from one dataset is quoting noise.
+* **The benchmark found a library bug the compatibility matrix could not.** TiRex's
+  roll-forward path for horizons longer than one vendor output block mixed the batch axis
+  into a 1-D context and raised — at `h ≤ 63` (the matrix grid) that code never ran, so
+  the model "worked". It is now fixed and measurable, and it happens to be the best
+  zero-shot point model on the index. A green `✅` in a capability matrix is evidence the
+  call returned, not that the numbers are right.
+
+What this does **not** license: any statement about a family being better in general
+(12 windows, one seed, three daily series), anything about *adapted* checkpoints (not
+run), or the word "significant" (no variance estimate exists for a forecast row).
+
 ## What is *not* done yet (so nobody reads it in)
 
 * The effectiveness sweep that *has* been run is zero-shot only: 46 registry models ×

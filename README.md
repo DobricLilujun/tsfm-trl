@@ -49,7 +49,17 @@ Two different claims, and the repo keeps them apart:
 | | question | where the answer is |
 |---|---|---|
 | **compatibility** | does this architecture load, forecast, get scored, and have a training/RL path *in this environment* | `COMPATIBILITY.md`, produced by `tsfm-trl doctor` |
-| **effectiveness** | how accurate is it, versus baselines and other families | `tsfm-trl evaluate` / `forecast_eval`, protocol in [`docs/09_benchmark.md`](docs/09_benchmark.md) — **not run repo-wide yet** |
+| **effectiveness** | how accurate is it, versus baselines and other families | `EFFECTIVENESS.md` (site: *Measured effectiveness*) — 43/46 models × 3 series × horizons 21/63/126, zero-shot, one seed; protocol and reading rules in [`docs/09_benchmark.md`](docs/09_benchmark.md) |
+
+The first effectiveness pass is in the repo, and what it says is mostly about what
+these models *cannot* do on finance data: on a daily index no published checkpoint beats
+the trivial scaler on point accuracy at 21- or 126-day horizons, directional accuracy
+sits at chance (~0.5), and the column that actually separates families is interval
+calibration — where a nominal 80% band covers anywhere from 0.27 to 0.98 depending on
+model and horizon. Rankings also move between series, so no single-dataset "best TSFM"
+claim survives. The pass also caught an adapter bug the capability matrix could not see:
+TiRex's roll-forward path crashed for any horizon past one output block, because the
+matrix grid never reached that code.
 
 `COMPATIBILITY.md` is the merged output of one run per machine — an x86_64 laptop
 (RTX 1000 Ada, 6 GB) and an aarch64 DGX Spark (GB10, unified memory) — over all 46

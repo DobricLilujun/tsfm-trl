@@ -162,6 +162,14 @@ parameters and one earned by 0.3 M adapters are different claims.
 | `toto-2-22m` | `rft` | 48 | 21,915,584 (full) | −1.488 → −1.669 | **not improved** |
 | `flowstate-r1` | `reward_descent` | 96 | heads_only at `bs=1 bf16` (ladder) | −1.296 → −1.387 | **not improved** |
 
+Repeated over three seeds on a different machine (x86 node, RTX A6000, same
+protocol — `scripts/reward_seeds.py`): the GRPO row's late-minus-early delta is
++0.071, +0.058, +0.046 (mean **+0.059**, sd 0.013) — 3/3 seeds improved, and the spread
+is small relative to the effect. The negative rows have not been repeated at three seeds
+yet; when they are, that goes in the same table. Everything in this table is still a
+*quartile* comparison inside the run, not out-of-sample skill (see the reading rules
+below).
+
 The Toto row previously read **−2.232 → −1.914, improved**. It no longer does, and the
 reason is worth writing down rather than quietly fixing. Two things moved since that
 number was recorded: the reward's quantile-level grid (when the emitted head has a

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 import statistics
 import subprocess
 import sys
@@ -25,6 +26,9 @@ def main() -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--seeds", default="0,1,2")
     ap.add_argument("--out", default="")
+    ap.add_argument("--fresh", action="store_true",
+                    help="overwrite an existing --out (different configs must not clobber "
+                         "each other's evidence by accident)")
     ap.add_argument("--python", default=sys.executable)
     for flag, kind in (("--steps", int), ("--bs", int), ("--lr", float), ("--ctx", int),
                        ("--horizon", int), ("--max-windows", int), ("--kl", float),
@@ -69,7 +73,18 @@ def main() -> int:
     deltas = [r["reward_late_mean"] - r["reward_early_mean"] for r in runs
               if isinstance(r.get("reward_early_mean"), (int, float))
               and isinstance(r.get("reward_late_mean"), (int, float))]
+    # a reward curve without its configuration is not evidence: the same model+mode
+    # flips sign across learning rates, and two machines writing the same filename
+    # silently overwrite each other's run
+    try:
+        sha = subprocess.run(["git", "-C", str(Path(__file__).resolve().parent.parent),
+                              "rev-parse", "--short", "HEAD"],
+                             capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:                                          # noqa: BLE001
+        sha = "?"
     summary = {"model": a.model, "seeds": len(runs), "runs": runs,
+               "protocol": {"machine": socket.gethostname(), "code_sha": sha,
+                            "python": sys.version.split()[0], "argv": sys.argv[1:]},
                "delta_mean": round(statistics.mean(deltas), 5) if deltas else None,
                "delta_sd": round(statistics.stdev(deltas), 5) if len(deltas) > 1 else None,
                "n_improved": sum(1 for d in deltas if d > 0),
@@ -85,7 +100,13 @@ def main() -> int:
         summary["verdict"] = "no seed produced reward quartile means (see reasons)"
         print(summary["verdict"])
     if a.out:
-        Path(a.out).write_text(json.dumps(summary, indent=1, default=float))
+        p = Path(a.out)
+        if p.exists() and not a.fresh:
+            raise SystemExit(f"{p} already exists — pass --fresh or choose another "
+                             f"--out; different configurations must not overwrite "
+                             f"each other's evidence")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(summary, indent=1, default=float))
         print(f"wrote {a.out}")
     return 0
 

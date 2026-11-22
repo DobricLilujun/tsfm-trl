@@ -1,6 +1,6 @@
 # Effectiveness benchmark
 
-Generated 2026-11-22 18:04:53 from `reports/effectiveness_watson.jsonl` — 372 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
+Generated 2026-11-22 18:29:54 from `reports/effectiveness_watson.jsonl` — 381 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
 
 Rows are **zero-shot** (no adaptation) and slide windows over the span(s) named above — for zero-shot rows the whole series is legitimate because the model saw no training data; an *adapted* checkpoint must be scored with `--spans test`, or the comparison leaks. Same horizon grid, same window count, same seed for every model. Rows carry the **registry key the sweep requested** (adapters may report a family-level key internally). `ctx` is the context actually used (an oversized one is clamped to the span, which is recorded, not hidden). **CRPS/WQL/pinball appear only for models that emit quantiles**; a point-only model gets point metrics and is marked `pt` — a probabilistic column with a dash is not a zero. `skill` is `1 − MASE` (MASE normalises by the in-sample mean |Δ| of the train span), so MASE is the column to read and a negative skill means the model lost to that trivial scaler on this series. `cov@80` is empirical coverage of the nominal 80% band (`nominal_80` in the JSON rows carries the nominal value the model actually claims, which is not always exactly 0.8 for models with their own quantile grid).
 
@@ -12,6 +12,7 @@ Every model runs in the venv its registry env names; a device column is there be
 |---|---|---|
 | `(unknown)` | ? | `timesfm-2.5-200m` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-kronos/bin/python` | ? | `kronos-small` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ? | `timemoe-50m` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-tirex/bin/python` | ? | `tirex` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-vendor/bin/python` | ? | `aurora`, `hirondel-7m`, `kairos-10m`, `kairos-50m`, `t0-alpha`, `t0-beta`, `t0-gamma`, `timestral-123m`, `timestral-209m`, `timestral-28m`, `timestral-5m`, `yug` |
 | `envs/core/bin/python` | ? | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `patchtst-fm-r2`, `seasonal_naive`, `theta`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
@@ -58,6 +59,7 @@ Every model runs in the venv its registry env names; a device column is there be
 | toto-open-1.0 | 256 | 12 | 3.48 | 0.0244 | 0.0163 | 0.513 | -0.0963 | -2.48 | 0.0127 | 1.45 | 0.00635 | 0.683 |
 | seasonal_naive | 256 | 12 | 3.5 | 0.0257 | 0.0164 | 0.492 | 0.0361 | -2.5 | — · pt | — | — | — |
 | t0-gamma | 256 | 12 | 3.69 | 0.0276 | 0.0172 | 0.483 | -0.124 | -2.69 | 0.014 | 1.61 | 0.007 | 0.679 |
+| timemoe-50m | 256 | 12 | 3.73 | 0.0262 | 0.0174 | 0.492 | 0.139 | -2.73 | 0.0145 | 1.65 | 0.00724 | 0.921 |
 | moirai-1.1-R-small | 256 | 12 | 3.78 | 0.0273 | 0.0177 | 0.504 | 0.00121 | -2.78 | 0.0139 | 1.59 | 0.00696 | 0.77 |
 | timesfm-2.0-500m | 256 | 12 | 3.92 | 0.0246 | 0.0183 | 0.529 | 0.172 | -2.92 | 0.0145 | 1.72 | 0.00726 | 0.456 |
 | moving_average | 256 | 12 | 4.46 | 0.0309 | 0.0208 | 0 | — | -3.46 | — · pt | — | — | — |
@@ -71,7 +73,6 @@ Every model runs in the venv its registry env names; a device column is there be
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## audusd · all · horizon 63
@@ -114,6 +115,7 @@ _attempted on this series, not scored:_
 | t0-alpha | 256 | 12 | 5.02 | 0.0325 | 0.0234 | 0.495 | -0.198 | -4.02 | 0.0181 | 6.08 | 0.00904 | 0.692 |
 | yug | 256 | 12 | 5.07 | 0.0307 | 0.0237 | 0.462 | -0.0949 | -4.07 | 0.0193 | 6.63 | 0.00964 | 0.647 |
 | kronos-small | 256 | 12 | 5.29 | 0.0337 | 0.0247 | 0.511 | -0.102 | -4.29 | 0.023 | 8.44 | 0.0115 | 0.239 |
+| timemoe-50m | 256 | 12 | 5.32 | 0.0337 | 0.0249 | 0.528 | -0.0567 | -4.32 | 0.0211 | 7.16 | 0.0105 | 0.687 |
 | kronos-mini | 256 | 12 | 5.87 | 0.0359 | 0.0274 | 0.524 | -0.0142 | -4.87 | 0.0225 | 7.8 | 0.0113 | 0.504 |
 | kronos-base | 256 | 12 | 6.07 | 0.0372 | 0.0284 | 0.515 | 0.0353 | -5.07 | 0.0269 | 9.94 | 0.0134 | 0.112 |
 | moment-1-large | 256 | 12 | 6.7 | 0.0408 | 0.0313 | 0.508 | -0.009 | -5.7 | — · pt | — | — | — |
@@ -123,7 +125,6 @@ _attempted on this series, not scored:_
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## audusd · all · horizon 126
@@ -170,12 +171,12 @@ _attempted on this series, not scored:_
 | kronos-mini | 256 | 12 | 8.69 | 0.0556 | 0.0406 | 0.495 | 0.0478 | -7.69 | 0.0343 | 23.6 | 0.0171 | 0.464 |
 | theta | 256 | 12 | 9.7 | 0.077 | 0.0453 | 0.483 | -0.378 | -8.7 | — · pt | — | — | — |
 | toto-open-1.0 | 256 | 12 | 12 | 0.356 | 0.0559 | 0.499 | 0.0214 | -11 | 0.0254 | 17 | 0.0127 | 0.758 |
+| timemoe-50m | 256 | 12 | 13.8 | 0.185 | 0.0646 | 0.511 | -0.111 | -12.8 | 0.0265 | 18.3 | 0.0132 | 0.706 |
 | ttm-r2 | 256 | 12 | 36.8 | 0.208 | 0.172 | 0.509 | -0.00524 | -35.8 | — · pt | — | — | — |
 | ttm-r3 | 256 | 12 | 79.5 | 0.398 | 0.371 | 0.499 | 0.00378 | -78.5 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## btc_crypto · all · horizon 21
@@ -216,6 +217,7 @@ _attempted on this series, not scored:_
 | toto-open-1.0 | 256 | 12 | 3.99 | 9.22e+03 | 4.97e+03 | 0.517 | -0.0826 | -2.99 | 3.55e+03 | 4.06e+05 | 1.78e+03 | 0.865 |
 | aurora | 256 | 12 | 4.5 | 6.91e+03 | 5.6e+03 | 0.5 | -0.219 | -3.5 | 4.59e+03 | 5.31e+05 | 2.3e+03 | 0.397 |
 | kairos-10m | 256 | 12 | 4.68 | 6.8e+03 | 5.83e+03 | 0.463 | -0.14 | -3.68 | 4.36e+03 | 4.89e+05 | 2.18e+03 | 0.968 |
+| timemoe-50m | 256 | 12 | 4.84 | 8.84e+03 | 6.03e+03 | 0.492 | -0.00639 | -3.84 | 8.2e+03 | 9.09e+05 | 4.1e+03 | 0.901 |
 | moving_average | 256 | 12 | 4.97 | 7.98e+03 | 6.19e+03 | 0 | — | -3.97 | — · pt | — | — | — |
 | timesfm-2.0-500m | 256 | 12 | 5.55 | 8.28e+03 | 6.92e+03 | 0.475 | 0.102 | -4.55 | 5.4e+03 | 6.17e+05 | 2.7e+03 | 0.333 |
 | moment-1-large | 256 | 12 | 13.4 | 1.86e+04 | 1.67e+04 | 0.458 | 0.0485 | -12.4 | — · pt | — | — | — |
@@ -224,7 +226,6 @@ _attempted on this series, not scored:_
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## btc_crypto · all · horizon 63
@@ -267,13 +268,13 @@ _attempted on this series, not scored:_
 | ttm-r2 | 256 | 12 | 8.41 | 1.42e+04 | 1.05e+04 | 0.5 | -0.0983 | -7.41 | — · pt | — | — | — |
 | sundial-base-128m | 256 | 12 | 9.01 | 1.49e+04 | 1.12e+04 | 0.491 | -0.0212 | -8.01 | 9.72e+03 | 3.47e+06 | 4.86e+03 | 0.317 |
 | timesfm-2.0-500m | 256 | 12 | 9.29 | 1.54e+04 | 1.16e+04 | 0.476 | -0.105 | -8.29 | 9.66e+03 | 3.37e+06 | 4.83e+03 | 0.344 |
+| timemoe-50m | 256 | 12 | 12.4 | 2.17e+04 | 1.55e+04 | 0.503 | -0.0934 | -11.4 | 1.33e+04 | 4.51e+06 | 6.64e+03 | 0.624 |
 | moment-1-large | 256 | 12 | 14.9 | 2.11e+04 | 1.85e+04 | 0.487 | 0.00349 | -13.9 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 15 | 2.14e+04 | 1.87e+04 | 0.509 | -0.0603 | -14 | — · pt | — | — | — |
 | ttm-r3 | 256 | 12 | 37.9 | 5.19e+04 | 4.72e+04 | 0.513 | 0.0793 | -36.9 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## btc_crypto · all · horizon 126
@@ -317,12 +318,12 @@ _attempted on this series, not scored:_
 | timesfm-3.0 | 256 | 6 | 12.8 | 2.02e+04 | 1.6e+04 | 0.508 | 0.139 | -11.8 | 1.3e+04 | 4.44e+06 | 6.48e+03 | 0.583 |
 | moment-1-large | 256 | 6 | 17.3 | 2.4e+04 | 2.15e+04 | 0.484 | 0.0391 | -16.3 | — · pt | — | — | — |
 | moment-1-small | 256 | 6 | 17.3 | 2.41e+04 | 2.16e+04 | 0.539 | 0.00534 | -16.3 | — · pt | — | — | — |
+| timemoe-50m | 256 | 6 | 18.5 | 2.89e+04 | 2.31e+04 | 0.523 | 0.203 | -17.5 | 1.69e+04 | 5.75e+06 | 8.44e+03 | 0.446 |
 | ttm-r3 | 256 | 6 | 36.7 | 5.04e+04 | 4.57e+04 | 0.504 | 0.0388 | -35.7 | — · pt | — | — | — |
 | toto-open-1.0 | 256 | 6 | 50.1 | 1.25e+06 | 6.24e+04 | 0.521 | 0.141 | -49.1 | 1.18e+04 | 4.1e+06 | 5.92e+03 | 0.709 |
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## sp500_long · all · horizon 21
@@ -361,6 +362,7 @@ _attempted on this series, not scored:_
 | flowstate-r1 | 256 | 12 | 5.38 | 96.9 | 60.1 | 0.463 | -0.199 | -4.38 | 48.6 | 5.59e+03 | 24.3 | 0.567 |
 | patchtst-fm-r2 | 256 | 12 | 5.45 | 108 | 60.9 | 0.512 | 0.133 | -4.45 | — · pt | — | — | — |
 | chronos-bolt-small | 256 | 12 | 5.55 | 99.7 | 62 | 0.483 | -0.064 | -4.55 | 47.2 | 5.24e+03 | 23.6 | 0.746 |
+| timemoe-50m | 256 | 12 | 5.61 | 89.8 | 62.7 | 0.471 | -0.158 | -4.61 | 108 | 1.19e+04 | 54.1 | 0.71 |
 | aurora | 256 | 12 | 5.64 | 84.5 | 63.1 | 0.458 | -0.0665 | -4.64 | 53.3 | 6.26e+03 | 26.7 | 0.468 |
 | toto-open-1.0 | 256 | 12 | 5.71 | 115 | 63.8 | 0.504 | -0.0092 | -4.71 | 45.2 | 5.02e+03 | 22.6 | 0.77 |
 | ttm-r2 | 256 | 12 | 6.08 | 104 | 67.9 | 0.458 | -0.129 | -5.08 | — · pt | — | — | — |
@@ -375,7 +377,6 @@ _attempted on this series, not scored:_
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## sp500_long · all · horizon 63
@@ -422,13 +423,13 @@ _attempted on this series, not scored:_
 | kronos-base | 256 | 12 | 20.5 | 353 | 229 | 0.496 | -0.0423 | -19.5 | 217 | 8.03e+04 | 108 | 0.0688 |
 | moment-1-large | 256 | 12 | 22.7 | 384 | 254 | 0.5 | 0.0348 | -21.7 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 23.1 | 391 | 258 | 0.504 | 0.0346 | -22.1 | — · pt | — | — | — |
+| timemoe-50m | 256 | 12 | 23.9 | 475 | 267 | 0.493 | -0.0879 | -22.9 | 181 | 6.13e+04 | 90.6 | 0.577 |
 | ttm-r2 | 256 | 12 | 26.2 | 432 | 293 | 0.464 | -0.142 | -25.2 | — · pt | — | — | — |
 | kronos-mini | 256 | 12 | 29.5 | 508 | 330 | 0.52 | -0.203 | -28.5 | 299 | 1.06e+05 | 149 | 0.213 |
 | ttm-r3 | 256 | 12 | 130 | 1.81e+03 | 1.45e+03 | 0.517 | 0.0808 | -129 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## sp500_long · all · horizon 126
@@ -475,18 +476,17 @@ _attempted on this series, not scored:_
 | moment-1-large | 256 | 12 | 19.7 | 272 | 220 | 0.493 | 0.0996 | -18.7 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 20 | 276 | 223 | 0.5 | -0.0432 | -19 | — · pt | — | — | — |
 | toto-open-1.0 | 256 | 12 | 22 | 571 | 246 | 0.497 | -0.119 | -21 | 128 | 8.72e+04 | 64.1 | 0.737 |
+| timemoe-50m | 256 | 12 | 23 | 366 | 257 | 0.496 | 0.000969 | -22 | 176 | 1.2e+05 | 87.9 | 0.431 |
 | kronos-mini | 256 | 12 | 29.7 | 389 | 331 | 0.491 | -0.0316 | -28.7 | 311 | 2.24e+05 | 155 | 0.0992 |
 | ttm-r2 | 256 | 12 | 49.8 | 726 | 557 | 0.458 | -0.48 | -48.8 | — · pt | — | — | — |
 | ttm-r3 | 256 | 12 | 119 | 1.43e+03 | 1.33e+03 | 0.497 | 0.455 | -118 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
-- `timemoe-50m`: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 9153
 - `tirex-2`: RuntimeError: Errors during CUDA kernel calls forward.
 
 ## Failed or incomplete rows
 
-- **timemoe-50m**: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.12 GiB. GPU 0 has a total capacity of 5.64 GiB of which 1.07 GiB is free. Process 915373 has 163.04 MiB memory in use. Process 2601750 has 710.00 MiB memory in use. Including non-PyTorch memory, this process has 3.67 GiB memory in use. 
 - **tirex-2**: RuntimeError: Errors during CUDA kernel calls forward.
 - **visiontspp-base**: tsfm_trl.errors.UnavailableError: visiontspp-base: UnavailableError: visiontspp-base: VisionTS++ needs the upstream package (the Hub repo ships .ckpt weights only): No module named 'visiontspp'  [install: git clone the VisionTS/VisionTS++ upstream, then weights=/path/to/visiontspp_base.ckpt. clone i
 
