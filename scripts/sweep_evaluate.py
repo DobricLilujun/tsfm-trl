@@ -133,6 +133,11 @@ def sweep(args) -> int:
             fh.flush()
             skipped += 1
             continue
+        py_abs = str(Path(py).expanduser().resolve())
+        if py_abs != py:
+            # provenance has to name the interpreter that ran, not one that happens to
+            # share the name here
+            py = py_abs
         tt = torch_of(py)
         if args.device.startswith("cuda") and not tt.get("cuda"):
             print(f"  NOTE {k}: --device cuda requested, but env '{spec.env}' "
@@ -236,7 +241,7 @@ def report(args) -> int:
         if py in seen:
             return seen[py]
         out = {"torch": "?", "cuda": False}
-        if py and Path(py).exists():
+        if py and Path(py).is_absolute() and Path(py).exists():
             try:
                 r = subprocess.run([py, "-c", probe_cmd], capture_output=True,
                                    text=True, timeout=120)
@@ -280,15 +285,20 @@ def report(args) -> int:
            "80% band (`nominal_80` in the JSON rows carries the nominal value the model "
            "actually claims, which is not always exactly 0.8 for models with their own "
            "quantile grid).", ""]
+    def tcell(t: dict) -> str:
+        if t.get("torch") in (None, "?"):
+            return "not probed"
+        return f"{t.get('torch')} ({'cuda' if t.get('cuda') else 'CPU-only'})"
+
     if prov:
         out += ["## Which interpreter produced which row", "",
                 "Every model runs in the venv its registry env names; a device column is "
                 "there because CPU-versus-GPU changes the numbers. `?` means the field "
-                "was not recorded by that run and the interpreter is not on this machine "
-                "to re-probe — treat those rows as provenance-incomplete.", "",
+                "was not recorded by that run, or the interpreter path is relative to a "
+                "different machine and cannot be probed from here ('not probed') — treat "
+                "those rows as provenance-incomplete.", "",
                 "| interpreter | device | torch (cuda?) | models |", "|---|---|---|---|"] + [
-            f"| `{k}` | {v['device']} | {v['torch'].get('torch')} "
-            f"({'cuda' if v['torch'].get('cuda') else 'no cuda'}) | "
+            f"| `{k}` | {v['device']} | {tcell(v['torch'])} | "
             f"{', '.join(f'`{m}`' for m in sorted(v['models']))} |"
             for k, v in sorted(prov.items())] + [""]
     spans = sorted({r.get("span", "test") for r in rows})
