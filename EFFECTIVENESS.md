@@ -1,6 +1,6 @@
 # Effectiveness benchmark
 
-Generated 2026-11-22 18:44:19 from `reports/effectiveness_watson.jsonl` — 381 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
+Generated 2026-11-22 19:26:57 from `reports/effectiveness_watson.jsonl` — 384 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
 
 Rows are **zero-shot** (no adaptation) and slide windows over the span(s) named above — for zero-shot rows the whole series is legitimate because the model saw no training data; an *adapted* checkpoint must be scored with `--spans test`, or the comparison leaks. Same horizon grid, same window count, same seed for every model. Rows carry the **registry key the sweep requested** (adapters may report a family-level key internally). `ctx` is the context actually used (an oversized one is clamped to the span, which is recorded, not hidden). **CRPS/WQL/pinball appear only for models that emit quantiles**; a point-only model gets point metrics and is marked `pt` — a probabilistic column with a dash is not a zero. `skill` is `1 − MASE` (MASE normalises by the in-sample mean |Δ| of the train span), so MASE is the column to read and a negative skill means the model lost to that trivial scaler on this series. `cov@80` is empirical coverage of the nominal 80% band (`nominal_80` in the JSON rows carries the nominal value the model actually claims, which is not always exactly 0.8 for models with their own quantile grid).
 
@@ -8,20 +8,20 @@ Rows are **zero-shot** (no adaptation) and slide windows over the span(s) named 
 
 Every model runs in the venv its registry env names; a device column is there because CPU-versus-GPU changes the numbers. `?` means the field was not recorded by that run, or the interpreter path is relative to a different machine and cannot be probed from here ('not probed') — treat those rows as provenance-incomplete.
 
-| interpreter | device | torch (cuda?) | models |
-|---|---|---|---|
-| `(env core: no interpreter recorded by that run)` | ? | not probed | `timesfm-2.5-200m` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-kronos/bin/python` | ? | 2.5.1+cu124 (cuda) | `kronos-small` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ? | 2.5.1+cu124 (cuda) | `timemoe-50m` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-tirex/bin/python` | ? | 2.15.0+cu132 (cuda) | `tirex` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-vendor/bin/python` | ? | 2.15.0+cu132 (cuda) | `aurora`, `hirondel-7m`, `kairos-10m`, `kairos-50m`, `t0-alpha`, `t0-beta`, `t0-gamma`, `timestral-123m`, `timestral-209m`, `timestral-28m`, `timestral-5m`, `yug` |
-| `envs/core/bin/python` | ? | not probed | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `patchtst-fm-r2`, `seasonal_naive`, `theta`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
-| `envs/kronos/bin/python` | ? | not probed | `kronos-base`, `kronos-mini` |
-| `envs/moirai/bin/python` | ? | not probed | `moirai-1.1-R-base`, `moirai-1.1-R-small`, `moirai-2.0-R-small`, `moirai-moe-1.0-R-base` |
-| `envs/moment/bin/python` | ? | not probed | `moment-1-large`, `moment-1-small` |
-| `envs/sundial/bin/python` | ? | not probed | `sundial-base-128m` |
-| `envs/timesfm20/bin/python` | ? | not probed | `timesfm-2.0-500m` |
-| `envs/toto/bin/python` | ? | not probed | `toto-2-22m`, `toto-2-313m`, `toto-open-1.0` |
+| interpreter | machine | device | torch (cuda?) | models |
+|---|---|---|---|---|
+| `(interpreter not recorded by that run)` | ? | ? | not probed | `patchtst-fm-r2`, `timesfm-2.5-200m` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-kronos/bin/python` | ? | ? | 2.5.1+cu124 (cuda) | `kronos-small` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ubadmin-Precision-3591 | ? | 2.5.1+cu124 (cuda) | `timemoe-50m` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-tirex/bin/python` | ? | ? | 2.15.0+cu132 (cuda) | `tirex` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-vendor/bin/python` | ? | ? | 2.15.0+cu132 (cuda) | `aurora`, `hirondel-7m`, `kairos-10m`, `kairos-50m`, `t0-alpha`, `t0-beta`, `t0-gamma`, `timestral-123m`, `timestral-209m`, `timestral-28m`, `timestral-5m`, `yug` |
+| `envs/core/bin/python` | ? | ? | not probed | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `patchtst-fm-r2`, `seasonal_naive`, `theta`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
+| `envs/kronos/bin/python` | ? | ? | not probed | `kronos-base`, `kronos-mini` |
+| `envs/moirai/bin/python` | ? | ? | not probed | `moirai-1.1-R-base`, `moirai-1.1-R-small`, `moirai-2.0-R-small`, `moirai-moe-1.0-R-base` |
+| `envs/moment/bin/python` | ? | ? | not probed | `moment-1-large`, `moment-1-small` |
+| `envs/sundial/bin/python` | ? | ? | not probed | `sundial-base-128m` |
+| `envs/timesfm20/bin/python` | ? | ? | not probed | `timesfm-2.0-500m` |
+| `envs/toto/bin/python` | ? | ? | not probed | `toto-2-22m`, `toto-2-313m`, `toto-open-1.0` |
 
 ## audusd · all · horizon 21
 
@@ -214,6 +214,7 @@ _attempted on this series, not scored:_
 | chronos-bolt-base | 256 | 12 | 3.67 | 6.4e+03 | 4.57e+03 | 0.538 | -0.085 | -2.67 | 3.68e+03 | 4.18e+05 | 1.84e+03 | 0.825 |
 | timesfm-3.0 | 256 | 12 | 3.72 | 5.77e+03 | 4.63e+03 | 0.487 | 0.0324 | -2.72 | 3.5e+03 | 3.92e+05 | 1.75e+03 | 0.893 |
 | seasonal_naive | 256 | 12 | 3.86 | 6.24e+03 | 4.8e+03 | 0.487 | -0.0654 | -2.86 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 3.97 | 6.17e+03 | 4.94e+03 | 0.504 | 0.163 | -2.97 | — · pt | — | — | — |
 | toto-open-1.0 | 256 | 12 | 3.99 | 9.22e+03 | 4.97e+03 | 0.517 | -0.0826 | -2.99 | 3.55e+03 | 4.06e+05 | 1.78e+03 | 0.865 |
 | aurora | 256 | 12 | 4.5 | 6.91e+03 | 5.6e+03 | 0.5 | -0.219 | -3.5 | 4.59e+03 | 5.31e+05 | 2.3e+03 | 0.397 |
 | kairos-10m | 256 | 12 | 4.68 | 6.8e+03 | 5.83e+03 | 0.463 | -0.14 | -3.68 | 4.36e+03 | 4.89e+05 | 2.18e+03 | 0.968 |
@@ -256,6 +257,7 @@ _attempted on this series, not scored:_
 | tirex | 256 | 12 | 6.7 | 1.13e+04 | 8.34e+03 | 0.489 | -0.0525 | -5.7 | 7.5e+03 | 2.71e+06 | 3.75e+03 | 0.495 |
 | chronos-bolt-small | 256 | 12 | 6.7 | 1.16e+04 | 8.35e+03 | 0.505 | -0.0534 | -5.7 | 6.93e+03 | 2.42e+06 | 3.47e+03 | 0.803 |
 | yug | 256 | 12 | 7 | 1.18e+04 | 8.71e+03 | 0.501 | -0.0265 | -6 | 7.24e+03 | 2.53e+06 | 3.62e+03 | 0.747 |
+| patchtst-fm-r2 | 256 | 12 | 7.01 | 1.29e+04 | 8.74e+03 | 0.517 | -0.0694 | -6.01 | — · pt | — | — | — |
 | theta | 256 | 12 | 7.02 | 1.21e+04 | 8.75e+03 | 0.493 | -0.0563 | -6.02 | — · pt | — | — | — |
 | kairos-10m | 256 | 12 | 7.11 | 1.27e+04 | 8.85e+03 | 0.497 | 0.0344 | -6.11 | 7.89e+03 | 2.8e+06 | 3.95e+03 | 0.802 |
 | flowstate-r1 | 256 | 12 | 7.18 | 1.31e+04 | 8.95e+03 | 0.504 | 0.0718 | -6.18 | 8.03e+03 | 2.91e+06 | 4.02e+03 | 0.406 |
@@ -312,6 +314,7 @@ _attempted on this series, not scored:_
 | yug | 256 | 6 | 11.8 | 1.84e+04 | 1.47e+04 | 0.503 | 0.295 | -10.8 | 1.24e+04 | 4.33e+06 | 6.21e+03 | 0.538 |
 | ttm-r2 | 256 | 6 | 11.8 | 2.08e+04 | 1.47e+04 | 0.513 | -0.000571 | -10.8 | — · pt | — | — | — |
 | timesfm-2.5-200m | 256 | 6 | 12 | 1.9e+04 | 1.49e+04 | 0.491 | 0.151 | -11 | 1.16e+04 | 3.96e+06 | 5.82e+03 | 0.677 |
+| patchtst-fm-r2 | 256 | 6 | 12.2 | 1.91e+04 | 1.52e+04 | 0.491 | -0.0305 | -11.2 | — · pt | — | — | — |
 | t0-alpha | 256 | 6 | 12.5 | 2.04e+04 | 1.55e+04 | 0.495 | 0.16 | -11.5 | 1.31e+04 | 4.56e+06 | 6.54e+03 | 0.526 |
 | sundial-base-128m | 256 | 6 | 12.5 | 1.97e+04 | 1.56e+04 | 0.504 | 0.285 | -11.5 | 1.36e+04 | 4.83e+06 | 6.78e+03 | 0.304 |
 | moirai-1.1-R-small | 256 | 6 | 12.6 | 2.06e+04 | 1.57e+04 | 0.505 | 0.027 | -11.6 | 1.3e+04 | 4.48e+06 | 6.48e+03 | 0.591 |
@@ -487,6 +490,6 @@ _attempted on this series, not scored:_
 
 ## Failed or incomplete rows
 
-- **tirex-2**: RuntimeError: Errors during CUDA kernel calls forward.
+- **tirex-2**:         matC_k); the native fallback needs a working JIT build and failed too (RuntimeError: Ninja is required to load C++ extensions (pip install ninja to get it))
 - **visiontspp-base**: tsfm_trl.errors.UnavailableError: visiontspp-base: UnavailableError: visiontspp-base: VisionTS++ needs the upstream package (the Hub repo ships .ckpt weights only): No module named 'visiontspp'  [install: git clone the VisionTS/VisionTS++ upstream, then weights=/path/to/visiontspp_base.ckpt. clone i
 

@@ -209,26 +209,44 @@ def report(args) -> int:
     # anywhere, and a stale error-only record must not outlive a newer attempt
     srcs = sorted(raw, key=lambda x: x.stat().st_mtime)
     src = srcs[0]
-    recs = [json.loads(l) for f in srcs for l in f.read_text().splitlines() if l.strip()]
     # one meta block per input file: a merged report says which machine ran what
-    metas = [r["meta"] for r in recs if "meta" in r]
+    metas: list = []
+    by_file = []
+    for f in srcs:
+        file_recs = [json.loads(l) for l in f.read_text().splitlines() if l.strip()]
+        fm = next((r["meta"] for r in file_recs if "meta" in r), {})
+        metas.append(fm)
+        by_file.append((fm, [r for r in file_recs if "meta" not in r]))
     meta = metas[0] if metas else {}
-    recs = [r for r in recs if "meta" not in r]
-    # one record per model across all inputs: a row set beats an error, later beats earlier
-    best: dict = {}
-    for r in recs:
-        cur = best.get(r["model"])
-        if cur is None or bool(r.get("rows")) >= bool(cur.get("rows")):
-            best[r["model"]] = r
-    recs = [best[k] for k in sorted(best)]
-    # label rows by the registry key the sweep asked for: several adapters report a
-    # family-level key internally (two Chronos sizes both say "chronos-t5"), which would
-    # otherwise merge different models into one indistinguishable row
-    rows = []
-    for rec in recs:
-        for r in rec["rows"]:
-            r["model_key"] = rec["model"]
-            rows.append(r)
+
+    # Merge at (model, series, span, horizon), not per model. The normal multi-machine
+    # case is partial: one machine scored a model on two series, another on the third, a
+    # third only produced an error. Merging whole records silently deletes real rows, so
+    # later files (by mtime) win *per cell* and each row carries the provenance of the
+    # run that produced it.
+    cells: dict = {}
+    err_by_model: dict = {}
+    series_err_by_model: dict = {}
+    rec_by_model: dict = {}
+    for fm, file_recs in by_file:
+        for rec in file_recs:
+            model = rec["model"]
+            prov = {"interpreter": rec.get("interpreter") or "",
+                    "device": rec.get("device") or "?", "torch": rec.get("torch"),
+                    "machine": fm.get("machine", "?"), "code_sha": fm.get("code_sha"),
+                    "started": fm.get("started")}
+            for r in rec.get("rows", []):
+                r["model_key"] = model          # registry key, not the adapter's family key
+                r["_prov"] = prov
+                cells[(model, r["series"], r.get("span", "test"), int(r["horizon"]))] = r
+            if rec.get("error"):
+                err_by_model.setdefault(model, rec["error"])
+            series_err_by_model.setdefault(model, {}).update(rec.get("series_errors", {}))
+            cur = rec_by_model.get(model)
+            if cur is None or bool(rec.get("rows")) >= bool(cur.get("rows")):
+                rec_by_model[model] = rec
+    recs = [rec_by_model[k] for k in sorted(rec_by_model)]
+    rows = list(cells.values())
     # which venv and which device produced each row: the same model measured in another
     # interpreter or on another device is a different experiment
     # older merged runs did not stamp their torch build; if that interpreter is on this
@@ -253,15 +271,21 @@ def report(args) -> int:
         return out
 
     prov: dict = {}
-    for rec in recs:
-        if rec.get("rows"):
-            k = rec.get("interpreter") or ("(env %s: no interpreter recorded by that "
-                                          "run)" % rec.get("env", "?"))
-            prov.setdefault(k, {"device": rec.get("device", "?"),
-                                "torch": rec.get("torch") or torch_of(k),
-                                "models": []})
-            prov[k]["models"].append(rec["model"])
-    failed = {rec["model"]: rec["error"] for rec in recs if rec["error"] and not rec["rows"]}
+    for r in rows:
+        pr = r.get("_prov") or {}
+        k = pr.get("interpreter") or "(interpreter not recorded by that run)"
+        # the group key includes machine/device: the same interpreter producing rows on
+        # two machines, or on cpu in one run and cuda in another, is two provenance rows
+        key = (k, pr.get("machine", "?"), pr.get("device", "?"))
+        prov.setdefault(key, {"device": pr.get("device", "?"),
+                              "torch": pr.get("torch")
+                              or (torch_of(k) if k.startswith("/") else {"torch": "?"}),
+                              "machine": pr.get("machine", "?"), "models": set()})
+        prov[key]["models"].add(r["model_key"])
+    for v in prov.values():
+        v["models"] = sorted(v["models"])
+    have_rows = {r["model_key"] for r in rows}
+    failed = {m: w for m, w in err_by_model.items() if m not in have_rows}
     notrun = [rec["model"] for rec in recs if not rec["rows"] and not rec["error"]]
     series = sorted({r["series"] for r in rows})
     hz = sorted({int(r["horizon"]) for r in rows})
@@ -297,10 +321,11 @@ def report(args) -> int:
                 "was not recorded by that run, or the interpreter path is relative to a "
                 "different machine and cannot be probed from here ('not probed') — treat "
                 "those rows as provenance-incomplete.", "",
-                "| interpreter | device | torch (cuda?) | models |", "|---|---|---|---|"] + [
-            f"| `{k}` | {v['device']} | {tcell(v['torch'])} | "
-            f"{', '.join(f'`{m}`' for m in sorted(v['models']))} |"
-            for k, v in sorted(prov.items())] + [""]
+                "| interpreter | machine | device | torch (cuda?) | models |",
+                "|---|---|---|---|---|"] + [
+            f"| `{k}` | {v['machine']} | {v['device']} | {tcell(v['torch'])} | "
+            f"{', '.join(f'`{m}`' for m in v['models'])} |"
+            for (k, _machine, _device), v in sorted(prov.items())] + [""]
     spans = sorted({r.get("span", "test") for r in rows})
 
     def cell(v):
@@ -329,9 +354,9 @@ def report(args) -> int:
                                f"{cell(r.get('relative_skill'))} | "
                                f"{cell(r.get('crps'))}{pt} | {cell(r.get('wql'))} | "
                                f"{cell(r.get('pinball'))} | {cell(r.get('coverage_80'))} |")
-                gaps = sorted((rec["model"], rec["series_errors"][srs]) for rec in recs
-                              if rec.get("series_errors", {}).get(srs)
-                              and not any(x.get("series") == srs for x in rec.get("rows", [])))
+                scored = {r["model_key"] for r in rows if r["series"] == srs}
+                gaps = sorted((m, errs[srs]) for m, errs in series_err_by_model.items()
+                              if errs.get(srs) and m not in scored)
                 if gaps:
                     out += ["", "_attempted on this series, not scored:_", ""] + [
                         f"- `{m}`: {w[:150]}" for m, w in gaps]

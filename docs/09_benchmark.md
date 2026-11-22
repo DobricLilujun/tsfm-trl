@@ -82,7 +82,9 @@ scripts/sweep_evaluate.py \
     --horizons 21,63,126 --max-windows 12 --spans all \
     --out reports/effectiveness_dgx.jsonl --fresh
 
-# merge several machines/runs; a model that produced rows beats one that only errored
+# merge several machines/runs; merging is per (model, series, span, horizon), so partial
+coverage from different machines unions instead of overwriting, and every row keeps the
+machine/interpreter/torch stamp of the run that produced it
 scripts/sweep_evaluate.py --report reports/effectiveness_dgx.jsonl,\
 reports/effectiveness_watson.jsonl,reports/effectiveness_laptop_vendor.jsonl \
     --md EFFECTIVENESS.md
