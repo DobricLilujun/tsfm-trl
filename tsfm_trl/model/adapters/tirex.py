@@ -96,20 +96,31 @@ class TiRex(TSFMModel):
         return int(np.argmin(np.abs(np.asarray(lv) - 0.5)))
 
     def predict(self, contexts, horizon, *, panels=None, future=None) -> Pred:
+        """Roll the vendor's single output block forward to the requested horizon.
+
+        The median column is fed back as the point path — the position in the returned
+        quantile axis is the median, not `levels`, because the vendor's grid can be
+        wider than the levels we report. Per-item paths live in a list of 1-D arrays:
+        slicing the batch axis out of `q0` (as an earlier version did) mixed a (B, H)
+        array into a 1-D context and raised for every horizon past one block, which is
+        why a compatibility pass at h <= 64 never reached this code.
+        """
         cs = self.trim(contexts)
         q0, _ = self._raw(cs, horizon)
-        step = q0.shape[1]
-        qs = [q0]
-        pts = [q0[:, :, self._median_index(self.levels)]]
+        step = int(q0.shape[1])
+        qs = [q0[:, : min(step, horizon), :]]
+        med0 = q0.shape[-1] // 2                      # positional median of the vendor grid
+        paths = [q0[i, :step, med0].copy() for i in range(q0.shape[0])]
         while step < horizon:
-            grown = [np.concatenate([c, p[: min(step, horizon)]])[-self.max_context:]
-                     for c, p in zip(cs, pts)]
+            grown = [np.concatenate([c, p[:step]])[-self.max_context:]
+                     for c, p in zip(cs, paths)]
             q, _ = self._raw(grown, horizon)
-            qs.append(q)
-            med = self._median_index(self.levels)
-            pts = [np.concatenate([p, (qq[:, :, med] if qq.ndim == 2
-                                       else qq[:, :, med])]) for p, qq in zip(pts, qs)]
-            step += q.shape[1]
+            take = min(int(q.shape[1]), horizon - step)
+            med = q.shape[-1] // 2
+            qs.append(q[:, :take, :])
+            for i, pth in enumerate(paths):
+                paths[i] = np.concatenate([pth, q[i, :take, med]])
+            step += take
         full = np.concatenate(qs, axis=1)[:, :horizon, :]
         nq = full.shape[-1]
         lv = self.levels if len(self.levels) == nq else list(np.linspace(0.001, 0.999, nq))

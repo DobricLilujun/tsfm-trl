@@ -53,6 +53,14 @@ def forecast_eval(model, dataset, *, horizons=(21,), spans=("test",), ctx: int |
             # the target column (the panel frame stores open/high/low/volume only, and a
             # raw slice is missing exactly the column panel models ask for).
             want_panel = ds.panel is not None and "panel_in" in set(getattr(model, "caps", ()))
+            if "panel_in" in set(getattr(model, "caps", ())) and ds.panel is None:
+                # a covariate-fed model cannot be scored on a one-column series; say so
+                # as a dataset limitation instead of letting the vendor error stand
+                raise DataError(
+                    f"{getattr(model, 'key', '?')} consumes a covariate panel, and "
+                    f"'{ds.name}' has only the target column: score it on a series with "
+                    f"OHLCV covariates (this is a dataset-coverage gap, not a model "
+                    f"failure)")
             w = windows(y_span, h, eff_ctx, stride=stride or h, max_windows=max_windows,
                         seed=seed, with_offsets=want_panel)
             if not w:

@@ -17,6 +17,7 @@ Model names are keys from ``tsfm_trl/models.yaml``; ``--weights`` overrides.
 from __future__ import annotations
 
 import argparse
+import sys
 import json
 from pathlib import Path
 

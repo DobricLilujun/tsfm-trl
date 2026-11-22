@@ -22,3 +22,4 @@ site/
 docs/matrix.md
 .venv-docs/
 envs/local.json
+docs/effectiveness.md

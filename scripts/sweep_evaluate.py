@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -60,6 +61,28 @@ def sweep(args) -> int:
                 continue
     fh = out.open("a" if not args.fresh else "w")
     series = [os.path.expanduser(s) for s in args.series]
+
+    def _sha() -> str:
+        try:
+            return subprocess.run(["git", "-C", str(Path(__file__).resolve().parent.parent),
+                                   "rev-parse", "--short", "HEAD"],
+                                  capture_output=True, text=True, timeout=10).stdout.strip()
+        except Exception:                                      # noqa: BLE001
+            return "?"
+
+    # A published table has to say which machine and which code produced each row;
+    # without this line the same model measured in two venvs is one indistinguishable
+    # number. Written once, as the first record of the file.
+    if fh.tell() == 0:
+        fh.write(json.dumps({"meta": {
+            "started": time.strftime("%Y-%m-%d %H:%M:%S"), "machine": socket.gethostname(),
+            "code_sha": _sha(), "python": sys.version.split()[0],
+            "series": [os.path.basename(x) for x in series],
+            "horizons": [int(h) for h in args.horizons.split(",")],
+            "spans": args.spans, "max_windows": int(args.max_windows),
+            "ctx": int(args.ctx), "batch": int(args.batch), "seed": int(args.seed),
+            "device": args.device}}, default=float) + "\n")
+        fh.flush()
     n_ok = n_bad = skipped = 0
     for k in keys:
         if k in done:
@@ -85,6 +108,9 @@ def sweep(args) -> int:
         tmp = Path(f"/tmp/eval_{k}_{os.getpid()}.json")
         rows = []
         err = ""
+        # per-series reasons: a model scored on two of three series must explain the
+        # empty third table, or a partial sweep reads as a complete one
+        series_err: dict[str, str] = {}
         # one subprocess per (model, series): SeriesDataset is single-series, and a
         # per-series pass keeps a partial sweep readable instead of all-or-nothing
         for s in series:
@@ -92,9 +118,15 @@ def sweep(args) -> int:
             cmd = [py, "-m", "tsfm_trl.cli", "evaluate", "--model", k, "--series", s,
                    "--horizons", args.horizons, "--spans", args.spans,
                    "--max-windows", str(args.max_windows),
-                   "--device", args.device, "--out", str(tmp)]
+                   "--device", args.device, "--out", str(tmp),
+                   "--ctx", str(args.ctx), "--batch", str(args.batch),
+                   "--seed", str(args.seed)]
             env = dict(os.environ)
             env.setdefault("TSFMTRL_QUIET", "1")
+            # the child runs `.../env/bin/python` directly, so the venv's own bin dir is
+            # not on PATH the way `source activate` would put it: ninja, nvcc shims and
+            # other build tools installed *into that env* stay invisible without this
+            env["PATH"] = os.path.dirname(py) + os.pathsep + env.get("PATH", "")
             t0 = time.time()
             try:
                 p = subprocess.run(cmd, capture_output=True, text=True,
@@ -109,6 +141,8 @@ def sweep(args) -> int:
                 err = f"timeout after {args.timeout}s"
             except Exception as e:                                          # noqa: BLE001
                 err = f"{type(e).__name__}: {e}"[:300]
+            if err and not any(r.get("series") == nm for r in rows):
+                series_err[nm] = err
             got = len([r for r in rows if r.get("series") == nm])
             print(f"  {k:20s} {nm:14s} "
                   f"{('ok ' + str(got)) if not err else 'FAIL'}"
@@ -117,7 +151,8 @@ def sweep(args) -> int:
         # different venv is a different experiment, and the report must be able to say
         # which venv produced which row.
         rec = {"model": k, "env": spec.env, "tier": spec.tier, "family": spec.family,
-               "interpreter": py, "rows": rows, "error": err}
+               "interpreter": py, "device": args.device, "rows": rows, "error": err,
+               "series_errors": series_err}
         fh.write(json.dumps(rec, default=float) + "\n")
         fh.flush()
         n_ok += bool(rows)
@@ -128,8 +163,11 @@ def sweep(args) -> int:
 
 
 def report(args) -> int:
-    src = Path(str(args.report).split(",")[0])
-    srcs = [Path(x).expanduser() for x in str(args.report).split(",")]
+    raw = [Path(x).expanduser() for x in str(args.report).split(",")]
+    # "later beats earlier" is meant in time, not alphabetically: retry files sort
+    # anywhere, and a stale error-only record must not outlive a newer attempt
+    srcs = sorted(raw, key=lambda x: x.stat().st_mtime)
+    src = srcs[0]
     recs = [json.loads(l) for f in srcs for l in f.read_text().splitlines() if l.strip()]
     # one meta block per input file: a merged report says which machine ran what
     metas = [r["meta"] for r in recs if "meta" in r]
@@ -150,6 +188,14 @@ def report(args) -> int:
         for r in rec["rows"]:
             r["model_key"] = rec["model"]
             rows.append(r)
+    # which venv and which device produced each row: the same model measured in another
+    # interpreter or on another device is a different experiment
+    prov: dict = {}
+    for rec in recs:
+        if rec.get("rows"):
+            k = rec.get("interpreter") or "(unknown)"
+            prov.setdefault(k, {"device": rec.get("device", "?"), "models": []})
+            prov[k]["models"].append(rec["model"])
     failed = {rec["model"]: rec["error"] for rec in recs if rec["error"] and not rec["rows"]}
     notrun = [rec["model"] for rec in recs if not rec["rows"] and not rec["error"]]
     series = sorted({r["series"] for r in rows})
@@ -170,7 +216,19 @@ def report(args) -> int:
            "probabilistic column with a dash is not a zero. `skill` is "
            "`1 − MASE` (MASE normalises by the in-sample mean |Δ| of the train span), so "
            "MASE is the column to read and a negative skill means the model lost to that "
-           "trivial scaler on this series.", ""]
+           "trivial scaler on this series. `cov@80` is empirical coverage of the nominal "
+           "80% band (`nominal_80` in the JSON rows carries the nominal value the model "
+           "actually claims, which is not always exactly 0.8 for models with their own "
+           "quantile grid).", ""]
+    if prov:
+        out += ["## Which interpreter produced which row", "",
+                "Every model runs in the venv its registry env names; a device column is "
+                "there because CPU-versus-GPU changes the numbers, and older merged runs "
+                "without the field show `?`.", "",
+                "| interpreter | device | models |", "|---|---|---|"] + [
+            f"| `{k}` | {v['device']} | "
+            f"{', '.join(f'`{m}`' for m in sorted(v['models']))} |"
+            for k, v in sorted(prov.items())] + [""]
     spans = sorted({r.get("span", "test") for r in rows})
 
     def cell(v):
@@ -186,8 +244,9 @@ def report(args) -> int:
                 sel.sort(key=lambda r: (r.get("mase") is None, r.get("mase") or 9e9))
                 out += [f"## {srs} · {sp} · horizon {h}", "",
                         "| model | ctx | win | MASE ↓ | RMSE | MAE | dir-acc | rank ρ | "
-                        "skill | CRPS ↓ | WQL | pinball |",
-                        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+                        "skill | CRPS ↓ | WQL | pinball | cov@80 |",
+                        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
+                        "---:|"]
                 for r in sel:
                     pt = "" if "crps" in r else " · pt"
                     out.append(f"| {r.get('model_key') or r['model']} | {r['ctx']} | "
@@ -197,7 +256,13 @@ def report(args) -> int:
                                f"{cell(r.get('rank_corr'))} | "
                                f"{cell(r.get('relative_skill'))} | "
                                f"{cell(r.get('crps'))}{pt} | {cell(r.get('wql'))} | "
-                               f"{cell(r.get('pinball'))} |")
+                               f"{cell(r.get('pinball'))} | {cell(r.get('coverage_80'))} |")
+                gaps = sorted((rec["model"], rec["series_errors"][srs]) for rec in recs
+                              if rec.get("series_errors", {}).get(srs)
+                              and not any(x.get("series") == srs for x in rec.get("rows", [])))
+                if gaps:
+                    out += ["", "_attempted on this series, not scored:_", ""] + [
+                        f"- `{m}`: {w[:150]}" for m, w in gaps]
                 out.append("")
 
     mismatch = [(r["model"], r["env"], r.get("interpreter", "")) for r in recs
@@ -222,6 +287,13 @@ def report(args) -> int:
                 "", "No row was produced for these yet — they are **not** measured here, "
                 "and their absence is not a pass:", "",
                 ", ".join(f"`{m}`" for m in absent), ""]
+    dataset_gaps = [(rec["model"], rec["error"]) for rec in recs
+                    if rec["error"] and "covariate panel" in rec["error"]]
+    if dataset_gaps:
+        out += ["## Not scoreable on some series (dataset coverage, not model failure)", "",
+                "These models consume a covariate panel; the close-only series cannot "
+                "score them at all, so their absence from a table is about the dataset:",
+                ""] + [f"- **{m}**: {w[:160]}" for m, w in dataset_gaps] + [""]
     if failed:
         out += ["## Failed or incomplete rows", ""]
         for m, why in sorted(failed.items()):
@@ -244,6 +316,10 @@ def main() -> int:
                     help="CSV with timestamp,close (repeatable)")
     ap.add_argument("--horizons", default="21,63,126")
     ap.add_argument("--max-windows", type=int, default=16)
+    # protocol knobs the child inherits, so the file states what was actually asked for
+    ap.add_argument("--ctx", type=int, default=256)
+    ap.add_argument("--batch", type=int, default=16)
+    ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--spans", default="all",
                     help="zero-shot rows slide over 'all'; use 'test' when scoring "
                          "adapted checkpoints, or the comparison leaks")

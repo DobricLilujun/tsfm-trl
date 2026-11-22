@@ -72,7 +72,7 @@ comparison cannot silently swap a TimesFM head onto a Moirai trunk or evaluate o
 windows the run trained on.
 
 The whole registry at once, one interpreter per family, one row per model per series per
-horizon — this is what produced [`EFFECTIVENESS.md`](EFFECTIVENESS.md):
+horizon — this is what produced `EFFECTIVENESS.md` (rendered as the site's *Measured effectiveness* page):
 
 ```bash
 # canonical series: fev-style directories with real train/validation/test splits and
@@ -144,7 +144,7 @@ into `forecast_eval` without further adaptation work.
   3 canonical series (`sp500_long`, `audusd`, `btc_crypto`) × horizons 21/63/126, 12
   windows per pass, one seed, on three machines (DGX Spark aarch64, an x86 node with an
   RTX A6000, and a 6 GB laptop for the vendor-family models). The result lives in
-  [`EFFECTIVENESS.md`](EFFECTIVENESS.md).
+  `EFFECTIVENESS.md` (rendered as the site's *Measured effectiveness* page).
 * What that does **not** cover: more than one seed (so no confidence intervals on any
   cell), more datasets or frequencies (three daily series is a start, not GIFT-Eval),
   adapted checkpoints (`--spans test` + `--adaptation <ckpt>`, never `all`), and any
