@@ -34,6 +34,7 @@ def main() -> int:
         ap.add_argument(flag, default=None)
     a = ap.parse_args()
 
+    cmd_extra: list[str] = []
     # argparse stores dashes as underscores; map the flags explicitly rather than
     # deriving the attribute name from the flag
     names = {"--steps": "steps", "--bs": "bs", "--lr": "lr", "--ctx": "ctx",

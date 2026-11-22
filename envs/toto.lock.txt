@@ -50,7 +50,7 @@ pandas==2.3.3
 patsy==1.0.3
 pillow==13.0.0
 propcache==0.5.4
-pyarrow==26.0.1
+pyarrow==16.1.0
 pydantic==2.14.3
 pydantic-core==2.50.4
 pyparsing==3.3.3

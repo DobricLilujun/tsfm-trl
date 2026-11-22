@@ -79,3 +79,19 @@ as a model failure.
 | laptop, RTX Ada 6 GB, CUDA 12.x | development, core/moirai/moment/toto/tirex/timemoe/kronos/ttm envs |
 | DGX Spark (GB10, aarch64, 119 GB unified) | the aarch64 matrix; TiRex-2's Triton path (sm ≥ 10.0, Triton ≥ 3.4) |
 | 3× A6000 (escalation) | not needed so far: every Tier-A row fit on 6–48 GB at smoke size |
+
+## The parquet engine is an environment dependency, not a model one
+
+The canonical benchmark series are `train/validation/test` **parquet** directories, so
+every family env that should be able to *read a dataset* needs a parquet engine. Two
+pins collide: envs frozen on `numpy 1.26` cannot import `pyarrow ≥ 18` (`pyarrow
+requires NumPy 2.0 or newer`), and pandas' fallback names `fastparquet`, which is not
+what you should install into a frozen env. Use the version the numpy pin allows —
+
+```bash
+uv pip install --python envs/sundial/bin/python --no-deps pyarrow==16.1.0   # numpy 1.26 envs
+uv pip install --python envs/core/bin/python     --no-deps pyarrow==26.0.1  # numpy 2 envs
+```
+
+`SeriesDataset._from_dir` now raises a `DataError` that says exactly this instead of
+letting pandas' optional-dependency message read like a model failure.
