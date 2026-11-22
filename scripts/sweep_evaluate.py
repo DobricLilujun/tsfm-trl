@@ -63,12 +63,17 @@ def sweep(args) -> int:
     series = [os.path.expanduser(s) for s in args.series]
 
     def _sha() -> str:
+        root = Path(__file__).resolve().parent.parent
         try:
-            return subprocess.run(["git", "-C", str(Path(__file__).resolve().parent.parent),
-                                   "rev-parse", "--short", "HEAD"],
+            return subprocess.run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
                                   capture_output=True, text=True, timeout=10).stdout.strip()
         except Exception:                                      # noqa: BLE001
-            return "?"
+            pass
+        # most remote workers get an rsync'd tree with no .git: the sync writes REVISION
+        rev = root / "REVISION"
+        if rev.exists():
+            return rev.read_text().strip()[:12]
+        return "?"
 
     # A published table has to say which machine and which code produced each row;
     # without this line the same model measured in two venvs is one indistinguishable
@@ -83,6 +88,30 @@ def sweep(args) -> int:
             "ctx": int(args.ctx), "batch": int(args.batch), "seed": int(args.seed),
             "device": args.device}}, default=float) + "\n")
         fh.flush()
+    # Does this env's torch even see a GPU? Recording it turns "device auto" into a
+    # claim: a family env built from a lock that resolved a CPU wheel silently runs the
+    # whole benchmark on CPU, and a CUDA failure then reads like a model problem.
+    probe = (
+        "import json,torch;"
+        "print(json.dumps({'torch': torch.__version__,"
+        " 'cuda': bool(torch.cuda.is_available()),"
+        " 'gpu': (torch.cuda.get_device_name(0) if torch.cuda.is_available() else None)}))"
+    )
+
+    def torch_of(py: str) -> dict:
+        if py in _torch_cache:
+            return _torch_cache[py]
+        try:
+            r = subprocess.run([py, "-c", probe], capture_output=True, text=True, timeout=120)
+            out = _torch_cache.setdefault(py, json.loads(r.stdout.strip().splitlines()[-1])
+                                          if r.returncode == 0 else
+                                          {"torch": "?", "cuda": False,
+                                           "gpu": (r.stderr or "").strip().splitlines()[-1:][0][:60]})
+        except Exception as e:                                 # noqa: BLE001
+            out = _torch_cache.setdefault(py, {"torch": "?", "cuda": False, "gpu": str(e)[:60]})
+        return out
+
+    _torch_cache: dict = {}
     n_ok = n_bad = skipped = 0
     for k in keys:
         if k in done:
@@ -104,7 +133,13 @@ def sweep(args) -> int:
             fh.flush()
             skipped += 1
             continue
-        print(f"== {k} (env {spec.env}, {py})", flush=True)
+        tt = torch_of(py)
+        if args.device.startswith("cuda") and not tt.get("cuda"):
+            print(f"  NOTE {k}: --device cuda requested, but env '{spec.env}' "
+                  f"(torch {tt.get('torch')}) reports no CUDA — this run will fail or "
+                  f"fall back; not a model verdict", flush=True)
+        print(f"== {k} (env {spec.env}, {py}, torch {tt.get('torch')}, "
+              f"cuda={tt.get('cuda')})", flush=True)
         tmp = Path(f"/tmp/eval_{k}_{os.getpid()}.json")
         rows = []
         err = ""
@@ -151,7 +186,8 @@ def sweep(args) -> int:
         # different venv is a different experiment, and the report must be able to say
         # which venv produced which row.
         rec = {"model": k, "env": spec.env, "tier": spec.tier, "family": spec.family,
-               "interpreter": py, "device": args.device, "rows": rows, "error": err,
+               "interpreter": py, "device": args.device, "torch": tt,
+               "rows": rows, "error": err,
                "series_errors": series_err}
         fh.write(json.dumps(rec, default=float) + "\n")
         fh.flush()
@@ -190,11 +226,35 @@ def report(args) -> int:
             rows.append(r)
     # which venv and which device produced each row: the same model measured in another
     # interpreter or on another device is a different experiment
+    # older merged runs did not stamp their torch build; if that interpreter is on this
+    # machine, probe it now rather than shipping a table with unknowns in it
+    probe_cmd = ("import json,torch;print(json.dumps({'torch': torch.__version__,"
+                 " 'cuda': bool(torch.cuda.is_available())}))")
+    seen: dict = {}
+
+    def torch_of(py: str) -> dict:
+        if py in seen:
+            return seen[py]
+        out = {"torch": "?", "cuda": False}
+        if py and Path(py).exists():
+            try:
+                r = subprocess.run([py, "-c", probe_cmd], capture_output=True,
+                                   text=True, timeout=120)
+                if r.returncode == 0:
+                    out = json.loads(r.stdout.strip().splitlines()[-1])
+            except Exception:                                  # noqa: BLE001
+                pass
+        seen[py] = out
+        return out
+
     prov: dict = {}
     for rec in recs:
         if rec.get("rows"):
-            k = rec.get("interpreter") or "(unknown)"
-            prov.setdefault(k, {"device": rec.get("device", "?"), "models": []})
+            k = rec.get("interpreter") or ("(env %s: no interpreter recorded by that "
+                                          "run)" % rec.get("env", "?"))
+            prov.setdefault(k, {"device": rec.get("device", "?"),
+                                "torch": rec.get("torch") or torch_of(k),
+                                "models": []})
             prov[k]["models"].append(rec["model"])
     failed = {rec["model"]: rec["error"] for rec in recs if rec["error"] and not rec["rows"]}
     notrun = [rec["model"] for rec in recs if not rec["rows"] and not rec["error"]]
@@ -223,10 +283,12 @@ def report(args) -> int:
     if prov:
         out += ["## Which interpreter produced which row", "",
                 "Every model runs in the venv its registry env names; a device column is "
-                "there because CPU-versus-GPU changes the numbers, and older merged runs "
-                "without the field show `?`.", "",
-                "| interpreter | device | models |", "|---|---|---|"] + [
-            f"| `{k}` | {v['device']} | "
+                "there because CPU-versus-GPU changes the numbers. `?` means the field "
+                "was not recorded by that run and the interpreter is not on this machine "
+                "to re-probe — treat those rows as provenance-incomplete.", "",
+                "| interpreter | device | torch (cuda?) | models |", "|---|---|---|---|"] + [
+            f"| `{k}` | {v['device']} | {v['torch'].get('torch')} "
+            f"({'cuda' if v['torch'].get('cuda') else 'no cuda'}) | "
             f"{', '.join(f'`{m}`' for m in sorted(v['models']))} |"
             for k, v in sorted(prov.items())] + [""]
     spans = sorted({r.get("span", "test") for r in rows})

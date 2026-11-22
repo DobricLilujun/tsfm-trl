@@ -2,28 +2,28 @@
 
 # Effectiveness benchmark
 
-Generated 2026-11-22 18:29:54 from `reports/effectiveness_watson.jsonl` — 381 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
+Generated 2026-11-22 18:41:34 from `reports/effectiveness_watson.jsonl` — 381 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
 
 Rows are **zero-shot** (no adaptation) and slide windows over the span(s) named above — for zero-shot rows the whole series is legitimate because the model saw no training data; an *adapted* checkpoint must be scored with `--spans test`, or the comparison leaks. Same horizon grid, same window count, same seed for every model. Rows carry the **registry key the sweep requested** (adapters may report a family-level key internally). `ctx` is the context actually used (an oversized one is clamped to the span, which is recorded, not hidden). **CRPS/WQL/pinball appear only for models that emit quantiles**; a point-only model gets point metrics and is marked `pt` — a probabilistic column with a dash is not a zero. `skill` is `1 − MASE` (MASE normalises by the in-sample mean |Δ| of the train span), so MASE is the column to read and a negative skill means the model lost to that trivial scaler on this series. `cov@80` is empirical coverage of the nominal 80% band (`nominal_80` in the JSON rows carries the nominal value the model actually claims, which is not always exactly 0.8 for models with their own quantile grid).
 
 ## Which interpreter produced which row
 
-Every model runs in the venv its registry env names; a device column is there because CPU-versus-GPU changes the numbers, and older merged runs without the field show `?`.
+Every model runs in the venv its registry env names; a device column is there because CPU-versus-GPU changes the numbers. `?` means the field was not recorded by that run and the interpreter is not on this machine to re-probe — treat those rows as provenance-incomplete.
 
-| interpreter | device | models |
-|---|---|---|
-| `(unknown)` | ? | `timesfm-2.5-200m` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-kronos/bin/python` | ? | `kronos-small` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ? | `timemoe-50m` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-tirex/bin/python` | ? | `tirex` |
-| `/home/ubadmin/projects/TSFM4Finance/.venv-vendor/bin/python` | ? | `aurora`, `hirondel-7m`, `kairos-10m`, `kairos-50m`, `t0-alpha`, `t0-beta`, `t0-gamma`, `timestral-123m`, `timestral-209m`, `timestral-28m`, `timestral-5m`, `yug` |
-| `envs/core/bin/python` | ? | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `patchtst-fm-r2`, `seasonal_naive`, `theta`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
-| `envs/kronos/bin/python` | ? | `kronos-base`, `kronos-mini` |
-| `envs/moirai/bin/python` | ? | `moirai-1.1-R-base`, `moirai-1.1-R-small`, `moirai-2.0-R-small`, `moirai-moe-1.0-R-base` |
-| `envs/moment/bin/python` | ? | `moment-1-large`, `moment-1-small` |
-| `envs/sundial/bin/python` | ? | `sundial-base-128m` |
-| `envs/timesfm20/bin/python` | ? | `timesfm-2.0-500m` |
-| `envs/toto/bin/python` | ? | `toto-2-22m`, `toto-2-313m`, `toto-open-1.0` |
+| interpreter | device | torch (cuda?) | models |
+|---|---|---|---|
+| `(env core: no interpreter recorded by that run)` | ? | ? (no cuda) | `timesfm-2.5-200m` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-kronos/bin/python` | ? | 2.5.1+cu124 (cuda) | `kronos-small` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ? | 2.5.1+cu124 (cuda) | `timemoe-50m` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-tirex/bin/python` | ? | 2.15.0+cu132 (cuda) | `tirex` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-vendor/bin/python` | ? | 2.15.0+cu132 (cuda) | `aurora`, `hirondel-7m`, `kairos-10m`, `kairos-50m`, `t0-alpha`, `t0-beta`, `t0-gamma`, `timestral-123m`, `timestral-209m`, `timestral-28m`, `timestral-5m`, `yug` |
+| `envs/core/bin/python` | ? | ? (no cuda) | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `patchtst-fm-r2`, `seasonal_naive`, `theta`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
+| `envs/kronos/bin/python` | ? | ? (no cuda) | `kronos-base`, `kronos-mini` |
+| `envs/moirai/bin/python` | ? | ? (no cuda) | `moirai-1.1-R-base`, `moirai-1.1-R-small`, `moirai-2.0-R-small`, `moirai-moe-1.0-R-base` |
+| `envs/moment/bin/python` | ? | ? (no cuda) | `moment-1-large`, `moment-1-small` |
+| `envs/sundial/bin/python` | ? | ? (no cuda) | `sundial-base-128m` |
+| `envs/timesfm20/bin/python` | ? | 2.15.0+cu132 (cuda) | `timesfm-2.0-500m` |
+| `envs/toto/bin/python` | ? | ? (no cuda) | `toto-2-22m`, `toto-2-313m`, `toto-open-1.0` |
 
 ## audusd · all · horizon 21
 

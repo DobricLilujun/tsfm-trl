@@ -82,9 +82,22 @@ def main() -> int:
                              capture_output=True, text=True, timeout=10).stdout.strip()
     except Exception:                                          # noqa: BLE001
         sha = "?"
+    probe = ("import json,torch;print(json.dumps({'torch': torch.__version__,"
+             " 'cuda': bool(torch.cuda.is_available())}))")
+    try:
+        pr = subprocess.run([a.python, "-c", probe], capture_output=True, text=True,
+                            timeout=120)
+        child_torch = json.loads(pr.stdout.strip().splitlines()[-1]) if pr.returncode == 0 \
+            else {"torch": "?", "cuda": False}
+    except Exception:                                          # noqa: BLE001
+        child_torch = {"torch": "?", "cuda": False}
+    if (a.__dict__.get("device") or "").startswith("cuda") and not child_torch.get("cuda"):
+        print(f"  NOTE: --device cuda requested but {a.python} reports no CUDA "
+              f"(torch {child_torch.get('torch')}) — the run will fail or fall back")
     summary = {"model": a.model, "seeds": len(runs), "runs": runs,
                "protocol": {"machine": socket.gethostname(), "code_sha": sha,
-                            "python": sys.version.split()[0], "argv": sys.argv[1:]},
+                            "python": sys.version.split()[0], "argv": sys.argv[1:],
+                            "child_python": a.python, "child_torch": child_torch},
                "delta_mean": round(statistics.mean(deltas), 5) if deltas else None,
                "delta_sd": round(statistics.stdev(deltas), 5) if len(deltas) > 1 else None,
                "n_improved": sum(1 for d in deltas if d > 0),

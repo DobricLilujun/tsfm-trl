@@ -345,3 +345,22 @@ before the matrix, which is exactly why `check.sh` exists.
 * **Vendor loops log on their own interval.** A Chronos-2/Kronos vendor fine-tune at smoke
   size produces no loss pair in the matrix cell; recorded rather than hidden
   (`docs/03_fine_tune.md`).
+
+## A family env can silently lose its GPU
+
+Lock-file rebuilds on aarch64 resolved CPU wheels in three of the twelve DGX environments
+(`toto` → `torch 2.7.0+cpu`, `timesfm20` and `new` → `torch 2.8.0+cpu`). Nothing about the
+run looked wrong: `--device auto` quietly chose CPU, the numbers came out plausible, and a
+run that *asked* for CUDA failed with `Torch not compiled with CUDA enabled` — which reads
+like a model or harness failure and is neither. Two mitigations are now in the tooling:
+
+* the sweep probes each env's interpreter once (`torch.__version__`,
+  `torch.cuda.is_available()`, device name), prints a NOTE when `--device cuda` was asked
+  for and the env has no CUDA, and writes the probe into every record and into the report's
+  provenance table;
+* the reward seeding script does the same for the child interpreter before spending
+  minutes on a doomed run.
+
+The lesson generalises: **a benchmark row is its environment.** A CPU row and a GPU row for
+the same model are different experiments, and "it ran" is not evidence about which one you
+got.

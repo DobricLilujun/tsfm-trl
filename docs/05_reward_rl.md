@@ -162,13 +162,44 @@ parameters and one earned by 0.3 M adapters are different claims.
 | `toto-2-22m` | `rft` | 48 | 21,915,584 (full) | −1.488 → −1.669 | **not improved** |
 | `flowstate-r1` | `reward_descent` | 96 | heads_only at `bs=1 bf16` (ladder) | −1.296 → −1.387 | **not improved** |
 
-Repeated over three seeds on a different machine (x86 node, RTX A6000, same
-protocol — `scripts/reward_seeds.py`): the GRPO row's late-minus-early delta is
-+0.071, +0.058, +0.046 (mean **+0.059**, sd 0.013) — 3/3 seeds improved, and the spread
-is small relative to the effect. The negative rows have not been repeated at three seeds
-yet; when they are, that goes in the same table. Everything in this table is still a
-*quartile* comparison inside the run, not out-of-sample skill (see the reading rules
-below).
+### Repeated runs: what a reward delta is worth
+
+`scripts/reward_seeds.py` runs the same protocol over several seeds and reports the
+spread of the late-minus-early delta. Done properly (three seeds, and — for two of these
+— on two different machines), the picture is more interesting than the single-curve
+table above:
+
+| model | mode | configuration | seeds | late − early | verdict |
+|---|---|---|---|---|---|
+| `chronos-t5-small` | `grpo` | LoRA 1.08 M, lr 2e-5, bs 8, 96 steps | 3 (A6000) | **+0.059 ± 0.013** | 3/3 improved |
+| `flowstate-r1` | `reward_descent` | heads-only 1.18 M, **lr 2e-5** (the configuration of the table above), bs 1, 96 steps | 3 (GB10) + 3 (A6000) | +0.136 ± 0.348 | 1/3 — sign **not established** |
+| `flowstate-r1` | `reward_descent` | heads-only, **lr 1e-4**, bs 1, 96 steps | 3 (GB10) + 3 (A6000) | **+0.426 ± 0.228** | 3/3 improved |
+| `toto-2-22m` | `rft` | LoRA 295 k, default lr, bs 4, 48 steps | 3 (RTX Ada) | −0.067 ± 0.109 | 1/3 — no effect at this budget |
+
+Three things follow, and they are the reason this section exists:
+
+* **The FlowState row above ("not improved") was a single seed at lr 2e-5.** Repeated at
+  that configuration it is +0.136 ± 0.348 with 1/3 seeds improved — i.e. the original
+  −0.09 sits comfortably inside its own noise. At lr 1e-4 the same model and mode
+  improves 3/3 with a mean five times the size of the earlier point estimate. So the
+  honest claim is not "reward descent does not work on FlowState" but "**the reward
+  trajectory at this budget is learning-rate sensitive**, and a single seed at one
+  learning rate supports no verdict in either direction."
+* **The Toto negative result survives**, with an error bar: −0.067 ± 0.109, 1/3 seeds.
+  "RFT runs on Toto and does not improve reward at 48 steps" is supported; "RFT is
+  useless for Toto" is not.
+* **The harness is seed-deterministic across hardware.** The lr-2e-5 FlowState runs on
+  the aarch64 GB10 and the x86 A6000 agree to five decimals (+0.42577 vs +0.42576 for
+  the lr-1e-4 pair). Seed-to-seed variation is enormous; machine-to-machine variation is
+  not. So repeated runs must vary the seed, and cross-machine replication is a check on
+  the environment, not a source of new variance.
+
+A reproduction caveat worth recording: the original demo runs were done on the DGX, where
+the `toto` env now has a **CPU-only** torch (`2.7.0+cpu`) after its lock-file rebuild. A
+GPU-flagged reproduction there fails with `Torch not compiled with CUDA enabled`, which is
+environment drift, not a model result — the Toto seeds above were therefore run on the
+laptop GPU, and the sweep now records each env's torch build and CUDA availability per row
+(`docs/08_known_issues.md`).
 
 The Toto row previously read **−2.232 → −1.914, improved**. It no longer does, and the
 reason is worth writing down rather than quietly fixing. Two things moved since that
