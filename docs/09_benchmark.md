@@ -71,6 +71,31 @@ The second form is the zero-shot-vs-adapted comparison: the checkpoint's provena
 comparison cannot silently swap a TimesFM head onto a Moirai trunk or evaluate on
 windows the run trained on.
 
+The whole registry at once, one interpreter per family, one row per model per series per
+horizon — this is what produced [`EFFECTIVENESS.md`](EFFECTIVENESS.md):
+
+```bash
+# canonical series: fev-style directories with real train/validation/test splits and
+# OHLCV covariates (panel-consuming models such as Kronos need them)
+scripts/sweep_evaluate.py \
+    --series data/open/sp500_long --series data/open/audusd --series data/open/btc_crypto \
+    --horizons 21,63,126 --max-windows 12 --spans all \
+    --out reports/effectiveness_dgx.jsonl --fresh
+
+# merge several machines/runs; a model that produced rows beats one that only errored
+scripts/sweep_evaluate.py --report reports/effectiveness_dgx.jsonl,\
+reports/effectiveness_watson.jsonl,reports/effectiveness_laptop_vendor.jsonl \
+    --md EFFECTIVENESS.md
+```
+
+The sweep refuses to run a model in an environment the registry does not name for it (a
+missing env is a recorded skip, not a `core` fallback), writes rows to JSONL as they
+land, and stamps each run with its machine, series, spans and window count — so a
+published table can always be traced to the interpreter that produced each row.
+
+Reward runs get the same treatment: `scripts/reward_seeds.py --model … --seeds 0,1,2`
+reports the spread of the late-minus-early reward delta instead of one curve.
+
 Through the API, which is what a sweep should use:
 
 ```python
@@ -115,9 +140,16 @@ into `forecast_eval` without further adaptation work.
 
 ## What is *not* done yet (so nobody reads it in)
 
-* No repo-wide effectiveness sweep has been run: the checked-in evidence is the
-  compatibility matrix, not a CRPS/MASE table for 46 models. The machinery
-  (`forecast_eval`, `evaluate`, per-env dispatch) is there; the hours are not spent.
+* The effectiveness sweep that *has* been run is zero-shot only: 46 registry models ×
+  3 canonical series (`sp500_long`, `audusd`, `btc_crypto`) × horizons 21/63/126, 12
+  windows per pass, one seed, on three machines (DGX Spark aarch64, an x86 node with an
+  RTX A6000, and a 6 GB laptop for the vendor-family models). The result lives in
+  [`EFFECTIVENESS.md`](EFFECTIVENESS.md).
+* What that does **not** cover: more than one seed (so no confidence intervals on any
+  cell), more datasets or frequencies (three daily series is a start, not GIFT-Eval),
+  adapted checkpoints (`--spans test` + `--adaptation <ckpt>`, never `all`), and any
+  statement that a family is "better" — with one seed and twelve windows a MASE ordering
+  is a measurement, not a verdict.
 * No multi-seed confidence intervals, no Diebolt–Mariano / MZ statistics, no horizon-grid
   plots.
 * The finance label set (`dir5`, `extreme`) and a tiny public UEA/UCR subset are wired for

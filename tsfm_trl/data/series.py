@@ -74,7 +74,16 @@ class SeriesDataset:
         for split in ("train", "validation", "test"):
             f = d / f"{split}.parquet"
             if f.exists():
-                parts[split] = pd.read_parquet(f)
+                try:
+                    parts[split] = pd.read_parquet(f)
+                except ImportError as e:
+                    # pandas names 'fastparquet' and buries the actual fix: the parquet
+                    # engine is an optional dependency of the *environment*, not of the
+                    # model, so the row would otherwise read as a model failure
+                    raise DataError(
+                        f"{d}/{split}.parquet needs a parquet engine: install pyarrow "
+                        f"into this environment (pip install pyarrow). pandas said: "
+                        f"{str(e)[:120]}") from e
         if not parts:
             raise DataError(f"{d}: no train/validation/test parquet files")
         full = pd.concat([parts[k] for k in ("train", "validation", "test") if k in parts])

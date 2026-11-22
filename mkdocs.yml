@@ -66,6 +66,7 @@ nav:
       - Benchmark protocol: 09_benchmark.md
       - Compatibility matrix tool: 06_matrix.md
       - Measured matrix: matrix.md
+      - Measured effectiveness: effectiveness.md
   - Forecasting: 02_forecast.md
   - TRL — post-training:
       - RL / reward API: 10_trl_api.md
