@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from ...errors import UnavailableError
 from ..base import LEVELS, Pred, TSFMModel, to_levels
 
 POINT_CHANNEL = 5                     # median channel of the 2.5 head
@@ -30,7 +31,75 @@ class _TimesFMBase(TSFMModel):
     levels = list(LEVELS)
 
 
-class TimesFM25(_TimesFMBase):
+class _TimesFMBase2(_TimesFMBase):
+    """Device pinning for the wrappers whose vendor loader has no ``device`` argument.
+
+    ``TimesFM_2p5_200M_torch.from_pretrained`` takes no device: it lands on CUDA whenever
+    torch sees a GPU. A sweep asked for ``--device cpu``, recorded ``device: cpu`` on its
+    rows, and then died with ``CUDA out of memory`` on a card it was never supposed to
+    touch - which is also how a CPU lane quietly becomes a GPU experiment on a shared
+    machine. Move the weights to what was asked for, and refuse rather than write a row
+    that misstates where it ran.
+    """
+
+    def _load_off_gpu(self, construct):
+        """Construct the vendor model without it noticing a GPU.
+
+        Pinning after the fact is not enough: `TimesFMModel.__init__` selects cuda:0 and
+        calls `self.to(...)` inside the constructor, so on a saturated card the *load* is
+        what dies - `--device cpu` still produced `CUDA out of memory: GPU 0 ... 14.94 MiB
+        is free`. While the row is meant to say cpu, hide the device for the duration of
+        construction, then hand it back.
+        """
+        if str(self.device) == "cpu":
+            import torch
+            orig_avail, orig_count = torch.cuda.is_available, torch.cuda.device_count
+            torch.cuda.is_available, torch.cuda.device_count = (lambda: False), (lambda: 0)
+            try:
+                return construct()
+            finally:
+                torch.cuda.is_available, torch.cuda.device_count = orig_avail, orig_count
+        return construct()
+
+    def _pin_device(self) -> None:
+        """Move the module *and* correct what the vendor model remembered.
+
+        `TimesFMModel.__init__` (timesfm_2p5_torch.py:72) sets
+        `self.device = torch.device("cuda:0")` whenever CUDA is visible and then calls
+        `self.to(self.device)`. `compile()` later sizes the batch as
+        `per_core_batch_size * self.model.device_count`, so a bare `.to("cpu")` after
+        loading still asks the vendor path for GPU-shaped work. Pin before compile, fix the
+        cached attributes, then verify placement.
+        """
+        want = str(self.device)
+        module = getattr(self._wrapper, "model", None)
+        if module is None:
+            return
+        try:
+            got = self._dev()
+        except Exception:                                     # noqa: BLE001
+            return                                            # no parameters to move
+        if got.type != want:
+            try:
+                module.to(want)
+                module.device = want                          # what the model remembers
+                if want != "cuda":
+                    module.device_count = 1                   # what sizes the batch
+            except Exception as e:                            # noqa: BLE001
+                raise UnavailableError(
+                    self.key,
+                    f"weights are on {got} and could not be moved to device={want!r} "
+                    f"({str(e)[:80]}); refusing to record a row that names a device it "
+                    "did not run on") from e
+            got = self._dev()
+            if got.type != want:
+                raise UnavailableError(
+                    self.key,
+                    f"still on {got} after .to({want}); the vendor loader pins placement "
+                    "itself - do not trust the device column for this model")
+
+
+class TimesFM25(_TimesFMBase2):
     key, family = "timesfm-2.5-200m", "timesfm25"
     caps = frozenset({"forecast", "quantiles", "finetune"})
     loss_kind = "quantile"
@@ -41,8 +110,10 @@ class TimesFM25(_TimesFMBase):
         super().__init__(**kw)
         import timesfm
         self.checkpoint = checkpoint or timesfm.TimesFM_2p5_200M_torch.DEFAULT_REPO_ID
-        self._wrapper = timesfm.TimesFM_2p5_200M_torch.from_pretrained(
-            self.checkpoint, torch_compile=torch_compile)
+        self._wrapper = self._load_off_gpu(
+            lambda: timesfm.TimesFM_2p5_200M_torch.from_pretrained(
+                self.checkpoint, torch_compile=torch_compile))
+        self._pin_device()          # before compile(): compile sizes batches off device_count
         self._wrapper.compile(timesfm.ForecastConfig(
             max_context=self.max_context, max_horizon=self.max_horizon,
             normalize_inputs=normalize_inputs, infer_is_positive=False,
@@ -143,7 +214,13 @@ class TimesFM25(_TimesFMBase):
         """A fine-tuned 2.5 saved by ``finetune``/``save_pretrained`` is reloaded as
         a full checkpoint directory (the vendor format), not as a state dict."""
         import timesfm
-        self._wrapper = timesfm.TimesFM_2p5_200M_torch.from_pretrained(path, torch_compile=False)
+        loader = getattr(self, "_load_off_gpu", lambda f: f())
+        self._wrapper = loader(
+            lambda: timesfm.TimesFM_2p5_200M_torch.from_pretrained(path, torch_compile=False))
+        # same trap as __init__: a freshly loaded checkpoint lands wherever the vendor
+        # loader likes, not where the row will claim it ran
+        if hasattr(self, "_pin_device"):
+            self._pin_device()
         self._wrapper.compile(timesfm.ForecastConfig(
             max_context=self.max_context, max_horizon=self.max_horizon,
             normalize_inputs=self._norm, infer_is_positive=False, force_flip_invariance=True,
