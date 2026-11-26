@@ -24,6 +24,31 @@ RS() { if [ "${TRANSPORT:-remote}" = local ]; then rsync -a "$@"; else rsync -e 
 RDEST() { if [ "${TRANSPORT:-remote}" = local ]; then printf '%s' "$BRIDGE_DIR/$1";
           else printf '%s' "$BRIDGE_USER@$BRIDGE_HOST:$BRIDGE_DIR/$1"; fi; }
 mkdir -p "$LOCAL/inbox" "$LOCAL/outbox/results"
+# Exactly one poller per bridge directory. Two workers both see the same inbox, and the
+# "have I already run this job?" check is a file that appears only after a run starts, so
+# overlapping polls can run one job twice on one GPU. Restarting a worker without killing
+# the old one is the normal way this happens.
+LOCK="$LOCAL/worker.pid"
+if [ -f "$LOCK" ] && kill -0 "$(cat "$LOCK" 2>/dev/null)" 2>/dev/null; then
+  old=$(cat "$LOCK"); [ "$old" != "$$" ] && {
+    echo "another worker (pid $old) is already polling $LOCAL; kill it first" >&2; exit 1; }
+fi
+echo $$ > "$LOCK"
+py_candidate() {
+  # The worker's shell rarely has the venv active: PY is set inside job scripts, not in
+  # the poller's environment, and a standalone clone keeps its envs under ./envs. Try the
+  # interpreters that plausibly hold torch, in order, and use the first that imports.
+  for c in "${PY:-}" "$HOME/envs/tsfm-trl/core/bin/python" "$HOME/projects/TSFM4Finance/.venv/bin/python" \
+           "${REPO:-.}/envs/core/bin/python" python3; do
+    [ -n "$c" ] && command -v "$c" >/dev/null 2>&1 && "$c" -c 'import torch' >/dev/null 2>&1 \
+      && { echo "$c"; return; }
+  done
+}
+torch_free() {
+  local c; c=$(py_candidate)
+  [ -z "$c" ] && return
+  "$c" -c 'import torch;print(",".join(str(torch.cuda.mem_get_info(i)[0]>>20) for i in range(torch.cuda.device_count())))' 2>/dev/null | tr '\n' ','
+}
 beat() {                                   # machine facts = provenance, not decoration
   { echo "host=$(hostname)"; echo "arch=$(uname -m)"; echo "when=$(date -u +%FT%TZ)"
     # REPO differs per machine (standalone clone vs vendored trl/ inside TSFM4Finance);
@@ -39,12 +64,14 @@ beat() {                                   # machine facts = provenance, not dec
       *[N/]*|"")
         # GB10/DGX Spark reports [N/A] for memory under unified memory; torch still sees
         # the device, so schedule from torch rather than treating the card as absent.
-        free=$("${PY:-python3}" -c 'import torch;print(",".join(str(torch.cuda.mem_get_info(i)[0]>>20) for i in range(torch.cuda.device_count())))' 2>/dev/null | tr '\n' ',')
+        free=$(torch_free)
         echo "gpu_free=${free} gpu_free_source=torch"
         ;;
       *) echo "gpu_free=${free} gpu_free_source=nvidia-smi" ;;
     esac
-    [ -n "${PY:-}" ] && "$PY" -c 'import torch;print("torch",torch.__version__,"cuda",torch.cuda.is_available())' 2>/dev/null
+    TPY=$(py_candidate)
+    echo "torch_py=${TPY:-none}"
+    [ -n "$TPY" ] && "$TPY" -c 'import torch;print("torch",torch.__version__,"cuda",torch.cuda.is_available())' 2>/dev/null
   } > "$LOCAL/outbox/heartbeat" 2>/dev/null
   RS "$LOCAL/outbox/heartbeat" "$(RDEST outbox)/" 2>/dev/null
 }
