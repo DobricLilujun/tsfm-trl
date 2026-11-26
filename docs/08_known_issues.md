@@ -374,3 +374,149 @@ like a model or harness failure and is neither. Two mitigations are now in the t
 The lesson generalises: **a benchmark row is its environment.** A CPU row and a GPU row for
 the same model are different experiments, and "it ran" is not evidence about which one you
 got.
+
+## Seventh pass: 101 series, and three ways a number can be wrong without any code erroring
+
+### A checkpoint's context length is an interface, not a suggestion
+
+`granite-timeseries-ttm-r3` declares `context_length = 512`. Fed the protocol window of 256
+it pads its own input with zeros, and the whole forecast comes back scaled by the fraction
+of real history: measured on one equity series, the mean prediction is 0.25x the context at
+ctx 128, **0.50x at ctx 256**, 0.99x at 512. In the first pass-3 ranking that read as
+"median MASE 13x naive, 0% of series beaten" for a model whose weights are fine. The
+artifact was our window.
+
+Fix: `TSFMModel.min_context` (read by the Granite adapter from the checkpoint config).
+`forecast_eval` raises the benchmark context to it when the span allows and writes
+`context raised 256->512 (checkpoint contract)` into the row's `ctx_note`; when the span
+cannot supply it the adapter pads on the left with the oldest observation instead of letting
+vendor code feed zeros, and says so in `Pred.meta`. The row's `ctx` column then shows 512
+for those models, which is why the effectiveness table has a `ctx` column per row at all.
+
+The honest residual: with the contract honoured, TTM r2 behaves normally (MASE ~3-9) and
+**r3 still loses badly on financial series** because its forecast is nearly flat (std ~0.8
+against a truth std ~8 on a volatile equity) - an approximate mean-forecaster on
+low-volatility price data. Finding and artifact are now separable; before, they were the
+same number.
+
+`min_context` is set only where the padding artifact was measured. A contract probe over the
+sweep models (one equity series, level ratio at ctx 256 versus the declared length) found
+FlowState declaring 2048 and PatchTST-FM 8192 while both score normally at 256 - FlowState
+actually gets *worse* at its declared length (level ratio 0.587 at 2048 against 1.135 at
+256). Those models accept short windows honestly, so raising their context would change the
+experiment rather than repair it. The rule is: measure the padding behavior, then declare
+the contract - do not read a config number and treat it as a requirement.
+
+### NaN is a failed measurement, not a metric value
+
+TTM r3 also emits an all-NaN point head *intermittently*: the same 512-point window was
+clean in one process and NaN in the next. Two wrongs were hiding in the old path: the
+vendor model returned NaN without raising, and `forecast_report` is nan-safe, so it scored
+the surviving 3 of 4 windows while the row still claimed `n_windows: 4`. My own ranking
+script then aggregated a column containing NaN and printed "median MASE nan" for the
+model - which looks like a joke and reads like one.
+
+Now: retry each affected window alone (a batch can poison a model's own per-instance
+normalisation), drop whatever is still non-finite from the scoring set, record
+`pred_nan_windows` plus an `error` string, set `n_windows` to the number actually scored,
+and emit `None` rather than NaN in metric columns.
+
+### Report sections that iterate the wrong collection under-count across lanes
+
+`report()` merges cells per `(model, series, span, horizon)` but keeps one *raw record* per
+model in `rec_by_model`. The tables read the merged cells; the "Not scoreable on some
+series" section and the new untrained-head section read `recs`. With two GPU lanes each
+carrying half the corpus, the flag list showed 33 of 66 flagged MOMENT series, and the
+covariate-panel section was under-counted in pass 2 the same way. Both now read the merged
+rows, and a model that scored anywhere is no longer listed as dataset-unscoreable.
+Symptom to remember: a summary section whose count is exactly one lane's worth.
+
+### Shared cards: free at launch is not free during
+
+`chronos-t5-base` lost 33 of 66 series to `torch.OutOfMemoryError` with the error reporting
+44.94 MiB free, minutes after `nvidia-smi` showed ~10 GiB - another user's process grew to
+26 GiB mid-run, and our own peak was 7.09 GiB. The lane runner's `--min-free-mib` guard is
+necessary, not sufficient. Two operational rules follow: pin `CUDA_VISIBLE_DEVICES` to the
+index you chose (a retry that picked "cuda" from a free-memory total landed on the
+contended GPU 0 anyway), and treat a mid-run OOM as an environment event to re-run, never
+as a model result. Where the cards stay full, the retry runs on CPU lanes and the rows
+carry `device: cpu`.
+
+### Two small tooling facts from this pass
+
+- `--md path/to/report.md` now creates the parent directory; before, the first invocation
+  into a fresh run directory died on `FileNotFoundError` after doing all the merge work.
+- The trux `core` env has no ruff, so `scripts/check.sh` stops at the lint stage there.
+  Tests, registry consistency and the mini matrix are run on trux; lint stays a laptop
+  gate. That is a real gap in the multi-machine story, not a covered one.
+
+### Syncing a checkout with `rsync --delete` deletes the environments living inside it
+
+The harness exists twice on the laptop: the standalone repo and `trl/` inside the
+TSFM4Finance checkout, which is what the other machines fetch. Bringing the standalone
+repo up to date with `rsync -a --delete` overwrote more than the code. Two things were
+gone before I looked at the file list:
+
+- **`.github/workflows/docs.yml`** — the vendored tree has no `.github/`, so `--delete`
+  removed the Pages build. Nothing in the harness test suite notices a missing CI file.
+- **Every family venv under `envs/`** (several GB, built over days) — same reason: they are
+  in the destination and not in the source. The locks and `envs.toml` survived, so the fix
+  is `scripts/make_envs.sh`, not an archaeology hunt, but the run I was mid-way through on
+  the laptop was over.
+
+Nothing tracked by git was lost (`git status` showed 89 modified/added paths, 0 deletions),
+which is the only reason this was an afternoon and not a data-loss incident. The rule now:
+when one checkout feeds another, list what may move (`git ls-files`, plus the probe and
+report text manifests) and copy *that*, or keep `--delete` off and let git show what is
+missing. A working tree that holds installed environments is never a safe rsync target.
+
+## Sixth pass: moving the harness onto other machines
+
+The same code went to trux (2× RTX 6000 Ada) and watson (SLURM, A6000). What broke was not
+the models; it was the boundary between "a machine that has this project" and "a machine
+that has the right *environments*".
+
+**A recorded skip is sticky.** On watson the first run had no `envs/local.json`, so all 16
+models were written as env-skips — the resolver refusing to run a family in a foreign
+interpreter, exactly as designed. After writing the mapping, the next run printed
+`0 ok / 0 failed / 0 env-skipped`, which reads like a working sweep: the models already
+appear in the incremental JSONL, so resume treats them as done. Fixing the environment is
+not enough — the log needs `--fresh`. The merge rule ("rows beat errors") hides the
+symptom in a report, not the trap at launch.
+
+**Seven of twelve lock files do not re-resolve** (`core`, `moment`, `new`, `timemoe`,
+`tirex2`, `toto`, `ttm`): `uv` proves the frozen set contradicts itself, e.g. `gluonts`
+wants `pandas<2.2` while the freeze pins `2.3.3`. Those freezes were taken from layered
+installs, so they are a *record* of what worked, not a recipe a solver can reproduce.
+`uv pip install --no-deps -r <lock>` reinstalls exactly the recorded set; a solver-driven
+install does not. `core.lock.txt` also carries no `torch` pin by design (torch is
+platform-specific and installed separately), which surprises anyone expecting one command
+to rebuild an env. Related drift: `envs.toml` notes `transformers==4.57.6` for core while
+the committed lock pins `5.22.1` — the lock records a *later*, drifted env, not the one
+that produced the published matrix.
+
+**A plausible command line is not the real one.** The lane runner had been written against
+a remembered CLI: `--windows` and positional series do not exist (`--max-windows`,
+repeatable `--series`). It died at launch, which is the cheap way to find out. Now
+`probes/trux/selftest/` keeps a stub whose argparse mirrors `sweep_evaluate.py --help`, so
+an interface drift fails a 1-second test instead of a 12-hour sweep. Note that the real CLI
+inherits argparse prefix matching, so a typo like `--windows=3` is *silently accepted* as
+`--max-windows=3`; the stub forbids abbreviations so a runner cannot lean on that hazard.
+
+**Flattening the corpus needs a rule, not a shrug.** The corpus stores parquet splits, the
+sweep documents `timestamp,close` CSVs. Flattening found 19 series whose splits share
+timestamps — always *across* splits, never within one, which is lookback context reuse.
+But `open/sp500_daily`'s train range runs *past* its validation range, with validation
+entirely inside train. Zero-shot rows sliding over the whole series are unaffected;
+calling those splits held-out data is wrong. The converter now records overlap kind and
+range per series, and refuses to flatten a timestamp that carries *different* values.
+
+**A green cell can still be an untrained head.** MOMENT's released checkpoint contains one
+head — `head.linear` (8, d_model), reconstruction. Asking for `task_name="forecasting"`
+loads that head unchanged (transformers reports "0 missing keys" because the new head has
+different *shapes*), and the `init()` the model card tells you to call replaces it with a
+randomly initialised one. The compatibility matrix therefore shows a pass; the benchmark
+rows say what ran — MASE 7.0–19.6 where a naive forecast gets 2.1–8.4, `large` within ~1 of
+`small`. Rows now carry `head_from_checkpoint` and `head_trained_here`, and the report
+lists flagged models under "Flagged: the scored head was never trained" while keeping the
+numbers.

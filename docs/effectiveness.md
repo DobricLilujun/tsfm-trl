@@ -2,7 +2,7 @@
 
 # Effectiveness benchmark
 
-Generated 2026-11-22 19:26:57 from `reports/effectiveness_watson.jsonl` — 384 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
+Generated 2026-11-22 19:36:56 from `reports/effectiveness_watson.jsonl` — 384 evaluation rows over 3 series, horizons 21, 63, 126. Protocol: `docs/09_benchmark.md`.
 
 Rows are **zero-shot** (no adaptation) and slide windows over the span(s) named above — for zero-shot rows the whole series is legitimate because the model saw no training data; an *adapted* checkpoint must be scored with `--spans test`, or the comparison leaks. Same horizon grid, same window count, same seed for every model. Rows carry the **registry key the sweep requested** (adapters may report a family-level key internally). `ctx` is the context actually used (an oversized one is clamped to the span, which is recorded, not hidden). **CRPS/WQL/pinball appear only for models that emit quantiles**; a point-only model gets point metrics and is marked `pt` — a probabilistic column with a dash is not a zero. `skill` is `1 − MASE` (MASE normalises by the in-sample mean |Δ| of the train span), so MASE is the column to read and a negative skill means the model lost to that trivial scaler on this series. `cov@80` is empirical coverage of the nominal 80% band (`nominal_80` in the JSON rows carries the nominal value the model actually claims, which is not always exactly 0.8 for models with their own quantile grid).
 
@@ -12,12 +12,14 @@ Every model runs in the venv its registry env names; a device column is there be
 
 | interpreter | machine | device | torch (cuda?) | models |
 |---|---|---|---|---|
-| `(interpreter not recorded by that run)` | ? | ? | not probed | `patchtst-fm-r2`, `timesfm-2.5-200m` |
+| `(interpreter not recorded by that run)` | ? | ? | not probed | `timesfm-2.5-200m` |
+| `/home/lujun.li/tsfm-trl/envs/core/bin/python` | sedan-gpu3 | cuda | 2.15.0+cu132 (cuda) | `patchtst-fm-r2`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-kronos/bin/python` | ? | ? | 2.5.1+cu124 (cuda) | `kronos-small` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ubadmin-Precision-3591 | ? | 2.5.1+cu124 (cuda) | `timemoe-50m` |
+| `/home/ubadmin/projects/TSFM4Finance/.venv-timemoe/bin/python` | ubadmin-Precision-3591 | cpu | 2.5.1+cu124 (cuda) | `timemoe-50m` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-tirex/bin/python` | ? | ? | 2.15.0+cu132 (cuda) | `tirex` |
 | `/home/ubadmin/projects/TSFM4Finance/.venv-vendor/bin/python` | ? | ? | 2.15.0+cu132 (cuda) | `aurora`, `hirondel-7m`, `kairos-10m`, `kairos-50m`, `t0-alpha`, `t0-beta`, `t0-gamma`, `timestral-123m`, `timestral-209m`, `timestral-28m`, `timestral-5m`, `yug` |
-| `envs/core/bin/python` | ? | ? | not probed | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `patchtst-fm-r2`, `seasonal_naive`, `theta`, `timesfm-3.0`, `ttm-r2`, `ttm-r3` |
+| `envs/core/bin/python` | ? | ? | not probed | `arima`, `chronos-2`, `chronos-bolt-base`, `chronos-bolt-small`, `chronos-t5-base`, `chronos-t5-small`, `flowstate-r1`, `moving_average`, `naive`, `seasonal_naive`, `theta` |
 | `envs/kronos/bin/python` | ? | ? | not probed | `kronos-base`, `kronos-mini` |
 | `envs/moirai/bin/python` | ? | ? | not probed | `moirai-1.1-R-base`, `moirai-1.1-R-small`, `moirai-2.0-R-small`, `moirai-moe-1.0-R-base` |
 | `envs/moment/bin/python` | ? | ? | not probed | `moment-1-large`, `moment-1-small` |
@@ -56,7 +58,7 @@ Every model runs in the venv its registry env names; a device column is there be
 | moirai-2.0-R-small | 256 | 12 | 3.35 | 0.0254 | 0.0156 | 0.479 | -0.138 | -2.35 | 0.0126 | 1.44 | 0.00631 | 0.75 |
 | yug | 256 | 12 | 3.35 | 0.025 | 0.0156 | 0.467 | 0.162 | -2.35 | 0.0126 | 1.45 | 0.00631 | 0.702 |
 | kairos-50m | 256 | 12 | 3.36 | 0.0241 | 0.0157 | 0.483 | -0.505 | -2.36 | 0.0125 | 1.43 | 0.00627 | 0.81 |
-| patchtst-fm-r2 | 256 | 12 | 3.38 | 0.0237 | 0.0158 | 0.429 | -0.00456 | -2.38 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 3.38 | 0.0237 | 0.0158 | 0.438 | -0.0159 | -2.38 | — · pt | — | — | — |
 | kairos-10m | 256 | 12 | 3.43 | 0.0248 | 0.016 | 0.492 | -0.102 | -2.43 | 0.0127 | 1.42 | 0.00633 | 0.841 |
 | toto-open-1.0 | 256 | 12 | 3.48 | 0.0244 | 0.0163 | 0.513 | -0.0963 | -2.48 | 0.0127 | 1.45 | 0.00635 | 0.683 |
 | seasonal_naive | 256 | 12 | 3.5 | 0.0257 | 0.0164 | 0.492 | 0.0361 | -2.5 | — · pt | — | — | — |
@@ -71,7 +73,7 @@ Every model runs in the venv its registry env names; a device column is there be
 | moment-1-large | 256 | 12 | 6.78 | 0.0426 | 0.0317 | 0.45 | 0.013 | -5.78 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 6.92 | 0.0433 | 0.0323 | 0.521 | -0.0167 | -5.92 | — · pt | — | — | — |
 | kronos-base | 256 | 12 | 7.17 | 0.0467 | 0.0335 | 0.533 | 0.214 | -6.17 | 0.0322 | 3.97 | 0.0161 | 0.0913 |
-| ttm-r3 | 256 | 12 | 79.7 | 0.401 | 0.372 | 0.462 | 0.0155 | -78.7 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | 93.1 | 0.457 | 0.435 | 0.5 | 0.0483 | -92.1 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -112,7 +114,7 @@ _attempted on this series, not scored:_
 | moirai-moe-1.0-R-base | 256 | 12 | 4.49 | 0.0274 | 0.021 | 0.52 | -0.117 | -3.49 | 0.0161 | 5.4 | 0.00806 | 0.712 |
 | chronos-t5-small | 256 | 12 | 4.5 | 0.0279 | 0.021 | 0.204 | -0.187 | -3.5 | 0.0166 | 5.62 | 0.00828 | 0.692 |
 | moirai-2.0-R-small | 256 | 12 | 4.72 | 0.0288 | 0.0221 | 0.508 | -0.196 | -3.72 | 0.0171 | 5.74 | 0.00854 | 0.677 |
-| patchtst-fm-r2 | 256 | 12 | 4.89 | 0.0295 | 0.0228 | 0.523 | -0.187 | -3.89 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 4.89 | 0.0295 | 0.0228 | 0.501 | -0.191 | -3.89 | — · pt | — | — | — |
 | moving_average | 256 | 12 | 4.95 | 0.0291 | 0.0231 | 0.00269 | — | -3.95 | — · pt | — | — | — |
 | t0-alpha | 256 | 12 | 5.02 | 0.0325 | 0.0234 | 0.495 | -0.198 | -4.02 | 0.0181 | 6.08 | 0.00904 | 0.692 |
 | yug | 256 | 12 | 5.07 | 0.0307 | 0.0237 | 0.462 | -0.0949 | -4.07 | 0.0193 | 6.63 | 0.00964 | 0.647 |
@@ -123,7 +125,7 @@ _attempted on this series, not scored:_
 | moment-1-large | 256 | 12 | 6.7 | 0.0408 | 0.0313 | 0.508 | -0.009 | -5.7 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 6.72 | 0.041 | 0.0314 | 0.511 | -0.0262 | -5.72 | — · pt | — | — | — |
 | ttm-r2 | 256 | 12 | 14.2 | 0.0809 | 0.0662 | 0.534 | 0.113 | -13.2 | — · pt | — | — | — |
-| ttm-r3 | 256 | 12 | 75.3 | 0.374 | 0.352 | 0.473 | -0.00122 | -74.3 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | 82.5 | 0.404 | 0.385 | 0.504 | -0.00942 | -81.5 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -166,7 +168,7 @@ _attempted on this series, not scored:_
 | chronos-t5-small | 256 | 12 | 7.6 | 0.0518 | 0.0355 | 0.231 | -0.00489 | -6.6 | 0.0302 | 21.3 | 0.0151 | 0.559 |
 | kronos-small | 256 | 12 | 7.6 | 0.0486 | 0.0355 | 0.529 | 0.133 | -6.6 | 0.0316 | 22.7 | 0.0158 | 0.273 |
 | moirai-1.1-R-small | 256 | 12 | 7.61 | 0.0524 | 0.0356 | 0.489 | 0.0197 | -6.61 | 0.027 | 18 | 0.0135 | 0.772 |
-| patchtst-fm-r2 | 256 | 12 | 7.7 | 0.0498 | 0.0359 | 0.52 | 0.244 | -6.7 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 7.73 | 0.0501 | 0.0361 | 0.495 | 0.245 | -6.73 | — · pt | — | — | — |
 | timesfm-2.0-500m | 256 | 12 | 7.8 | 0.0486 | 0.0364 | 0.501 | 0.0564 | -6.8 | 0.0291 | 20.2 | 0.0146 | 0.279 |
 | moving_average | 256 | 12 | 8.32 | 0.0524 | 0.0389 | 0.002 | — | -7.32 | — · pt | — | — | — |
 | chronos-t5-base | 256 | 12 | 8.33 | 0.0533 | 0.0389 | 0.235 | -0.162 | -7.33 | 0.0323 | 22.6 | 0.0162 | 0.504 |
@@ -175,7 +177,7 @@ _attempted on this series, not scored:_
 | toto-open-1.0 | 256 | 12 | 12 | 0.356 | 0.0559 | 0.499 | 0.0214 | -11 | 0.0254 | 17 | 0.0127 | 0.758 |
 | timemoe-50m | 256 | 12 | 13.8 | 0.185 | 0.0646 | 0.511 | -0.111 | -12.8 | 0.0265 | 18.3 | 0.0132 | 0.706 |
 | ttm-r2 | 256 | 12 | 36.8 | 0.208 | 0.172 | 0.509 | -0.00524 | -35.8 | — · pt | — | — | — |
-| ttm-r3 | 256 | 12 | 79.5 | 0.398 | 0.371 | 0.499 | 0.00378 | -78.5 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | 85.4 | 0.424 | 0.399 | 0.507 | 0.00575 | -84.4 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -217,15 +219,15 @@ _attempted on this series, not scored:_
 | timesfm-3.0 | 256 | 12 | 3.72 | 5.77e+03 | 4.63e+03 | 0.487 | 0.0324 | -2.72 | 3.5e+03 | 3.92e+05 | 1.75e+03 | 0.893 |
 | seasonal_naive | 256 | 12 | 3.86 | 6.24e+03 | 4.8e+03 | 0.487 | -0.0654 | -2.86 | — · pt | — | — | — |
 | patchtst-fm-r2 | 256 | 12 | 3.97 | 6.17e+03 | 4.94e+03 | 0.504 | 0.163 | -2.97 | — · pt | — | — | — |
-| toto-open-1.0 | 256 | 12 | 3.99 | 9.22e+03 | 4.97e+03 | 0.517 | -0.0826 | -2.99 | 3.55e+03 | 4.06e+05 | 1.78e+03 | 0.865 |
 | aurora | 256 | 12 | 4.5 | 6.91e+03 | 5.6e+03 | 0.5 | -0.219 | -3.5 | 4.59e+03 | 5.31e+05 | 2.3e+03 | 0.397 |
 | kairos-10m | 256 | 12 | 4.68 | 6.8e+03 | 5.83e+03 | 0.463 | -0.14 | -3.68 | 4.36e+03 | 4.89e+05 | 2.18e+03 | 0.968 |
-| timemoe-50m | 256 | 12 | 4.84 | 8.84e+03 | 6.03e+03 | 0.492 | -0.00639 | -3.84 | 8.2e+03 | 9.09e+05 | 4.1e+03 | 0.901 |
 | moving_average | 256 | 12 | 4.97 | 7.98e+03 | 6.19e+03 | 0 | — | -3.97 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | — | — | — | — | — | — | — · pt | — | — | — |
+| toto-open-1.0 | 256 | 12 | 3.99 | 9.22e+03 | 4.97e+03 | 0.517 | -0.0826 | -2.99 | 3.55e+03 | 4.06e+05 | 1.78e+03 | 0.865 |
+| timemoe-50m | 256 | 12 | 4.84 | 8.84e+03 | 6.03e+03 | 0.492 | -0.00639 | -3.84 | 8.2e+03 | 9.09e+05 | 4.1e+03 | 0.901 |
 | timesfm-2.0-500m | 256 | 12 | 5.55 | 8.28e+03 | 6.92e+03 | 0.475 | 0.102 | -4.55 | 5.4e+03 | 6.17e+05 | 2.7e+03 | 0.333 |
 | moment-1-large | 256 | 12 | 13.4 | 1.86e+04 | 1.67e+04 | 0.458 | 0.0485 | -12.4 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 13.4 | 1.87e+04 | 1.67e+04 | 0.454 | -0.0936 | -12.4 | — · pt | — | — | — |
-| ttm-r3 | 256 | 12 | 44.8 | 5.97e+04 | 5.57e+04 | 0.521 | -0.00877 | -43.8 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -270,12 +272,12 @@ _attempted on this series, not scored:_
 | aurora | 256 | 12 | 7.5 | 1.3e+04 | 9.34e+03 | 0.487 | 0.0279 | -6.5 | 8.41e+03 | 3.04e+06 | 4.21e+03 | 0.352 |
 | timesfm-3.0 | 256 | 12 | 8.15 | 1.39e+04 | 1.01e+04 | 0.473 | -0.151 | -7.15 | 8.48e+03 | 2.96e+06 | 4.24e+03 | 0.708 |
 | ttm-r2 | 256 | 12 | 8.41 | 1.42e+04 | 1.05e+04 | 0.5 | -0.0983 | -7.41 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | — | — | — | — | — | — | — · pt | — | — | — |
 | sundial-base-128m | 256 | 12 | 9.01 | 1.49e+04 | 1.12e+04 | 0.491 | -0.0212 | -8.01 | 9.72e+03 | 3.47e+06 | 4.86e+03 | 0.317 |
 | timesfm-2.0-500m | 256 | 12 | 9.29 | 1.54e+04 | 1.16e+04 | 0.476 | -0.105 | -8.29 | 9.66e+03 | 3.37e+06 | 4.83e+03 | 0.344 |
 | timemoe-50m | 256 | 12 | 12.4 | 2.17e+04 | 1.55e+04 | 0.503 | -0.0934 | -11.4 | 1.33e+04 | 4.51e+06 | 6.64e+03 | 0.624 |
 | moment-1-large | 256 | 12 | 14.9 | 2.11e+04 | 1.85e+04 | 0.487 | 0.00349 | -13.9 | — · pt | — | — | — |
 | moment-1-small | 256 | 12 | 15 | 2.14e+04 | 1.87e+04 | 0.509 | -0.0603 | -14 | — · pt | — | — | — |
-| ttm-r3 | 256 | 12 | 37.9 | 5.19e+04 | 4.72e+04 | 0.513 | 0.0793 | -36.9 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -319,12 +321,12 @@ _attempted on this series, not scored:_
 | patchtst-fm-r2 | 256 | 6 | 12.2 | 1.91e+04 | 1.52e+04 | 0.491 | -0.0305 | -11.2 | — · pt | — | — | — |
 | t0-alpha | 256 | 6 | 12.5 | 2.04e+04 | 1.55e+04 | 0.495 | 0.16 | -11.5 | 1.31e+04 | 4.56e+06 | 6.54e+03 | 0.526 |
 | sundial-base-128m | 256 | 6 | 12.5 | 1.97e+04 | 1.56e+04 | 0.504 | 0.285 | -11.5 | 1.36e+04 | 4.83e+06 | 6.78e+03 | 0.304 |
-| moirai-1.1-R-small | 256 | 6 | 12.6 | 2.06e+04 | 1.57e+04 | 0.505 | 0.027 | -11.6 | 1.3e+04 | 4.48e+06 | 6.48e+03 | 0.591 |
 | timesfm-3.0 | 256 | 6 | 12.8 | 2.02e+04 | 1.6e+04 | 0.508 | 0.139 | -11.8 | 1.3e+04 | 4.44e+06 | 6.48e+03 | 0.583 |
+| ttm-r3 | 256 | 6 | — | — | — | — | — | — | — · pt | — | — | — |
+| moirai-1.1-R-small | 256 | 6 | 12.6 | 2.06e+04 | 1.57e+04 | 0.505 | 0.027 | -11.6 | 1.3e+04 | 4.48e+06 | 6.48e+03 | 0.591 |
 | moment-1-large | 256 | 6 | 17.3 | 2.4e+04 | 2.15e+04 | 0.484 | 0.0391 | -16.3 | — · pt | — | — | — |
 | moment-1-small | 256 | 6 | 17.3 | 2.41e+04 | 2.16e+04 | 0.539 | 0.00534 | -16.3 | — · pt | — | — | — |
 | timemoe-50m | 256 | 6 | 18.5 | 2.89e+04 | 2.31e+04 | 0.523 | 0.203 | -17.5 | 1.69e+04 | 5.75e+06 | 8.44e+03 | 0.446 |
-| ttm-r3 | 256 | 6 | 36.7 | 5.04e+04 | 4.57e+04 | 0.504 | 0.0388 | -35.7 | — · pt | — | — | — |
 | toto-open-1.0 | 256 | 6 | 50.1 | 1.25e+06 | 6.24e+04 | 0.521 | 0.141 | -49.1 | 1.18e+04 | 4.1e+06 | 5.92e+03 | 0.709 |
 
 _attempted on this series, not scored:_
@@ -365,7 +367,7 @@ _attempted on this series, not scored:_
 | sundial-base-128m | 256 | 12 | 5.32 | 91 | 59.4 | 0.492 | -0.0635 | -4.32 | 53.1 | 6.38e+03 | 26.5 | 0.306 |
 | timesfm-3.0 | 256 | 12 | 5.34 | 90.4 | 59.7 | 0.513 | -0.00218 | -4.34 | 46.2 | 5.15e+03 | 23.1 | 0.615 |
 | flowstate-r1 | 256 | 12 | 5.38 | 96.9 | 60.1 | 0.463 | -0.199 | -4.38 | 48.6 | 5.59e+03 | 24.3 | 0.567 |
-| patchtst-fm-r2 | 256 | 12 | 5.45 | 108 | 60.9 | 0.512 | 0.133 | -4.45 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 5.46 | 109 | 61 | 0.5 | 0.126 | -4.46 | — · pt | — | — | — |
 | chronos-bolt-small | 256 | 12 | 5.55 | 99.7 | 62 | 0.483 | -0.064 | -4.55 | 47.2 | 5.24e+03 | 23.6 | 0.746 |
 | timemoe-50m | 256 | 12 | 5.61 | 89.8 | 62.7 | 0.471 | -0.158 | -4.61 | 108 | 1.19e+04 | 54.1 | 0.71 |
 | aurora | 256 | 12 | 5.64 | 84.5 | 63.1 | 0.458 | -0.0665 | -4.64 | 53.3 | 6.26e+03 | 26.7 | 0.468 |
@@ -378,7 +380,7 @@ _attempted on this series, not scored:_
 | moment-1-small | 256 | 12 | 16.9 | 239 | 189 | 0.5 | 0.0626 | -15.9 | — · pt | — | — | — |
 | moment-1-large | 256 | 12 | 17.2 | 242 | 192 | 0.517 | -0.0207 | -16.2 | — · pt | — | — | — |
 | kronos-mini | 256 | 12 | 22 | 324 | 246 | 0.487 | -0.119 | -21 | 215 | 2.53e+04 | 108 | 0.202 |
-| ttm-r3 | 256 | 12 | 119 | 1.55e+03 | 1.33e+03 | 0.479 | -0.00455 | -118 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | 119 | 1.54e+03 | 1.33e+03 | 0.496 | -0.0672 | -118 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -415,7 +417,7 @@ _attempted on this series, not scored:_
 | chronos-2 | 256 | 12 | 8.56 | 139 | 95.7 | 0.515 | 0.122 | -7.56 | 73 | 2.46e+04 | 36.5 | 0.749 |
 | moving_average | 256 | 12 | 8.79 | 138 | 98.2 | 0 | — | -7.79 | — · pt | — | — | — |
 | hirondel-7m | 256 | 12 | 9.12 | 159 | 102 | 0.474 | -0.319 | -8.12 | 77.9 | 2.61e+04 | 39 | 0.721 |
-| patchtst-fm-r2 | 256 | 12 | 9.22 | 161 | 103 | 0.484 | -0.322 | -8.22 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 9.21 | 161 | 103 | 0.493 | -0.322 | -8.21 | — · pt | — | — | — |
 | t0-beta | 256 | 12 | 9.3 | 175 | 104 | 0.505 | -0.122 | -8.3 | 80.2 | 2.69e+04 | 40.1 | 0.742 |
 | flowstate-r1 | 256 | 12 | 9.44 | 174 | 106 | 0.523 | -0.24 | -8.44 | 95.6 | 3.48e+04 | 47.8 | 0.295 |
 | t0-alpha | 256 | 12 | 10.1 | 173 | 112 | 0.485 | -0.32 | -9.06 | 91.2 | 3.13e+04 | 45.6 | 0.532 |
@@ -431,7 +433,7 @@ _attempted on this series, not scored:_
 | timemoe-50m | 256 | 12 | 23.9 | 475 | 267 | 0.493 | -0.0879 | -22.9 | 181 | 6.13e+04 | 90.6 | 0.577 |
 | ttm-r2 | 256 | 12 | 26.2 | 432 | 293 | 0.464 | -0.142 | -25.2 | — · pt | — | — | — |
 | kronos-mini | 256 | 12 | 29.5 | 508 | 330 | 0.52 | -0.203 | -28.5 | 299 | 1.06e+05 | 149 | 0.213 |
-| ttm-r3 | 256 | 12 | 130 | 1.81e+03 | 1.45e+03 | 0.517 | 0.0808 | -129 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | 130 | 1.81e+03 | 1.45e+03 | 0.472 | 0.0781 | -129 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 
@@ -463,7 +465,7 @@ _attempted on this series, not scored:_
 | t0-beta | 256 | 12 | 13.1 | 207 | 147 | 0.511 | -0.209 | -12.1 | 115 | 7.79e+04 | 57.6 | 0.633 |
 | seasonal_naive | 256 | 12 | 13.3 | 208 | 148 | 0.5 | -0.000674 | -12.3 | — · pt | — | — | — |
 | moirai-1.1-R-base | 256 | 12 | 13.4 | 219 | 150 | 0.499 | 0.105 | -12.4 | 116 | 7.79e+04 | 57.9 | 0.808 |
-| timesfm-3.0 | 256 | 12 | 13.6 | 225 | 152 | 0.527 | 0.157 | -12.6 | 119 | 8.03e+04 | 59.4 | 0.661 |
+| timesfm-3.0 | 256 | 12 | 13.6 | 225 | 152 | 0.528 | 0.157 | -12.6 | 119 | 8.03e+04 | 59.4 | 0.661 |
 | flowstate-r1 | 256 | 12 | 13.6 | 222 | 153 | 0.487 | -0.0788 | -12.6 | 144 | 1.07e+05 | 72.1 | 0.208 |
 | moirai-1.1-R-small | 256 | 12 | 13.8 | 227 | 154 | 0.515 | -0.0605 | -12.8 | 123 | 8.42e+04 | 61.6 | 0.753 |
 | t0-alpha | 256 | 12 | 13.8 | 219 | 154 | 0.483 | -0.244 | -12.8 | 123 | 8.42e+04 | 61.7 | 0.535 |
@@ -474,7 +476,7 @@ _attempted on this series, not scored:_
 | theta | 256 | 12 | 14.6 | 249 | 164 | 0.519 | 0.0666 | -13.6 | — · pt | — | — | — |
 | sundial-base-128m | 256 | 12 | 15.4 | 239 | 172 | 0.502 | -0.00446 | -14.4 | 153 | 1.11e+05 | 76.4 | 0.202 |
 | aurora | 256 | 12 | 16.1 | 249 | 180 | 0.508 | -0.192 | -15.1 | 164 | 1.19e+05 | 82.2 | 0.231 |
-| patchtst-fm-r2 | 256 | 12 | 17.6 | 294 | 197 | 0.484 | -0.204 | -16.6 | — · pt | — | — | — |
+| patchtst-fm-r2 | 256 | 12 | 17.6 | 294 | 196 | 0.474 | -0.205 | -16.6 | — · pt | — | — | — |
 | kronos-base | 256 | 12 | 17.9 | 254 | 200 | 0.507 | 0.0756 | -16.9 | 183 | 1.34e+05 | 91.7 | 0.0966 |
 | timesfm-2.0-500m | 256 | 12 | 18.1 | 269 | 203 | 0.511 | -0.302 | -17.1 | 165 | 1.15e+05 | 82.7 | 0.22 |
 | kronos-small | 256 | 12 | 18.9 | 276 | 211 | 0.501 | 0.186 | -17.9 | 186 | 1.33e+05 | 93 | 0.199 |
@@ -484,7 +486,7 @@ _attempted on this series, not scored:_
 | timemoe-50m | 256 | 12 | 23 | 366 | 257 | 0.496 | 0.000969 | -22 | 176 | 1.2e+05 | 87.9 | 0.431 |
 | kronos-mini | 256 | 12 | 29.7 | 389 | 331 | 0.491 | -0.0316 | -28.7 | 311 | 2.24e+05 | 155 | 0.0992 |
 | ttm-r2 | 256 | 12 | 49.8 | 726 | 557 | 0.458 | -0.48 | -48.8 | — · pt | — | — | — |
-| ttm-r3 | 256 | 12 | 119 | 1.43e+03 | 1.33e+03 | 0.497 | 0.455 | -118 | — · pt | — | — | — |
+| ttm-r3 | 256 | 12 | 119 | 1.43e+03 | 1.33e+03 | 0.511 | 0.45 | -118 | — · pt | — | — | — |
 
 _attempted on this series, not scored:_
 

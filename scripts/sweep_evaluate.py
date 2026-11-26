@@ -53,6 +53,10 @@ def sweep(args) -> int:
     keys = _models(reg, args.models, args.tier)
     done = set()
     out = Path(args.out)
+    # A run directory does not exist until this line, and the sweep only opens it at the
+    # end: discovering that with FileNotFoundError after a lane has scored every series
+    # wastes machine minutes that a shared cluster will not give back.
+    out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and not args.fresh:
         for line in out.read_text().splitlines():
             try:
@@ -237,6 +241,7 @@ def report(args) -> int:
                     "started": fm.get("started")}
             for r in rec.get("rows", []):
                 r["model_key"] = model          # registry key, not the adapter's family key
+                r.setdefault("dataset", rec.get("dataset"))  # gaps are computed on merged rows
                 r["_prov"] = prov
                 cells[(model, r["series"], r.get("span", "test"), int(r["horizon"]))] = r
             if rec.get("error"):
@@ -384,13 +389,39 @@ def report(args) -> int:
                 "", "No row was produced for these yet — they are **not** measured here, "
                 "and their absence is not a pass:", "",
                 ", ".join(f"`{m}`" for m in absent), ""]
+    # Anything that counts *measurements* must read `rows` (the merged cells), not `recs`:
+    # `rec_by_model` keeps ONE raw record per model, so with two GPU lanes — or a GPU lane
+    # plus a CPU retry — a rec-based count silently reports one lane. That under-counted
+    # this section in pass 2 and would have reported 33 of 66 flagged MOMENT series here.
+    scored_models = {r.get("model_key") or r.get("model") for r in rows}
     dataset_gaps = [(rec["model"], rec["error"]) for rec in recs
-                    if rec["error"] and "covariate panel" in rec["error"]]
+                    if rec.get("error") and "covariate panel" in rec["error"]
+                    and (rec.get("model_key") or rec.get("model")) not in scored_models]
+    dataset_gaps = sorted(set(dataset_gaps))
     if dataset_gaps:
         out += ["## Not scoreable on some series (dataset coverage, not model failure)", "",
                 "These models consume a covariate panel; the close-only series cannot "
                 "score them at all, so their absence from a table is about the dataset:",
                 ""] + [f"- **{m}**: {w[:160]}" for m, w in dataset_gaps] + [""]
+    # rows whose adapter says the task head was never trained for the task. MOMENT's
+    # released checkpoint has only a reconstruction head, so its zero-shot forecast row
+    # scores a randomly initialised linear map: keep the number, label it.
+    untrained = {}
+    for r in rows:
+        mt = r.get("meta") or {}
+        if mt.get("head_from_checkpoint") is False and not mt.get("head_trained_here"):
+            untrained.setdefault(r.get("model_key") or r.get("model"), set()).add(
+                str(r.get("series", "?")))
+    if untrained:
+        out += ["## Flagged: the scored head was never trained", "",
+                "These rows ran fine and are **kept**, because a number you can see beats a "
+                "blank — but they do not measure the model doing this task. The checkpoint "
+                "ships no trained head for it, and `init()` randomises the one that gets "
+                "built. Read them as a reference point for a fine-tune column, not as "
+                "zero-shot performance:", ""] + [
+            f"- **{m}**: {len(s)} series ("
+            + ", ".join(sorted(s)[:6]) + (" …" if len(s) > 6 else "") + ")"
+            for m, s in sorted(untrained.items())] + [""]
     if failed:
         out += ["## Failed or incomplete rows", ""]
         for m, why in sorted(failed.items()):
@@ -400,6 +431,9 @@ def report(args) -> int:
         out += [f"## No rows (attempted, nothing scored): {', '.join(notrun)}", ""]
     text = "\n".join(out) + "\n"
     if args.md:
+        # a report path names a run directory that does not exist until this line; making
+        # it here means --md runs/new-dir/report.md is not a footgun on first use
+        Path(args.md).expanduser().parent.mkdir(parents=True, exist_ok=True)
         Path(args.md).write_text(text)
         print(f"wrote {args.md}")
     if args.stdout:
