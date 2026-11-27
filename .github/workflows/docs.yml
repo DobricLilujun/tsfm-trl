@@ -5,11 +5,12 @@ name: docs
 on:
   push:
     branches: [main]
-    paths: ['docs/**', 'mkdocs.yml', 'COMPATIBILITY.md', 'reports/compat_matrix.json',
-            'scripts/build_docs.sh', 'requirements-docs.txt', '.github/workflows/docs.yml']
+    paths: ['docs/**', 'mkdocs.yml', 'COMPATIBILITY.md', 'EFFECTIVENESS.md',
+            'reports/compat_matrix.json', 'scripts/build_docs.sh', 'requirements-docs.txt',
+            '.github/workflows/docs.yml']
   pull_request:
-    paths: ['docs/**', 'mkdocs.yml', 'COMPATIBILITY.md', 'reports/compat_matrix.json',
-            'scripts/build_docs.sh']
+    paths: ['docs/**', 'mkdocs.yml', 'COMPATIBILITY.md', 'EFFECTIVENESS.md',
+            'reports/compat_matrix.json', 'scripts/build_docs.sh']
   workflow_dispatch:
 
 permissions:
