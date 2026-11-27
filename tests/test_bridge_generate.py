@@ -6,6 +6,7 @@ passed on an ungenerated file), job_014 because TRUX/TRUX_SSH/SRC were read from
 exists on trux and nowhere on the worker. Both are the same rule - one file crosses the bridge - and
 both should fail in a test rather than on a far machine at 03:00.
 """
+import os
 import subprocess
 from pathlib import Path
 
@@ -43,7 +44,7 @@ def test_generated_job_carries_the_series_and_the_endpoints(tmp_path):
     ser = tmp_path / "series.txt"
     ser.write_text("std_equity_1d_10107\nstd_fx_1d_eurjpy\n")
     _bridge(tmp_path, BRIDGE="/b", TRUX="trux.example", TRUX_SSH="ssh -p 22 -i /k",
-            SRC="/data/standard")
+            GPU_SSH="ssh -o BatchMode=yes", SRC="/data/standard")
     r = _run(tmp_path, tpl, ser)
     assert r.returncode == 0, r.stderr
     job = (tmp_path / "job.sh").read_text()
@@ -78,6 +79,62 @@ def test_a_token_the_generator_does_not_know_fails_the_run(tmp_path):
                                     'OUT=${OUT:-"@@OUT_DIR@@/lane.jsonl"}'))
     ser = tmp_path / "series.txt"
     ser.write_text("s1\n")
-    _bridge(tmp_path, BRIDGE="/b", TRUX="t", TRUX_SSH="ssh", SRC="/d")
+    _bridge(tmp_path, BRIDGE="/b", TRUX="t", TRUX_SSH="ssh", GPU_SSH="ssh", SRC="/d")
     r = _run(tmp_path, tpl, ser)
     assert r.returncode != 0 and "OUT_DIR" in r.stderr, r.stderr
+
+
+def test_the_shipped_templates_generate_clean(tmp_path):
+    """Every gpu7_*.sh template must survive the generator with no token left, including GPU_SSH,
+    which is the credential the *worker* uses to reach trux (not the one trux uses to reach it)."""
+    bridge = tmp_path / "bridge.env"
+    bridge.write_text('BRIDGE="/b"\nTRUX="user@trux.example"\n'
+                      'TRUX_SSH="ssh -i /on/trux/id_bridge"\n'
+                      'GPU_SSH="ssh -o BatchMode=yes"\nSRC="/data/standard"\n')
+    script = tmp_path / "gpu7_generate.sh"
+    script.write_text(GEN.read_text())
+    ser = tmp_path / "series.txt"
+    ser.write_text("s1\ns2\n")
+    for tpl in sorted(t for t in (REPO / "probes" / "trux" / "bridge").glob("gpu7_*.sh")
+                      if t.name != "gpu7_generate.sh"):  # the generator's own comment carries a
+                                                         # example token, by design
+        r = subprocess.run(["bash", str(script), str(tpl), str(ser), str(tmp_path / "job.sh")],
+                           capture_output=True, text=True)
+        assert r.returncode == 0, f"{tpl.name}: {r.stderr}"
+        job = (tmp_path / "job.sh").read_text()
+        import re
+        assert not re.findall(r"@@[A-Z_]+@@", job), f"{tpl.name}: token left in the generated job"
+        if "@@GPU_SSH@@" in tpl.read_text():
+            # the newer jobs pull the corpus with the worker's own credentials; that value must
+            # arrive filled, because no bridge.env exists on the worker
+            assert 'ssh -o BatchMode=yes' in job, f"{tpl.name}: worker-side ssh not inlined"
+
+
+def test_dispatch_refuses_a_file_that_was_never_generated(tmp_path):
+    """The generator aborting and the old output surviving in /tmp is how a superseded template got
+    dispatched once (job_021). Dispatch reads the stamp the generator writes."""
+    disp = REPO / "probes" / "trux" / "bridge" / "trux_dispatch.sh"
+    bridge = tmp_path / "bridge"
+    (bridge / "inbox").mkdir(parents=True)
+    (bridge / "outbox").mkdir()
+    env = tmp_path / "disp.sh"
+    env.write_text(f'BRIDGE="{bridge}"\n')
+    stale = tmp_path / "job_old.sh"
+    stale.write_text("#!/usr/bin/env bash\necho hi\n")
+    r = subprocess.run(["bash", str(disp), str(stale)], capture_output=True, text=True,
+                       env={**os.environ, "BRIDGE": str(bridge)})
+    assert r.returncode == 7 and "no GENERATED stamp" in r.stderr, r.stderr
+
+
+def test_dispatch_refuses_a_stale_generated_file(tmp_path):
+    disp = REPO / "probes" / "trux" / "bridge" / "trux_dispatch.sh"
+    bridge = tmp_path / "bridge"
+    (bridge / "inbox").mkdir(parents=True)
+    (bridge / "outbox").mkdir()
+    old = tmp_path / "job_old.sh"
+    old.write_text("#!/usr/bin/env bash\n"
+                   "# GENERATED 2020-01-01T00:00:00Z by gpu7_generate.sh from x.sh\n"
+                   "echo hi\n")
+    r = subprocess.run(["bash", str(disp), str(old)], capture_output=True, text=True,
+                       env={**os.environ, "BRIDGE": str(bridge)})
+    assert r.returncode == 7 and "generated" in r.stderr, r.stderr
