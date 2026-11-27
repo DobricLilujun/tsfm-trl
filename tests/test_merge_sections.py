@@ -24,11 +24,12 @@ def _load():
     return mod
 
 
-def _report(files, md_path):
+def _report(files, md_path, summary_only=False):
     """Call the generator the way the CLI does (it takes an argparse namespace, not paths):
     a subprocess run would hide the traceback, which is how this test started."""
     _load().report(argparse.Namespace(report=",".join(str(f) for f in files),
-                                      md=str(md_path), stdout=False))
+                                      md=str(md_path), stdout=False,
+                                      summary_only=summary_only))
 
 
 def _meta(machine):
@@ -184,3 +185,65 @@ def test_a_cell_read_from_another_data_path_is_a_supersession_not_run_variance(t
     text = md.read_text()
     assert "Superseded by a protocol change: chronos-bolt-small (1)" in text, text
     assert "**0** share a signature" in text, text
+
+
+def _row(model, series, mase, rmse=1.0, ctx=256):
+    return {"model": model, "family": "fam", "env": "core", "interpreter": "/venv/bin/python",
+            "torch": None, "cuda": None, "dataset": "datasets/standard/x", "task": "forecast",
+            "status": "ok", "detail": "ran", "error": None, "series_errors": {},
+            "rows": [{"series": series, "span": "test", "horizon": 21, "ctx": ctx,
+                      "mase": mase, "rmse": rmse, "mda": 0.5, "nd": 0.0, "no_leakage": True,
+                      "n_windows": 2, "seconds": 1.0, "adaptation": "zero-shot",
+                      "model": model}]}
+
+
+def test_headline_ranking_compares_against_the_naive_row_not_mase_below_one(tmp_path):
+    """The trap this guards: MASE's denominator is the *in-sample* naive error, so MASE < 1
+    is not "beat naive on this cell". On these financial series the naive row itself scores
+    ~4.5, and the first version of this table printed 0% for every model. The comparison is
+    against the naive row scored on the same (series, span, horizon) cell."""
+    a = tmp_path / "lane.jsonl"
+    recs = [json.dumps(_meta("trux"))]
+    # naive baseline per cell: 1.4 on s1/s2/s3, but a hard cell s4 where naive is 0.5
+    for srs, nm in (("s1", 1.4), ("s2", 1.4), ("s3", 1.4), ("s4", 0.5)):
+        recs.append(json.dumps(_row("naive", srs, nm)))
+    recs += [
+        json.dumps(_row("chronos-bolt-small", "s1", 0.5)),    # beats 1.4
+        json.dumps(_row("chronos-bolt-small", "s2", 0.8)),    # beats 1.4
+        json.dumps(_row("chronos-bolt-small", "s3", None, rmse=None)),  # no measurement
+        json.dumps(_row("chronos-bolt-small", "s4", 0.9)),    # MASE < 1 but LOSES to 0.5
+        json.dumps(_row("moment-1-large", "s1", 3.0)),
+        json.dumps(_row("moment-1-large", "s2", 2.0)),
+    ]
+    a.write_text("\n".join(recs) + "\n")
+    md = tmp_path / "M.md"
+    _report((a,), md)
+    text = md.read_text()
+    h = text.index("## Headline ranking")
+    rank = text[h:text.index("## ", h + 5)]
+    cb = next(l for l in rank.splitlines() if "chronos-bolt-small" in l)
+    mo = next(l for l in rank.splitlines() if "moment-1-large" in l)
+    assert rank.index("chronos-bolt-small") < rank.index("moment-1-large"), "better model sorts first"
+    # 4 cells, 3 comparable (s3 had no measurement), 2 wins: s4 is comparable and LOST,
+    # even though its MASE 0.9 is below 1.0
+    assert "67% (2/3)" in cb, f"s4 must not count as a win despite MASE 0.9 < 1: {cb}"
+    assert "0/2" in mo, mo
+    assert cb.rstrip().endswith("| 1 |"), f"the None-mase cell counts as no measurement: {cb}"
+    assert "not MASE < 1" in rank, "the table must say which comparison it is making"
+    assert "nan" not in rank, "a missing measurement must never render as nan"
+
+
+def test_summary_only_keeps_aggregates_and_drops_per_cell_tables(tmp_path):
+    """GitHub Pages does not serve the directory URL of a ~2 MB page, and a 3,600-row
+    table is unreadable anyway: the site asks for aggregates only."""
+    a = tmp_path / "lane.jsonl"
+    a.write_text("\n".join([json.dumps(_meta("trux")),
+                            json.dumps(_row("chronos-bolt-small", "s1", 0.5)),
+                            json.dumps(_row("chronos-bolt-small", "s2", 0.7))]) + "\n")
+    md = tmp_path / "M.md"
+    _report((a,), md, summary_only=True)
+    text = md.read_text()
+    assert "## Headline ranking" in text
+    assert "## Which interpreter produced which row" in text
+    assert "· horizon 21" not in text, "per-cell tables must be absent in summary mode"
+    assert "--summary-only" in text, "the page must say what it left out and why"

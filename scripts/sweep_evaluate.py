@@ -358,8 +358,15 @@ def report(args) -> int:
     notrun = [rec["model"] for rec in recs if not rec["rows"] and not rec["error"]]
     series = sorted({r["series"] for r in rows})
     hz = sorted({int(r["horizon"]) for r in rows})
+    # a merged report has to name every lane it folded, not just the first: one filename
+    # next to "3628 rows over 101 series" hides that nine lanes and three machines are in
+    # the table, which is exactly the provenance a reader needs to discount a row
+    srcs_note = ", ".join(
+        f"`{f}`" + (f" ({m.get('machine')})" if m and m.get("machine") else "")
+        for f, m in zip(srcs, metas))
     out = ["# Effectiveness benchmark", "",
-           f"Generated {time.strftime('%Y-%m-%d %H:%M:%S')} from `{src}` — "
+           f"Generated {time.strftime('%Y-%m-%d %H:%M:%S')} from {len(srcs)} lane file"
+           f"{'s' if len(srcs) > 1 else ''}: {srcs_note} — "
            f"{len(rows)} evaluation rows over {len(series)} series, horizons "
            f"{', '.join(map(str, hz))}. Protocol: `docs/09_benchmark.md`.", "",
            "Rows are **zero-shot** (no adaptation) and slide windows over the span(s) "
@@ -395,12 +402,75 @@ def report(args) -> int:
             f"| `{k}` | {v['machine']} | {v['device']} | {tcell(v['torch'])} | "
             f"{', '.join(f'`{m}`' for m in v['models'])} |"
             for (k, _machine, _device), v in sorted(prov.items())] + [""]
+    # Headline ranking: aggregates, so the site page stays readable and small.
+    #
+    # "beat naive" compares a model against the *naive row scored on the same cell*, not
+    # against MASE < 1. MASE's denominator is the in-sample mean |delta| of the train span,
+    # so on these financial series the naive baseline itself scores ~4.5 and a MASE < 1 test
+    # would call everything a loss (that wrong version printed 0% for every model). Ratios
+    # are medians of per-cell mase_model / mase_naive; a cell with no naive measurement is
+    # skipped, and missing measurements are counted, never averaged in.
+    from statistics import median as _median
+    base = {}
+    for (m, srs, sp, h), r in cells.items():
+        if m == "naive" and isinstance(r.get("mase"), (int, float)) and r["mase"] == r["mase"]:
+            base[(srs, sp, h)] = float(r["mase"])
+    per_model: dict = {}
+    for (m, srs, sp, h), r in cells.items():
+        d = per_model.setdefault(m, {"n": 0, "beat": 0, "cmp": 0, "ratio": [], "mase": [],
+                                     "rmse": [], "ctx": set(), "none": 0})
+        d["n"] += 1
+        if isinstance(r.get("ctx"), (int, float)):
+            d["ctx"].add(int(r["ctx"]))
+        mv = r.get("mase")
+        if isinstance(mv, (int, float)) and mv == mv:
+            d["mase"].append(float(mv))
+            b = base.get((srs, sp, h))
+            if b and b > 0:
+                d["cmp"] += 1
+                d["ratio"].append(float(mv) / b)
+                if mv < b:
+                    d["beat"] += 1
+        else:
+            d["none"] += 1
+        rv = r.get("rmse")
+        if isinstance(rv, (int, float)) and rv == rv:
+            d["rmse"].append(float(rv))
+    ranked = sorted(per_model.items(),
+                    key=lambda kv: (-(kv[1]["beat"] / kv[1]["cmp"] if kv[1]["cmp"] else 0.0),
+                                    _median(kv[1]["ratio"]) if kv[1]["ratio"] else 9e9))
+    out += ["## Headline ranking", "",
+            "`beat naive` is the share of cells where the model's MASE beats the **naive row "
+            "scored on the same (series, span, horizon) cell** - not MASE < 1: MASE's "
+            "denominator is the in-sample mean |delta| of the train span, so on these series "
+            "naive itself sits near 4.5 and a MASE < 1 test calls everything a loss. The ratio "
+            "column is the median of per-cell `mase_model / mase_naive`, which is comparable "
+            "across data paths (same bytes, same split, same denominator on both sides); raw "
+            "median MASE is scoped to this pass. `ctx` prints the context lengths actually "
+            "used - different ctx is a different measurement. `no measurement` counts cells "
+            "whose windows were all non-finite or unscored; those never enter a median.", "",
+            "| model_key | cells | beat naive | med MASE/naive | median MASE | median RMSE | ctx | no measurement |",
+            "|---|--:|--:|--:|--:|--:|---|--:|"]
+    def _num(vals):
+        # an empty list is "no measurement", not a zero and not a nan to be averaged later
+        return f"{_median(vals):.3g}" if vals else "—"
+    for m, d in ranked:
+        share = 100.0 * d["beat"] / d["cmp"] if d["cmp"] else 0.0
+        ctxs = ", ".join(str(c) for c in sorted(d["ctx"])) or "—"
+        out.append(f"| `{m}` | {d['n']} | {share:.0f}% ({d['beat']}/{d['cmp']}) "
+                   f"| {_num(d['ratio'])} | {_num(d['mase'])} | {_num(d['rmse'])} "
+                   f"| {ctxs} | {d['none']} |")
+    out += [""]
+    if getattr(args, "summary_only", False):
+        out += ["_Per-cell tables are omitted (`--summary-only`): a 3,600-row page is ~2 MB "
+                "of HTML, and GitHub Pages does not serve the directory URL for a page that "
+                "large - the full tables live in the repo's merged report instead._", ""]
     spans = sorted({r.get("span", "test") for r in rows})
 
     def cell(v):
         return "—" if v is None or (isinstance(v, float) and v != v) else f"{v:.3g}"
 
-    for srs in series:
+    for srs in (series if not getattr(args, "summary_only", False) else []):
         for sp in spans:
             for h in hz:
                 sel = [r for r in rows if r["series"] == srs
@@ -589,6 +659,10 @@ def main() -> int:
                     help="render markdown from JSONL(s); comma-separated merges several "
                          "runs/machines (rows beat errors)")
     ap.add_argument("--md", default="EFFECTIVENESS.md")
+    ap.add_argument("--summary-only", action="store_true",
+                    help="aggregates and provenance only, no per-cell tables: the docs "
+                         "site page for 3,600 cells is ~2 MB of HTML, and GitHub Pages "
+                         "will not serve a directory URL that large")
     ap.add_argument("--stdout", action="store_true")
     args = ap.parse_args()
     if args.report:
