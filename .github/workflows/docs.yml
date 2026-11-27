@@ -1,7 +1,16 @@
 name: docs
 # Publishes the documentation site (mkdocs-material) to GitHub Pages.
-# The site is a view of the repo markdown plus a matrix page generated from
-# reports/compat_matrix.json, so it is only ever as current as the committed matrix.
+# The site is a *view* of the repo's markdown, not a second copy of it: every page in
+# nav is a file that also lives in the working tree, and `docs/matrix.md` /
+# `docs/effectiveness.md` are generated from the committed matrix and lane reports
+# (scripts/build_docs.sh) - the published tables cannot drift away from their data.
+#
+# Pages source is the `gh-pages` branch, published by committing the built site there.
+# actions/deploy-pages does not work on this account: every attempt failed with
+# "Failed to create deployment (status: 404) ... Cannot find any run with github.run_id"
+# even after the repository was made public and Pages was (re)created with build_type
+# workflow. The branch-push route is the one that actually publishes here - TSFM4Finance's
+# leaderboard site uses the same mechanism.
 on:
   push:
     branches: [main]
@@ -14,16 +23,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write          # push the built site to gh-pages
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,18 +41,18 @@ jobs:
           cache-dependency-path: requirements-docs.txt
       - run: pip install -r requirements-docs.txt
       - run: bash scripts/build_docs.sh          # strict: broken links/nav fail the build
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
 
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v3
+      - name: Publish site to gh-pages
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git rm -r -q --cached .
+          find . -maxdepth 1 -mindepth 1 ! -name .git ! -name site -exec rm -rf {} +
+          mv site/* .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no site changes"; else
+            git commit -q -m "docs: publish $GITHUB_SHA"
+            git push -q -f origin HEAD:gh-pages
+          fi

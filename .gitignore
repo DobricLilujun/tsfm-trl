@@ -31,3 +31,6 @@ reports/**/*.csv
 
 # machine endpoints for the bridge probes (host, user, path, key) - never tracked
 probes/trux/bridge/bridge.env
+
+# generated site output (published to gh-pages by CI, never tracked)
+site/
