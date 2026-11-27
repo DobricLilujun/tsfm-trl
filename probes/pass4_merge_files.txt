@@ -1,0 +1,7 @@
+# pass-4 merge order (newest-wins per cell), arena parquet path only.
+# scripts/sweep_evaluate.py --report "$(grep -v '^#' probes/pass4_merge_files.txt | grep -v '^$' | tr '\n' ',' | sed 's/,$//')" --summary-only --md EFFECTIVENESS.md
+# watson's arena lane is listed last so its A6000 rows win for cells gpu7 also scored.
+reports/pass4_gpu7_full/lane_full66.jsonl
+reports/trux_rep12/lane.jsonl
+reports/trux_rep12/lane_timesfm.jsonl
+reports/pass4_watson_arena/lane_arena.jsonl
