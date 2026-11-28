@@ -1,0 +1,1824 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Time-series foundation models behind one API — a benchmark and compatibility harness">
+      
+      
+        <meta name="author" content="tsfm-trl maintainers">
+      
+      
+      
+        <link rel="prev" href="../06_matrix/">
+      
+      
+        <link rel="next" href="../effectiveness/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Measured matrix - tsfm-trl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#compatibility-matrix" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="tsfm-trl" class="md-header__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tsfm-trl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Measured matrix
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tsfm-trl" class="md-nav__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tsfm-trl
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility matrix tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured matrix
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rl-reachability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RL reachability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#captured-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Captured failures
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effectiveness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured effectiveness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_forecast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forecasting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TRL — post-training
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    TRL — post-training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_trl_api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RL / reward API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_reward_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reward & RL paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_fine_tune/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fine-tune (capability gate)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_classify_probing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification & probing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_finance_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_known_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rl-reachability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RL reachability
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#captured-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Captured failures
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<!-- generated by scripts/build_docs.sh from COMPATIBILITY.md / reports/compat_matrix.json; do not edit -->
+
+<h1 id="compatibility-matrix">Compatibility matrix<a class="headerlink" href="#compatibility-matrix" title="Permanent link">&para;</a></h1>
+<p>Generated 2026-11-21 16:33:48 on ubadmin-Precision-3591 (x86_64), python 3.11.15.</p>
+<p>✅ ok · ❌ failed (see the JSON report for the captured reason) · — not offered by the model · ◐ partial · · not checked</p>
+<p><strong>Benchmark columns</strong> (the point of this table): load · forecast · quantiles · embed · classify · anomaly. <code>classify n/m</code> counts the probe / head+LoRA / native-head routes that ran.</p>
+<p><strong>reward (mode)</strong> names the RL path the <em>architecture</em> allows — <code>grpo</code> (group-relative policy gradient over the model's own sampled token paths, needs log-probs), <code>rft</code> (rejection-sampling best-of-K, the group-baseline limit and the only path for sample-only heads), <code>descent</code> (gradient ascent on a differentiable quantile head), <code>descent·pt</code> (same through the point head). The trainer picks, not the caller; all four share one reward spec. It is a hand-written trainer with no RL library (<code>docs/05_reward_rl.md</code>).</p>
+<p><strong>fine-tune (capability)</strong> is a gate, not a result: it says a differentiable vendor objective ran, gradients were feasible and loss logging worked, over the <strong>two</strong> smoke steps shown as <code>(a→b)</code>. It is <em>not</em> evidence that fine-tuning improves out-of-sample error — that is a benchmark run with a metric, and the effectiveness question lives in <code>docs/09_benchmark.md</code>.</p>
+<p>Machines: gpu7/aarch64, ubadmin-Precision-3591/x86_64. One row per (model, environment); when two machines disagree the row that ran is kept and the other is recorded under <em>other machine</em> in the reasons.</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>tier</th>
+<th>weights</th>
+<th>load</th>
+<th>forecast</th>
+<th>quantiles</th>
+<th>embed</th>
+<th>classify</th>
+<th>anomaly</th>
+<th>reward (mode)</th>
+<th>fine-tune (capability)</th>
+<th>s</th>
+<th>machine</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>arima</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>5.9</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moving_average</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>0.7</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>naive</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>0.6</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>seasonal_naive</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>0.6</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>theta</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>0.8</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>chronos-2</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅</td>
+<td>14.3</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>chronos-bolt-small</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent</td>
+<td>✅ (3.530→3.526)</td>
+<td>2.4</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>chronos-t5-small</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ grpo</td>
+<td>✅ (1.774→1.814)</td>
+<td>10.3</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>flowstate-r1</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent</td>
+<td>✅ (7.098→7.722)</td>
+<td>2.0</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>hirondel-7m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (0.061→0.104)</td>
+<td>13.5</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>kairos-10m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (0.458→0.110)</td>
+<td>8.8</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>kronos-small</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (2.344→2.453)</td>
+<td>63.5</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moirai-1.1-R-small</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (2.562→2.413)</td>
+<td>14.0</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moirai-2.0-R-small</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent</td>
+<td>✅ (2.650→3.201)</td>
+<td>1.6</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moment-1-large</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 3/3</td>
+<td>✅</td>
+<td>✅ descent·pt</td>
+<td>✅ (219.576→97.814)</td>
+<td>30.4</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>sundial-base-128m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (3.436→3.505)</td>
+<td>20.4</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>t0-gamma</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (3.052→3.046)</td>
+<td>8.8</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>timemoe-50m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (0.025→0.043)</td>
+<td>148.6</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>timesfm-2.0-500m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>85.0</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>timesfm-2.5-200m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent</td>
+<td>✅ (0.347→0.450)</td>
+<td>5.9</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>timestral-28m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>14.8</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>tirex</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>17.1</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>toto-2-22m</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (0.710→0.714)</td>
+<td>26.1</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>ttm-r2</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent·pt</td>
+<td>✅ (219.444→315.138)</td>
+<td>0.8</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>ttm-r3</td>
+<td>A</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent·pt</td>
+<td>✅ (134.459→118.437)</td>
+<td>1.4</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>aurora</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>37.1</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>chronos-bolt-base</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent</td>
+<td>✅ (3.606→3.812)</td>
+<td>7.3</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>chronos-t5-base</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ grpo</td>
+<td>✅ (1.702→1.733)</td>
+<td>29.3</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>kairos-50m</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (0.099→0.114)</td>
+<td>4.7</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>kronos-base</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (2.559→2.605)</td>
+<td>203.8</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>kronos-mini</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (9.066→9.096)</td>
+<td>26.1</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moirai-1.1-R-base</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (2.576→2.852)</td>
+<td>6.0</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moirai-moe-1.0-R-base</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (3.496→3.328)</td>
+<td>52.9</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>moment-1-small</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 3/3</td>
+<td>✅</td>
+<td>✅ descent·pt</td>
+<td>✅ (244.804→108.576)</td>
+<td>5.3</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>t0-alpha</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (4.039→3.726)</td>
+<td>4.7</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>t0-beta</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (2.990→3.380)</td>
+<td>6.0</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>timesfm-3.0</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>12.7</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>timestral-123m</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>19.8</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>timestral-5m</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>11.0</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>tirex-2</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>—</td>
+<td>❌</td>
+<td>❌ 0/2</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>8.6</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>toto-open-1.0</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (3.067→2.643)</td>
+<td>235.2</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>toto-2-313m</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ rft</td>
+<td>✅ (0.703→0.712)</td>
+<td>93.0</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>yug</td>
+<td>B</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>9.3</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>patchtst-fm-r2</td>
+<td>C</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>—</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>✅ descent·pt</td>
+<td>—</td>
+<td>21.6</td>
+<td>gpu7/aarch64</td>
+</tr>
+<tr>
+<td>timestral-209m</td>
+<td>C</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅ 2/2</td>
+<td>✅</td>
+<td>—</td>
+<td>—</td>
+<td>23.7</td>
+<td>ubadmin-Precision-3591/x86_64</td>
+</tr>
+<tr>
+<td>visiontspp-base</td>
+<td>C</td>
+<td>❌</td>
+<td>❌</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>1.2</td>
+<td>gpu7/aarch64</td>
+</tr>
+</tbody>
+</table>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>task</th>
+<th>ok</th>
+<th>declined by the model</th>
+<th>failed</th>
+<th>not checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>load</td>
+<td>45</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>predict</td>
+<td>44</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>quantiles</td>
+<td>35</td>
+<td>11</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>embed</td>
+<td>44</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>classify</td>
+<td>44</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>anomaly</td>
+<td>44</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>reward</td>
+<td>30</td>
+<td>16</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>finetune</td>
+<td>29</td>
+<td>17</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>'declined' means the model or its vendor package offers no path for that task in this environment (a <code>—</code> in the table): TimesFM's and TiRex's public builds ship inference only, Timestral and Yug likewise, Aurora's flow-matching head has no public training step, and the installed tsfm_public <code>PatchTSTFMForPrediction.forward</code> declares no target argument. 'failed' means something was attempted and broke, with the reason captured below. A declined row is a statement about the model package; a failed row is a statement about this environment or our adapter — and history says to check the second category before believing the first (<code>docs/08_known_issues.md</code>, fifth pass).</p>
+<h2 id="rl-reachability">RL reachability<a class="headerlink" href="#rl-reachability" title="Permanent link">&para;</a></h2>
+<p>Which post-training path each architecture exposes. <code>grpo</code> is the strictest (token log-probs on its own sampled paths); <code>rft</code> is what a sample-only or diffusion head can do; <code>descent</code> needs a differentiable head; the point-only models get the point version. This is a property of the vendor's public build, not a preference of the harness.</p>
+<table>
+<thead>
+<tr>
+<th>path</th>
+<th>models</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>grpo</td>
+<td>2: chronos-t5-base, chronos-t5-small</td>
+</tr>
+<tr>
+<td>rft</td>
+<td>18: chronos-2, hirondel-7m, kairos-10m, kairos-50m, kronos-base, kronos-mini, kronos-small, moirai-1.1-R-base, moirai-1.1-R-small, moirai-moe-1.0-R-base, sundial-base-128m, t0-alpha, t0-beta, t0-gamma, timemoe-50m, toto-2-22m, toto-2-313m, toto-open-1.0</td>
+</tr>
+<tr>
+<td>descent</td>
+<td>5: chronos-bolt-base, chronos-bolt-small, flowstate-r1, moirai-2.0-R-small, timesfm-2.5-200m</td>
+</tr>
+<tr>
+<td>descent·pt</td>
+<td>5: moment-1-large, moment-1-small, patchtst-fm-r2, ttm-r2, ttm-r3</td>
+</tr>
+</tbody>
+</table>
+<p>declined by the package (no trainable path at all): 16 · not checked: 0</p>
+<h2 id="captured-failures">Captured failures<a class="headerlink" href="#captured-failures" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>arima</strong> (baseline, python 3.11.14): reward: arima: no 'finetune' support (adapter exposes no trainable module); finetune: baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)</li>
+<li><strong>moving_average</strong> (baseline, python 3.11.14): reward: moving_average: no 'finetune' support (adapter exposes no trainable module); finetune: baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)</li>
+<li><strong>naive</strong> (baseline, python 3.11.14): reward: naive: no 'finetune' support (adapter exposes no trainable module); finetune: baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)</li>
+<li><strong>seasonal_naive</strong> (baseline, python 3.11.14): reward: seasonal_naive: no 'finetune' support (adapter exposes no trainable module); finetune: baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)</li>
+<li><strong>theta</strong> (baseline, python 3.11.14): reward: theta: no 'finetune' support (adapter exposes no trainable module); finetune: baseline: no trainable module and no loss_kind in the installed package (nothing to fine-tune)</li>
+<li><strong>chronos-2</strong> (chronos2, python 3.11.14): other machine: gpu7/aarch64: reward=fail</li>
+<li><strong>hirondel-7m</strong> (hirondel, python 3.12.13): finetune: loss did not fall: 0.061029 -&gt; 0.103562</li>
+<li><strong>kairos-10m</strong> (kairos, python 3.12.13): other machine: ubadmin-Precision-3591/x86_64: finetune=fail, reward=fail</li>
+<li><strong>moment-1-large</strong> (moment, python 3.11.14): other machine: ubadmin-Precision-3591/x86_64: reward=fail</li>
+<li><strong>timemoe-50m</strong> (timemoe, python 3.11.14): finetune: loss did not fall: 0.024578 -&gt; 0.042918</li>
+<li><strong>timesfm-2.0-500m</strong> (timesfm20, python 3.11.14): finetune: timesfm-2.0-500m: no 'finetune' support (adapter exposes no trainable module); reward: timesfm-2.0-500m: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>timestral-28m</strong> (timestral, python 3.12.13): finetune: timestral: no 'finetune' support (the released timestral package exposes the inference forecaster only; wire the vendor training forward (mistralai/timestral) before claiming a Timestral fine-tune); reward: timestral: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>tirex</strong> (tirex, python 3.11.14): reward: tirex: no 'finetune' support (adapter exposes no trainable module); finetune: tirex: no trainable module and no loss_kind in the installed package (nothing to fine-tune)</li>
+<li><strong>aurora</strong> (aurora, python 3.12.13): finetune: aurora: no 'finetune' support (adapter exposes no trainable module); reward: aurora: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>chronos-t5-base</strong> (chronos_t5, python 3.11.14): other machine: ubadmin-Precision-3591/x86_64: predict=fail, reward=fail</li>
+<li><strong>kairos-50m</strong> (kairos, python 3.12.13): other machine: ubadmin-Precision-3591/x86_64: finetune=fail, reward=fail</li>
+<li><strong>timesfm-3.0</strong> (timesfm30, python 3.11.14): finetune: timesfm-3.0: no 'finetune' support (the public timesfm package ships TimesFM 3.0 inference only (no documented training forward); contributing a head-only loop is tracked in docs/03_fine_tune.md); reward: timesfm-3.0: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>timestral-123m</strong> (timestral, python 3.12.13): finetune: timestral: no 'finetune' support (the released timestral package exposes the inference forecaster only; wire the vendor training forward (mistralai/timestral) before claiming a Timestral fine-tune); reward: timestral: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>timestral-5m</strong> (timestral, python 3.12.13): finetune: timestral: no 'finetune' support (the released timestral package exposes the inference forecaster only; wire the vendor training forward (mistralai/timestral) before claiming a Timestral fine-tune); reward: timestral: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>tirex-2</strong> (tirex2, python 3.12.14): predict: CompilationError: at 85:21:
+        # each thread block loads the scaMinter_initial
+        scaMinterinitial_ptr = scaMinter_initial + idx_b_BNH * str_scaMinterinitial_B_NH<div class="highlight"><pre><span></span><code># load initial states
+matC_k_val = tl.load(matCinitial_ptr, boundary_check=(0, 1)).to(tl.float32)
+vecN; embed: CompilationError: at 85:21:
+# each thread block loads the scaMinter_initial
+scaMinterinitial_ptr = scaMinter_initial + idx_b_BNH * str_scaMinterinitial_B_NH
+
+# load initial sta; other machine: ubadmin-Precision-3591/x86_64: load=fail; anomaly: CompilationError: at 85:21:
+# each thread block loads the scaMinter_initial
+scaMinterinitial_ptr = scaMinter_initial + idx_b_BNH * str_scaMinterinitial_B_NH
+
+# load initial sta; reward: tirex-2: no 'finetune' support (adapter exposes no trainable module); finetune: tirex2: no trainable module and no loss_kind in the installed package (nothing to fine-tune); quantiles: not observed: the point forecast itself failed
+</code></pre></div>
+<ul>
+<li><strong>toto-open-1.0</strong> (toto1, python 3.12.14): other machine: gpu7/aarch64: load=fail</li>
+<li><strong>yug</strong> (yug, python 3.12.13): finetune: yug: no 'finetune' support (adapter exposes no trainable module); reward: yug: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>patchtst-fm-r2</strong> (patchtst, python 3.11.14): finetune: patchtst-fm-r2: no 'finetune' support (forward(['output_hidden_states', 'pad_mask', 'past_observed_mask', 'past_values', 'prediction_length', 'quantile_levels', 'return_dict', 'return_loss']) declares no target argument in transformers 5.22.1); other machine: gpu7/aarch64: finetune=fail</li>
+<li><strong>timestral-209m</strong> (timestral, python 3.12.13): finetune: timestral: no 'finetune' support (the released timestral package exposes the inference forecaster only; wire the vendor training forward (mistralai/timestral) before claiming a Timestral fine-tune); reward: timestral: no 'finetune' support (adapter exposes no trainable module)</li>
+<li><strong>visiontspp-base</strong> (visionts, python 3.11.14): load: UnavailableError: visiontspp-base: UnavailableError: visiontspp-base: VisionTS++ needs the upstream package (the Hub repo ships .ckpt weights only): No module named 'visiontspp'  [install: git clone the VisionTS/VisionTS++ upstream, then weights=/path/to/visiontspp_base.ckpt. clone it and point the ; other machine: ubadmin-Precision-3591/x86_64: load=fail; predict: not attempted: the model did not load; finetune: not attempted: the model did not load; classify: not attempted: the model did not load; anomaly: not attempted: the model did not load; reward: not attempted: the model did not load; quantiles: not attempted: the model did not load; embed: not attempted: the model did not load</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../06_matrix/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Compatibility matrix tool">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Compatibility matrix tool
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../effectiveness/" class="md-footer__link md-footer__link--next" aria-label="Next: Measured effectiveness">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Measured effectiveness
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

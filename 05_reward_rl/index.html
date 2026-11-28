@@ -1,0 +1,1379 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Time-series foundation models behind one API — a benchmark and compatibility harness">
+      
+      
+        <meta name="author" content="tsfm-trl maintainers">
+      
+      
+      
+        <link rel="prev" href="../10_trl_api/">
+      
+      
+        <link rel="next" href="../03_fine_tune/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Reward & RL paths - tsfm-trl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#5-reward-post-training-rewardtrainer" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="tsfm-trl" class="md-header__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tsfm-trl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Reward & RL paths
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tsfm-trl" class="md-nav__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tsfm-trl
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility matrix tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effectiveness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured effectiveness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_forecast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forecasting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TRL — post-training
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    TRL — post-training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_trl_api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RL / reward API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reward & RL paths
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reward & RL paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-default-reward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The default reward
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bring-your-own-reward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bring your own reward
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grpo-concretely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GRPO, concretely
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#honest-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Honest limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provenance-is-this-someone-elses-rl-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance: is this someone else's RL library?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#demonstrators-what-was-actually-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demonstrators (what was actually run)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Demonstrators (what was actually run)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#repeated-runs-what-a-reward-delta-is-worth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repeated runs: what a reward delta is worth
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_fine_tune/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fine-tune (capability gate)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_classify_probing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification & probing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_finance_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_known_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-default-reward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The default reward
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bring-your-own-reward" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bring your own reward
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grpo-concretely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GRPO, concretely
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#honest-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Honest limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#provenance-is-this-someone-elses-rl-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance: is this someone else's RL library?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#demonstrators-what-was-actually-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demonstrators (what was actually run)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Demonstrators (what was actually run)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#repeated-runs-what-a-reward-delta-is-worth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repeated runs: what a reward delta is worth
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="5-reward-post-training-rewardtrainer">5 · Reward post-training (<code>RewardTrainer</code>)<a class="headerlink" href="#5-reward-post-training-rewardtrainer" title="Permanent link">&para;</a></h1>
+<p>One trainer, three mechanisms, chosen by what the model actually exposes:</p>
+<table>
+<thead>
+<tr>
+<th>mode</th>
+<th>what it optimises</th>
+<th>which families can do it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grpo</code></td>
+<td>group-relative policy gradient on <strong>token log-probabilities</strong></td>
+<td>token models: Chronos-T5, Time-MoE, Sundial (anything with <code>loss_kind="token"</code> + <code>path_logprob</code>)</td>
+</tr>
+<tr>
+<td><code>reward_descent</code></td>
+<td>direct gradient through a <strong>differentiable quantile head</strong></td>
+<td>Chronos-2/Bolt, Moirai 2, Toto, TiRex-2, FlowState</td>
+</tr>
+<tr>
+<td><code>reward_descent_point</code></td>
+<td>same, on a <strong>mean-only head</strong> (interval terms switched off)</td>
+<td>MOMENT, small TTM releases</td>
+</tr>
+<tr>
+<td><code>rft</code></td>
+<td>rejection sampling / best-of-N: keep the best candidates, then supervise</td>
+<td>any family with a <code>training_step</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl</span><span class="w"> </span><span class="kn">import</span> <span class="n">RewardSpec</span><span class="p">,</span> <span class="n">RewardTrainer</span><span class="p">,</span> <span class="n">ModelHub</span><span class="p">,</span> <span class="n">TrainingConfig</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">m</span> <span class="o">=</span> <span class="n">ModelHub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"chronos-2"</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">r</span> <span class="o">=</span> <span class="n">RewardTrainer</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">TrainingConfig</span><span class="p">(</span><span class="n">budget</span><span class="o">=</span><span class="s2">"fs16"</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">peft</span><span class="o">=</span><span class="s2">"heads_only"</span><span class="p">),</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                  <span class="n">spec</span><span class="o">=</span><span class="n">RewardSpec</span><span class="p">(</span><span class="n">w_pinball</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">w_dir</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">w_cross</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                  <span class="n">n_candidates</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">kl</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">r</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s2">"mode"</span><span class="p">]</span>        <span class="c1"># 'reward_descent'</span>
+</code></pre></div>
+<p>CLI:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tsfm-trl<span class="w"> </span>reward<span class="w"> </span>--model<span class="w"> </span>chronos-t5<span class="w"> </span>--steps<span class="w"> </span><span class="m">6</span><span class="w"> </span>--candidates<span class="w"> </span><span class="m">8</span><span class="w"> </span>--kl<span class="w"> </span>1e-3<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">                </span>--mode<span class="w"> </span>auto<span class="w"> </span>--budget<span class="w"> </span>fs16<span class="w"> </span>--horizon<span class="w"> </span><span class="m">21</span><span class="w"> </span>--ctx<span class="w"> </span><span class="m">256</span>
+</code></pre></div>
+<h2 id="the-default-reward">The default reward<a class="headerlink" href="#the-default-reward" title="Permanent link">&para;</a></h2>
+<p><code>RewardSpec</code> is accuracy plus direction minus the pathologies that make a
+probabilistic forecast useless in a portfolio:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>reward = −w_pinball · pinball(quantiles, truth)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>         + w_dir     · directional_accuracy(median vs truth)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>         − w_cross   · quantile-crossing penalty
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>reward clipped to ±spec.clip          # outlier windows must not dominate a batch
+</code></pre></div>
+<h2 id="bring-your-own-reward">Bring your own reward<a class="headerlink" href="#bring-your-own-reward" title="Permanent link">&para;</a></h2>
+<p>Any callable with this signature replaces it — the trading case is the reason the
+signature has an <code>anchor</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">pnl</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">anchor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="mf">2e-4</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">"""candidates (B,K,H), truth (B,H), anchor (B,1) -&gt; reward (B,K)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="sd">    anchor is the last observed price: P&amp;L is relative, so a reward that ignores it</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="sd">    silently rewards forecasts that are simply close to the mean of the context.</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="sd">    """</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">anchor</span><span class="p">)</span>          <span class="c1"># (B,K)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">truth</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">anchor</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">truth</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="mi">0</span> <span class="o">*</span> <span class="n">anchor</span><span class="p">)</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="k">return</span> <span class="n">pos</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">-</span> <span class="n">cost</span> <span class="o">*</span> <span class="p">(</span><span class="n">pos</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">RewardTrainer</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">reward</span><span class="o">=</span><span class="n">pnl</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="grpo-concretely">GRPO, concretely<a class="headerlink" href="#grpo-concretely" title="Permanent link">&para;</a></h2>
+<p>Per step: draw <code>K</code> candidate continuations, score them, convert rewards to
+group-relative advantages <code>A = (r − mean)/std</code> across the group, then</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>loss = −Σ A · logp(candidates)  +  kl · KL(π ‖ π_ref)
+</code></pre></div>
+<p>with <code>π_ref</code> a frozen clone of the trainable parameters taken at the start of the run.
+That is the ordinary GRPO update, at smoke scale (<code>reward_steps</code>, <code>n_candidates</code>),
+which is what makes the matrix column meaningful: it proves the log-prob path, the
+candidate sampler and the KL anchor all <em>run</em> on that family.</p>
+<h2 id="honest-limits">Honest limits<a class="headerlink" href="#honest-limits" title="Permanent link">&para;</a></h2>
+<ul>
+<li>This is <strong>reward post-training, not an RL benchmark</strong>. Six steps on 16 windows is a
+  capability check; <code>mean_reward</code> in the output is the mean reward of the <em>final</em> step,
+  not a policy's expected return.</li>
+<li><code>reward_descent</code> is not policy gradient — for a deterministic quantile head the reward
+  is differentiable, and pretending otherwise would add variance for no bias-free
+  benefit. The mode is recorded in the checkpoint and in <code>TrainResult.extra["mode"]</code>.</li>
+<li>Families with no gradient path at all (TimesFM inference builds, TiRex) report
+  <code>— (no reward path)</code> rather than being run through a surrogate.</li>
+<li>Moirai 1.1 / Moirai-MoE are <code>—</code>: their head draws samples, so a "reward gradient"
+  would be noise with a learning rate attached.</li>
+</ul>
+<h2 id="memory">Memory<a class="headerlink" href="#memory" title="Permanent link">&para;</a></h2>
+<p>The same ladder as fine-tuning (<code>bs/amp/peft</code> stepped down on OOM), and the same rule
+that CUDA <em>toolchain</em> failures are environment problems: the run retries cheaper and
+writes <code>fallbacks: [...]</code> into the checkpoint, so a table never hides the fact that a
+row ran at <code>bs=1 bf16 heads_only</code>.</p>
+<p>Runnable shape of the call: <code>examples/04_reward.py</code> (core env, one GPU, ~1 minute).</p>
+<h2 id="provenance-is-this-someone-elses-rl-library">Provenance: is this someone else's RL library?<a class="headerlink" href="#provenance-is-this-someone-elses-rl-library" title="Permanent link">&para;</a></h2>
+<p>No. <code>RewardTrainer</code> is hand-written in <code>tsfm_trl/training/reward.py</code> (~435 lines), and
+the dependency graph proves it: core dependencies are
+<code>numpy/pandas/pyarrow/scikit-learn/scipy/pyyaml/tqdm</code>, the <code>[rl]</code> extra is <code>torch</code> only,
+and nothing in the tree imports <code>trl</code>, <code>trlx</code>, <code>verl</code>, <code>openrlhf</code> or <code>open_r1</code>. The
+<em>algorithm</em> <code>grpo</code> refers to is Group Relative Policy Optimization (Shao et al. 2024, the
+DeepSeek-R1 recipe); the code here is our own minimal implementation of it.</p>
+<p><strong>What is faithful to GRPO</strong></p>
+<ul>
+<li>group-relative advantage, no value/critic network:
+  <code>adv = (r − r.mean(axis=group)) / (r.std(axis=group) + 1e-6)</code>;</li>
+<li>K sampled continuations per window, scored by a reward that is not the loss;</li>
+<li>a policy-gradient update on the model's <strong>own</strong> log-likelihood
+  (<code>Chronos</code> adapter's <code>path_logprob</code> = sum of next-token log-probs from
+  <code>model(input_ids, labels=…)</code>), so the objective is the model's own language, not a
+  re-derived one.</li>
+</ul>
+<p><strong>What is deliberately simplified</strong> — say this out loud in any paper text:</p>
+<ul>
+<li>only the <strong>max-advantage path per group</strong> gets the <code>−A·logp</code> term; standard GRPO
+  averages the term over all K samples;</li>
+<li><strong>no PPO-style clipping and no π_old ratio</strong> — the update is the plain REINFORCE-with-
+  group-baseline form;</li>
+<li>the trust region is <strong>weight-space</strong> — a frozen clone of the trainable parameters taken
+  at step 0, penalised as <code>kl · Σ mean((p − p_ref)²)</code> (<code>kl</code> defaults to 1e-3 in the class and
+  0.02 on the CLI) — not the paper's
+  token-level KL to π_ref;</li>
+<li>the reward is a forecast reward (scale-free accuracy + directional term + optional
+  quantile-crossing penalty), not a program verifier.</li>
+</ul>
+<p>So: <em>GRPO-style</em> is the accurate phrase; <code>mode="grpo"</code> in the matrix means
+"group-relative policy gradient over the model's own sampled token paths", and it is only
+reachable where an adapter exposes <code>sample_paths</code> + <code>path_logprob</code> — today the Chronos-T5
+adapters (2 registered models). Kronos and Time-MoE expose <code>sample_paths</code> but no token
+log-prob, so they run <code>rft</code>, which is the group-baseline limit of the same objective and
+needs no likelihood.</p>
+<p><strong>Why not HuggingFace TRL's <code>GRPOTrainer</code>?</strong> It is bound to a causal-LM interface
+(<code>logits → per-token log-probs</code>, a <code>Trainer</code> training loop). Most TSFM architectures are
+not that: diffusion heads (Chronos-Bolt), masked-patch distribution heads (Moirai),
+quantile-regression heads (TTM, FlowState, Toto), flow-matching heads (Sundial, Aurora),
+RVQ tokens with a vendor training loop (Kronos). Adopting TRL would mean the RL half of
+the library only works for the two Chronos variants — and it would pin a <code>Trainer</code>
+dependency whose transitive requirements fight the per-family version pins that keep 11
+environments working (<code>docs/01_install.md</code>).</p>
+<p><strong>To make it canonical</strong> (each step is small and localized):</p>
+<ol>
+<li>have <code>path_logprob</code> return the per-token sequence log-prob instead of the sum, and
+   average the <code>−A·logp</code> term over all K candidates;</li>
+<li>snapshot π_old per iteration and add the clipped ratio;</li>
+<li>replace the weight-space anchor with a token-level KL against a frozen π_ref forward.</li>
+</ol>
+<h2 id="demonstrators-what-was-actually-run">Demonstrators (what was actually run)<a class="headerlink" href="#demonstrators-what-was-actually-run" title="Permanent link">&para;</a></h2>
+<p>Small data (16 windows, <code>fs64</code> budget), one GPU. Every row is recorded with the
+<em>quartile-mean</em> comparison described above rather than first-step-vs-last-step, and with
+the parameter budget it actually trained — because a reward gain earned by 22 M free
+parameters and one earned by 0.3 M adapters are different claims.</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>mode</th>
+<th>steps</th>
+<th>trainable</th>
+<th>reward early → late</th>
+<th>verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chronos-t5-small</code></td>
+<td><code>grpo</code> (8 sampled continuations, group-relative advantage)</td>
+<td>96</td>
+<td>1,081,344 (LoRA)</td>
+<td><strong>1.741 → 1.839</strong></td>
+<td>improved</td>
+</tr>
+<tr>
+<td><code>toto-2-22m</code></td>
+<td><code>rft</code> (rejection-sampling filtered fine-tune)</td>
+<td>48</td>
+<td>295,296 (LoRA)</td>
+<td>−1.488 → −1.670</td>
+<td><strong>not improved</strong></td>
+</tr>
+<tr>
+<td><code>toto-2-22m</code></td>
+<td><code>rft</code></td>
+<td>48</td>
+<td>21,915,584 (full)</td>
+<td>−1.488 → −1.669</td>
+<td><strong>not improved</strong></td>
+</tr>
+<tr>
+<td><code>flowstate-r1</code></td>
+<td><code>reward_descent</code></td>
+<td>96</td>
+<td>heads_only at <code>bs=1 bf16</code> (ladder)</td>
+<td>−1.296 → −1.387</td>
+<td><strong>not improved</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="repeated-runs-what-a-reward-delta-is-worth">Repeated runs: what a reward delta is worth<a class="headerlink" href="#repeated-runs-what-a-reward-delta-is-worth" title="Permanent link">&para;</a></h3>
+<p><code>scripts/reward_seeds.py</code> runs the same protocol over several seeds and reports the
+spread of the late-minus-early delta. Done properly (three seeds, and — for two of these
+— on two different machines), the picture is more interesting than the single-curve
+table above:</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th>mode</th>
+<th>configuration</th>
+<th>seeds</th>
+<th>late − early</th>
+<th>verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chronos-t5-small</code></td>
+<td><code>grpo</code></td>
+<td>LoRA 1.08 M, lr 2e-5, bs 8, 96 steps</td>
+<td>3 (A6000)</td>
+<td><strong>+0.059 ± 0.013</strong></td>
+<td>3/3 improved</td>
+</tr>
+<tr>
+<td><code>flowstate-r1</code></td>
+<td><code>reward_descent</code></td>
+<td>heads-only 1.18 M, <strong>lr 2e-5</strong> (the configuration of the table above), bs 1, 96 steps</td>
+<td>3 (GB10) + 3 (A6000)</td>
+<td>+0.136 ± 0.348</td>
+<td>1/3 — sign <strong>not established</strong></td>
+</tr>
+<tr>
+<td><code>flowstate-r1</code></td>
+<td><code>reward_descent</code></td>
+<td>heads-only, <strong>lr 1e-4</strong>, bs 1, 96 steps</td>
+<td>3 (GB10) + 3 (A6000)</td>
+<td><strong>+0.426 ± 0.228</strong></td>
+<td>3/3 improved</td>
+</tr>
+<tr>
+<td><code>toto-2-22m</code></td>
+<td><code>rft</code></td>
+<td>LoRA 295 k, default lr, bs 4, 48 steps</td>
+<td>3 (RTX Ada)</td>
+<td>−0.067 ± 0.109</td>
+<td>1/3 — no effect at this budget</td>
+</tr>
+</tbody>
+</table>
+<p>Three things follow, and they are the reason this section exists:</p>
+<ul>
+<li><strong>The FlowState row above ("not improved") was a single seed at lr 2e-5.</strong> Repeated at
+  that configuration it is +0.136 ± 0.348 with 1/3 seeds improved — i.e. the original
+  −0.09 sits comfortably inside its own noise. At lr 1e-4 the same model and mode
+  improves 3/3 with a mean five times the size of the earlier point estimate. So the
+  honest claim is not "reward descent does not work on FlowState" but "<strong>the reward
+  trajectory at this budget is learning-rate sensitive</strong>, and a single seed at one
+  learning rate supports no verdict in either direction."</li>
+<li><strong>The Toto negative result survives</strong>, with an error bar: −0.067 ± 0.109, 1/3 seeds.
+  "RFT runs on Toto and does not improve reward at 48 steps" is supported; "RFT is
+  useless for Toto" is not.</li>
+<li><strong>The harness is seed-deterministic across hardware.</strong> The lr-2e-5 FlowState runs on
+  the aarch64 GB10 and the x86 A6000 agree to five decimals (+0.42577 vs +0.42576 for
+  the lr-1e-4 pair). Seed-to-seed variation is enormous; machine-to-machine variation is
+  not. So repeated runs must vary the seed, and cross-machine replication is a check on
+  the environment, not a source of new variance.</li>
+</ul>
+<p>A reproduction caveat worth recording: the original demo runs were done on the DGX, where
+the <code>toto</code> env now has a <strong>CPU-only</strong> torch (<code>2.7.0+cpu</code>) after its lock-file rebuild. A
+GPU-flagged reproduction there fails with <code>Torch not compiled with CUDA enabled</code>, which is
+environment drift, not a model result — the Toto seeds above were therefore run on the
+laptop GPU, and the sweep now records each env's torch build and CUDA availability per row
+(<code>docs/08_known_issues.md</code>).</p>
+<p>The Toto row previously read <strong>−2.232 → −1.914, improved</strong>. It no longer does, and the
+reason is worth writing down rather than quietly fixing. Two things moved since that
+number was recorded: the reward's quantile-level grid (when the emitted head has a
+different number of levels than the caller asked for, the candidate grid is now the
+uniform one — the old scale is not comparable), and <code>peft="lora"</code> stopped training the
+trunk (<code>docs/08_known_issues.md</code>). Re-run at the current revision with both a 295 k
+adapter budget and the full 21.9 M-parameter model, the answer is the same in both
+cases: the reward drifts down. So RFT is a working <em>path</em> on Toto — the mode runs, the
+curve is logged, no fallback was needed — and a <strong>negative result</strong> at this budget.</p>
+<p>The <code>chronos-t5-small</code> GRPO gain is the one positive claim here, and it survived the LoRA
+fix, which strengthens it: +0.10 reward from 1.08 M adapter parameters, no ladder
+fallback.</p>
+<p>The FlowState row is kept as a negative result (re-run with quartile reporting: early
+mean −1.296, late mean −1.387). What it shows: the run fell to the ladder profile
+<code>bs=1, amp=bf16, peft=heads_only</code> under memory pressure, and gradient descent on the
+pinball-plus-direction reward at that profile drifts the reward down instead of up. A reward <em>path</em> is demonstrated (the mode runs, the curve is logged);
+a reward <em>gain</em> on a differentiable head is not demonstrated at this budget. Anyone
+concluding "reward post-training helps TSForecasters" from this repo would be
+over-reading it.</p>
+<p>Reproduce:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>tsfm-trl<span class="w"> </span>reward<span class="w"> </span>--model<span class="w"> </span>chronos-t5-small<span class="w"> </span>--steps<span class="w"> </span><span class="m">96</span><span class="w"> </span>--bs<span class="w"> </span><span class="m">8</span><span class="w"> </span>--lr<span class="w"> </span>2e-5<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">                </span>--budget<span class="w"> </span>fs64<span class="w"> </span>--peft<span class="w"> </span>lora<span class="w"> </span>--device<span class="w"> </span>cuda
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>tsfm-trl<span class="w"> </span>reward<span class="w"> </span>--model<span class="w"> </span>toto-2-22m<span class="w">      </span>--steps<span class="w"> </span><span class="m">48</span><span class="w"> </span>--budget<span class="w"> </span>fs64<span class="w"> </span>--peft<span class="w"> </span>lora<span class="w"> </span>--device<span class="w"> </span>cuda
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../10_trl_api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: RL / reward API">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                RL / reward API
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../03_fine_tune/" class="md-footer__link md-footer__link--next" aria-label="Next: Fine-tune (capability gate)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Fine-tune (capability gate)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

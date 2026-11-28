@@ -1,0 +1,3074 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Time-series foundation models behind one API — a benchmark and compatibility harness">
+      
+      
+        <meta name="author" content="tsfm-trl maintainers">
+      
+      
+      
+        <link rel="prev" href="../07_finance_tasks/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Known issues - tsfm-trl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#8-known-issues-pins-and-the-reasons-behind-them" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="tsfm-trl" class="md-header__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tsfm-trl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Known issues
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tsfm-trl" class="md-nav__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tsfm-trl
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility matrix tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effectiveness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured effectiveness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_forecast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forecasting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TRL — post-training
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    TRL — post-training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_trl_api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RL / reward API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_reward_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reward & RL paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_fine_tune/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fine-tune (capability gate)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_classify_probing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification & probing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_finance_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-pins-that-decide-whether-a-family-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pins that decide whether a family runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-level-behaviour-the-adapters-encode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model-level behaviour the adapters encode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decisions-that-look-like-quirks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design decisions that look like quirks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vendor-packages-the-exact-installs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vendor packages: the exact installs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numerical-ladder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numerical ladder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope (and why)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#second-pass-per-machine-matrix-three-classify-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Second pass: per-machine matrix, three classify levels
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#third-pass-sundial-toto-10-and-what-a-moving-repository-does-to-a-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Third pass: Sundial, Toto 1.0, and what a moving repository does to a matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fourth-pass-three-fine-tune-refusals-that-turned-out-to-be-ours" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fourth pass: three fine-tune refusals that turned out to be ours
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#peftlora-used-to-include-the-trunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        peft="lora" used to include the trunk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fifth-pass-two-dead-cli-paths-and-chronos-2s-output-patch-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fifth pass: two dead CLI paths, and Chronos-2's output-patch cap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#normalising-an-interpreter-path-can-leave-the-venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalising an interpreter path can leave the venv
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-family-env-can-silently-lose-its-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A family env can silently lose its GPU
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seventh-pass-101-series-and-three-ways-a-number-can-be-wrong-without-any-code-erroring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seventh pass: 101 series, and three ways a number can be wrong without any code erroring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Seventh pass: 101 series, and three ways a number can be wrong without any code erroring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-checkpoints-context-length-is-an-interface-not-a-suggestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A checkpoint's context length is an interface, not a suggestion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nan-is-a-failed-measurement-not-a-metric-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NaN is a failed measurement, not a metric value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#report-sections-that-iterate-the-wrong-collection-under-count-across-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report sections that iterate the wrong collection under-count across lanes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-cards-free-at-launch-is-not-free-during" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared cards: free at launch is not free during
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-small-tooling-facts-from-this-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two small tooling facts from this pass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syncing-a-checkout-with-rsync-delete-deletes-the-environments-living-inside-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syncing a checkout with rsync --delete deletes the environments living inside it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-rows-model-field-is-the-adapters-family-key-and-ten-checkpoints-collide-on-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A row's model field is the adapter's family key, and ten checkpoints collide on it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-gpu-that-answers-na-for-memory-is-a-scheduler-bug-waiting-to-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A GPU that answers [N/A] for memory is a scheduler bug waiting to happen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sixth-pass-moving-the-harness-onto-other-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sixth pass: moving the harness onto other machines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fine-tune-pass-the-lr-moved-the-number-and-the-job-script-lost-its-own-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fine-tune pass: the lr moved the number, and the job script lost its own summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-dispatched-bridge-job-is-one-file-three-failures-one-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A dispatched bridge job is one file: three failures, one rule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-same-series-name-can-be-two-different-measurements-csv-vs-arena-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The same series name can be two different measurements: CSV vs arena directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-device-is-a-record-not-a-constraint-until-the-adapter-enforces-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --device is a record, not a constraint - until the adapter enforces it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-model-family-is-device-sensitive-the-rest-agree-bit-for-bit-across-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One model family is device-sensitive; the rest agree bit-for-bit across machines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-2-mb-documentation-page-is-published-but-not-served" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A 2 MB documentation page is published but not served
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#re-dispatching-a-bridge-job-under-a-used-number-never-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-dispatching a bridge job under a used number never runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-job-that-ran-is-not-the-job-you-wrote-five-failures-one-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The job that ran is not the job you wrote: five failures, one bridge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-hand-written-file-on-a-remote-clone-blocks-the-pull-that-brings-the-next-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A hand-written file on a remote clone blocks the pull that brings the next job
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-max-windows-draws-the-test-windows-at-random-so-a-different-seed-is-a-different-measurement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --max-windows draws the test windows at random, so a different seed is a different measurement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-partitioned-corpus-makes-a-merged-report-look-cross-checked-when-it-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A partitioned corpus makes a merged report look cross-checked when it is not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#superseded-by-a-fix-and-re-measured-on-another-machine-are-not-the-same-sentence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Superseded by a fix" and "re-measured on another machine" are not the same sentence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-gpu-floor-was-written-as-a-verdict-and-it-would-have-put-a-200m-sweep-on-cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The GPU floor was written as a verdict, and it would have put a 200M sweep on CPU
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-beat-naive-share-is-a-threshold-on-a-noisy-number-and-32-windows-lowers-every-models-share" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The beat-naive share is a threshold on a noisy number, and 32 windows lowers every model's share
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-rows-n_windows-is-what-survived-scoring-not-what-was-asked-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A row's n_windows is what survived scoring, not what was asked for
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#an-untracked-config-file-beside-the-script-outranked-the-operators-own-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An untracked config file beside the script outranked the operator's own variable
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-pins-that-decide-whether-a-family-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pins that decide whether a family runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-level-behaviour-the-adapters-encode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model-level behaviour the adapters encode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decisions-that-look-like-quirks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design decisions that look like quirks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vendor-packages-the-exact-installs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vendor packages: the exact installs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numerical-ladder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numerical ladder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope (and why)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#second-pass-per-machine-matrix-three-classify-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Second pass: per-machine matrix, three classify levels
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#third-pass-sundial-toto-10-and-what-a-moving-repository-does-to-a-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Third pass: Sundial, Toto 1.0, and what a moving repository does to a matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fourth-pass-three-fine-tune-refusals-that-turned-out-to-be-ours" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fourth pass: three fine-tune refusals that turned out to be ours
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#peftlora-used-to-include-the-trunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        peft="lora" used to include the trunk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fifth-pass-two-dead-cli-paths-and-chronos-2s-output-patch-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fifth pass: two dead CLI paths, and Chronos-2's output-patch cap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#normalising-an-interpreter-path-can-leave-the-venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalising an interpreter path can leave the venv
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-family-env-can-silently-lose-its-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A family env can silently lose its GPU
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seventh-pass-101-series-and-three-ways-a-number-can-be-wrong-without-any-code-erroring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seventh pass: 101 series, and three ways a number can be wrong without any code erroring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Seventh pass: 101 series, and three ways a number can be wrong without any code erroring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-checkpoints-context-length-is-an-interface-not-a-suggestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A checkpoint's context length is an interface, not a suggestion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nan-is-a-failed-measurement-not-a-metric-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NaN is a failed measurement, not a metric value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#report-sections-that-iterate-the-wrong-collection-under-count-across-lanes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report sections that iterate the wrong collection under-count across lanes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-cards-free-at-launch-is-not-free-during" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared cards: free at launch is not free during
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-small-tooling-facts-from-this-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two small tooling facts from this pass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#syncing-a-checkout-with-rsync-delete-deletes-the-environments-living-inside-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syncing a checkout with rsync --delete deletes the environments living inside it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-rows-model-field-is-the-adapters-family-key-and-ten-checkpoints-collide-on-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A row's model field is the adapter's family key, and ten checkpoints collide on it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-gpu-that-answers-na-for-memory-is-a-scheduler-bug-waiting-to-happen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A GPU that answers [N/A] for memory is a scheduler bug waiting to happen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sixth-pass-moving-the-harness-onto-other-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sixth pass: moving the harness onto other machines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fine-tune-pass-the-lr-moved-the-number-and-the-job-script-lost-its-own-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fine-tune pass: the lr moved the number, and the job script lost its own summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-dispatched-bridge-job-is-one-file-three-failures-one-rule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A dispatched bridge job is one file: three failures, one rule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-same-series-name-can-be-two-different-measurements-csv-vs-arena-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The same series name can be two different measurements: CSV vs arena directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-device-is-a-record-not-a-constraint-until-the-adapter-enforces-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --device is a record, not a constraint - until the adapter enforces it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-model-family-is-device-sensitive-the-rest-agree-bit-for-bit-across-machines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One model family is device-sensitive; the rest agree bit-for-bit across machines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-2-mb-documentation-page-is-published-but-not-served" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A 2 MB documentation page is published but not served
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#re-dispatching-a-bridge-job-under-a-used-number-never-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-dispatching a bridge job under a used number never runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-job-that-ran-is-not-the-job-you-wrote-five-failures-one-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The job that ran is not the job you wrote: five failures, one bridge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-hand-written-file-on-a-remote-clone-blocks-the-pull-that-brings-the-next-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A hand-written file on a remote clone blocks the pull that brings the next job
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-max-windows-draws-the-test-windows-at-random-so-a-different-seed-is-a-different-measurement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --max-windows draws the test windows at random, so a different seed is a different measurement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-partitioned-corpus-makes-a-merged-report-look-cross-checked-when-it-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A partitioned corpus makes a merged report look cross-checked when it is not
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#superseded-by-a-fix-and-re-measured-on-another-machine-are-not-the-same-sentence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Superseded by a fix" and "re-measured on another machine" are not the same sentence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-gpu-floor-was-written-as-a-verdict-and-it-would-have-put-a-200m-sweep-on-cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The GPU floor was written as a verdict, and it would have put a 200M sweep on CPU
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-beat-naive-share-is-a-threshold-on-a-noisy-number-and-32-windows-lowers-every-models-share" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The beat-naive share is a threshold on a noisy number, and 32 windows lowers every model's share
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-rows-n_windows-is-what-survived-scoring-not-what-was-asked-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A row's n_windows is what survived scoring, not what was asked for
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#an-untracked-config-file-beside-the-script-outranked-the-operators-own-variable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An untracked config file beside the script outranked the operator's own variable
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="8-known-issues-pins-and-the-reasons-behind-them">8 · Known issues, pins and the reasons behind them<a class="headerlink" href="#8-known-issues-pins-and-the-reasons-behind-them" title="Permanent link">&para;</a></h1>
+<p>Everything here was measured, not read. Where a family is broken, the entry says what
+the library does about it: <strong>fix</strong>, <strong>work around</strong>, or <strong>report honestly</strong>.</p>
+<h2 id="the-pins-that-decide-whether-a-family-runs">The pins that decide whether a family runs<a class="headerlink" href="#the-pins-that-decide-whether-a-family-runs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>family</th>
+<th>pin</th>
+<th>what happens if you ignore it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time-MoE</td>
+<td><strong><code>transformers==4.40.2</code></strong>, <code>numpy&lt;2</code></td>
+<td>4.42 introduced <code>Cache</code> objects → <code>DynamicCache has no attribute from_legacy_cache</code>; 4.44 removed <code>standardize_cache_format</code> → the released remote code dies. 4.38 is too old (<code>EosTokenCriteria</code> missing). Only 4.40.x works.</td>
+</tr>
+<tr>
+<td>TTM-r1</td>
+<td><code>transformers==4.44.0</code></td>
+<td>4.5x removed <code>PatchTSMEncoderLayer</code>. r2/r3 are fine on 4.57, which is why they live in <code>core</code>.</td>
+</tr>
+<tr>
+<td>Sundial</td>
+<td><code>transformers==4.42.4</code>, <code>numpy&lt;2</code>, <code>einops==0.8.1</code></td>
+<td>its repo code predates the 4.5x generation refactor.</td>
+</tr>
+<tr>
+<td>peft everywhere</td>
+<td><strong><code>peft==0.19.1</code></strong></td>
+<td>0.20.x removed the <code>base_model</code> keyword our LoRA path passes.</td>
+</tr>
+<tr>
+<td>Toto</td>
+<td><code>safetensors==0.4.5</code></td>
+<td>0.4.6 changed the deserializer its loader expects.</td>
+</tr>
+<tr>
+<td>TimesFM 2.0-500M</td>
+<td><strong><code>timesfm==1.2.9</code> + jax</strong> (env <code>timesfm20</code>)</td>
+<td>PyPI's <code>timesfm</code> 2.0.x and 3.x are the <strong>2.5/3.0</strong> models; only 1.2.x still ships the v1 API (<code>TimesFm</code>, <code>TimesFmHparams</code>). 1.2.x imports <code>jax</code> at package import even for the torch backend.</td>
+</tr>
+<tr>
+<td>TiRex-2</td>
+<td>Triton ≥ 3.4 <strong>and</strong> sm ≥ 10.0, else a CUDA toolchain (nvcc)</td>
+<td>Triton kernels die on older archs; the <em>native</em> fallback JIT-compiles a CUDA extension through <code>flashrnn</code>, so it needs <code>nvcc</code> — a runtime-only CUDA install (no toolchain) fails with <code>Ninja is required…</code>. On a laptop that is a machine gap, and <code>TiRex2</code> raises <code>UnavailableError</code> naming both requirements rather than pretending the model is broken.</td>
+</tr>
+<tr>
+<td>datasets</td>
+<td><code>datasets&gt;=3,&lt;4</code></td>
+<td>4.x needs an ABI-matched pyarrow.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="model-level-behaviour-the-adapters-encode">Model-level behaviour the adapters encode<a class="headerlink" href="#model-level-behaviour-the-adapters-encode" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>TimesFM 2.0-500M is 50 layers × 1280 dims × 16 heads.</strong> Building it with the 2.5
+  shape loads a state_dict with 700 "unexpected keys". A mismatch is reported as
+  <em>architecture</em>, with the layer count, not a key dump. Forecast comes from
+  <code>TimesFm.forecast(inputs) -&gt; (point, quantiles)</code>; there is no public training code,
+  so fine-tune and reward are <code>—</code>.</li>
+<li><strong>Time-MoE's <code>generate(do_sample=True)</code> is broken in the released remote code</strong>
+  (its <code>prepare_inputs_for_generation</code> hands transformers a 3-D tensor and <code>_sample</code>
+  unpacks 2-D). Greedy works; sampling does not, in every transformers we tested.
+  The adapter therefore does its own AR decode with a KV cache
+  (<code>_ar_decode</code>), and the sampled paths are recorded in <code>Pred.meta</code>.</li>
+<li><strong>Time-MoE's <code>forward</code> mutates the tensor you pass it</strong> (in-place <code>unsqueeze</code>), so
+  the decode loop clones on entry — otherwise the second step dies on a shape error
+  that blames your own tensor.</li>
+<li><strong>Moirai 1.1 / Moirai-MoE cannot be fine-tuned through this API.</strong> Their <code>forward()</code>
+  <em>draws samples</em> from the predicted distribution and <code>_get_distr</code> returns a
+  distribution over the whole padded window, not the prediction slice: a gradient
+  through "the quantiles of a sample" would be a no-op dressed as a fine-tune. The
+  honest answer is <code>skipped</code>, with the reason, and the note that a real fine-tune
+  needs uni2ts' own Lightning stack (<code>MoiraiForecast</code> + packed masked dataset).
+  Moirai <strong>2.0</strong> exposes a differentiable quantile head → fine-tune ✅.</li>
+<li><strong>MOMENT fixes <code>seq_len</code>/<code>pred_len</code> at <code>init()</code>.</strong> Trainers call
+  <code>prepare_training(ctx, horizon)</code> before asking for the module, and pipelines are
+  cached per <code>(task, horizon, seq_len)</code> — rebuilding a 1 B backbone per call would
+  dominate any fine-tune. MOMENT also turns gradient checkpointing on by default and
+  its recomputation is not deterministic (<code>different number of tensors was saved</code>);
+  the adapter disables it.</li>
+<li><strong>MOMENT has no quantile head</strong> (<code>forward</code> returns mean + samples), so reward
+  post-training uses the <code>reward_descent_point</code> path (scale-free accuracy + direction),
+  with the interval terms switched off rather than silently reported as zero.</li>
+<li><strong>FlowState/Granite</strong>: <code>prediction_length = -1</code> in the config means <em>flexible</em>; the
+  adapter discovers the real chunk length with one dry forward (<code>_probe_head_len</code>).
+  Vendor models keep tensors in plain attributes, so LoRA/offload uses
+  <code>peft.move_deep</code> to walk non-registered tensor buffers. CUDA toolchain failures
+  (nvrtc, arch mismatch) are treated as environment, and the trainer retries on CPU.</li>
+<li><strong>Chronos-T5</strong> tokenizes on CPU and moves the ids; label windows are truncated to
+  <code>config.prediction_length</code>.</li>
+<li><strong>TiRex's loader validates a model <em>id</em>, not a path</strong> (<code>Invalid model id</code> when it is
+  given a directory). <code>ModelHub</code> therefore passes <code>source_id=</code> (the registry id) to
+  adapters so resolution to a local directory does not destroy the id.</li>
+<li><strong>Kronos needs an OHLCV panel</strong>, not a target series: <code>SeriesDataset.panel_window</code>
+  re-attaches the target column (its <code>close</code>) because the panel drops it. A 1-D series
+  is still accepted: the adapter writes the flat panel the vendor's own <code>finetune_csv</code>
+  format uses (<code>open = high = low = close</code>, <code>volume = amount = 0</code>) — that is their
+  convention for a single price series, not an invention here.</li>
+<li><strong>Kronos' <code>predictor.predict</code> returns a DataFrame of six OHLCV columns, averaged over
+  its internal samples</strong> — so <code>sample_count</code> decodes happen and then the spread is
+  thrown away. The adapter draws them itself through <code>predict_batch</code> (series × draws in
+  one batched decode; 32 sequential calls turned a matrix run into an hour) and keeps
+  <code>Pred.samples</code>, which is the only honest interval a sampler has.</li>
+<li><strong>Kronos fine-tunes in-process</strong>: <code>training_step</code> is the vendor's own next-token
+  cross-entropy (frozen <code>KronosTokenizer.encode</code> → <code>head.compute_loss</code>), so LoRA, the
+  memory ladder and the loss curve apply like every other family. <code>vendor_fit</code> still
+  exports their CSV + config and prints the command for anyone who wants the script.</li>
+<li><strong>Kairos ships weights but no remote code</strong> (<code>architectures: ["KairosModel"]</code>, no
+  <code>.py</code> in the repo). It needs <code>pip install git+https://github.com/foundation-model-research/Kairos</code>
+  which provides <code>tsfm.model.kairos.AutoModel</code>.</li>
+<li><strong>TTM r2/r3 declare no quantile levels.</strong> Their configs carry
+  <code>distribution_output=student_t</code> and no <code>quantiles</code> list, so the head emits
+  distribution <em>parameters</em>; inventing a 9-level grid from the parameter count would
+  print an interval the model never predicted. <code>_load_keep_info</code> keeps the
+  <code>from_pretrained</code> loading report, and where head tensors are <strong>newly initialised</strong>
+  (ttm-r3 ships 80 of them that its released config does not describe) the adapter
+  <em>removes</em> the <code>quantiles</code> capability and says why. Those rows are point-only, and
+  reward post-training uses <code>reward_descent_point</code>.</li>
+<li><strong><code>f1_score</code> does not take a <code>beta</code>.</strong> The recall-weighted F2 the finance framing
+  needs lives in <code>fbeta_score</code>; passing <code>beta=</code> to <code>f1_score</code> raised and was swallowed
+  by the except, so <code>f1_beta2</code> was silently <code>nan</code> for every run. For &gt;2 classes it is
+  now the macro average of each occurring class's one-vs-rest F2.</li>
+<li><strong>PR-AUC and ROC-AUC need scores, not argmax.</strong> <code>classification_report</code> computes them
+  one-vs-rest (weighted) when handed the score matrix, and reports <code>nan</code> — not a
+  number — when the caller only has hard labels. All three classification routes now
+  pass softmax scores.</li>
+<li><strong>A from-scratch head needs a from-scratch learning rate.</strong> The budget lr (1e-5) is a
+  fine-tuning rate; at that step size a fresh MLP never leaves its initial bias, which
+  reads as accuracy <em>below</em> chance. <code>fit_head</code> uses 1e-3 for the head with the trunk
+  still on the fine-tuning rate (AdamW param groups).</li>
+<li><strong>stdout is a data channel.</strong> <code>StepLog</code> writes its JSON lines to stderr, and the
+  per-env matrix children write their report to a temp file: a parent parsing a
+  child's stdout for "the JSON" silently dropped every row once the step lines started
+  sharing the stream.</li>
+<li><strong>statsmodels never shipped <code>ThetaModel</code></strong> (absent in every release through 0.14/0.15,
+  promised since 0.12). The theta baseline is implemented in-house (SES + drift).</li>
+</ul>
+<h2 id="design-decisions-that-look-like-quirks">Design decisions that look like quirks<a class="headerlink" href="#design-decisions-that-look-like-quirks" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>CAPS</code> is a <strong>frozenset</strong> — <code>set(caps) &lt;= CAPS</code> in the registry tests is a subset
+  check, and a tuple would make it silently wrong.</li>
+<li><code>quantile_coverage</code> reports <strong>only the bands a model actually emits</strong>. Reporting 95 %
+  coverage for a model whose grid stops at 0.9 is an interval lie.</li>
+<li><code>Pred.meta</code> always says how an interval was produced (native head, empirical from
+  <em>n</em> sampled paths, temperature-sampled AR decode, median-rollback rollout for
+  horizons longer than one output patch).</li>
+<li><code>skipped</code> ≠ <code>failed</code>: <code>—</code> means the model/adapter declines the task (with a reason),
+  <code>❌</code> means it tried and broke.</li>
+<li><code>smoke</code> counts as ok: the matrix checks that a capability <em>runs</em>, not that training
+  converged. Loss curves are still printed (<code>✅ (0.587→0.612)</code>) so a fine-tune that
+  diverges is visible.</li>
+</ul>
+<h2 id="vendor-packages-the-exact-installs">Vendor packages: the exact installs<a class="headerlink" href="#vendor-packages-the-exact-installs" title="Permanent link">&para;</a></h2>
+<p>These families publish no wheel on the index their model card names, and the matrix
+rows say which one is missing. On the laptop they live in <code>.venv-vendor</code> / <code>.venv-toto</code>
+(registered in <code>envs/local.json</code>):</p>
+<table>
+<thead>
+<tr>
+<th>family</th>
+<th>install</th>
+<th>import</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t0-α/β/γ</td>
+<td><code>pip install "tfc-t0[torch]&gt;=0.6.1"</code></td>
+<td><code>from t0 import T0Forecaster</code> (it <em>is</em> the nn.Module)</td>
+</tr>
+<tr>
+<td>Timestral 5/28/123/209M</td>
+<td><code>pip install git+https://github.com/mistralai/timestral.git</code></td>
+<td><code>from timestral import TimestralForecaster</code></td>
+</tr>
+<tr>
+<td>Hirondel-7M</td>
+<td><code>pip install git+https://github.com/tncrd/hirondel.git</code></td>
+<td><code>HirondelForecaster.from_pretrained(...).forecast([...])</code></td>
+</tr>
+<tr>
+<td>Yug</td>
+<td><code>pip install yug</code></td>
+<td><code>from yug import YugPipeline</code></td>
+</tr>
+<tr>
+<td>Aurora</td>
+<td><code>pip install aurora-model</code></td>
+<td><code>from aurora import load_model</code></td>
+</tr>
+<tr>
+<td>Toto 2.0</td>
+<td><code>pip install toto-models</code></td>
+<td><code>from toto2.model import Toto2Model</code></td>
+</tr>
+<tr>
+<td>Toto 1.0</td>
+<td><code>pip install toto-ts</code> (+ <code>setuptools&lt;81</code> for <code>pkg_resources</code>)</td>
+<td><code>from toto.model.toto import Toto</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Vendor forecaster objects keep outputs on the GPU.</strong> <code>np.asarray</code> on a CUDA tensor
+  raises <code>can't convert cuda:0 device type tensor to numpy</code>, which the matrix used to
+  file as a failure of the model; <code>base.to_numpy</code> handles torch/jax/pandas.</li>
+<li><strong>Hirondel's forecaster is constructed from a model object</strong>, not a repo id:
+  <code>HirondelForecaster.from_pretrained(repo)</code> then <code>.forecast(list_of_contexts,
+  prediction_length=)</code> → <code>.median (N,H)</code>, <code>.quantiles (N,H,L)</code>, <code>.quantile_levels</code>.</li>
+<li><strong>Toto-Open-1.0 (<code>toto-ts</code>) is the one row still open.</strong> Its <code>TotoForecaster</code> takes
+  the <em>backbone</em> (<code>Toto(...).model</code>) and a <code>MaskedTimeseries(series, padding_mask,
+  id_mask, timestamp_seconds, time_interval_seconds, num_exogenous_variables)</code> built by
+  their own dataset pipeline; the naive construction reaches <code>einops</code> shape errors.
+  The adapter wiring is pending and the row reports that, rather than scoring an
+  unverified path. Toto <strong>2.0</strong> (22m/313m) — the current generation — loads, forecasts,
+  classifies and fine-tunes.</li>
+<li><strong><code>~/.cache/huggingface/modules/transformers_modules</code> owned by root</strong> (someone ran a
+  pipeline as root on that box) makes every <code>trust_remote_code</code> model fail with
+  <code>PermissionError</code>. Fix without sudo: <code>export HF_MODULES_CACHE=$PWD/.cache/hf_modules</code>.</li>
+</ul>
+<h2 id="numerical-ladder">Numerical ladder<a class="headerlink" href="#numerical-ladder" title="Permanent link">&para;</a></h2>
+<p>A non-finite loss on step 1 is a property of <em>that profile</em>, not of the family. The
+fine-tune ladder now runs <code>keep → bf16 → fp16 → fp32 → lr×0.1 → ctx/2 → bs=1 → CPU</code>,
+and <code>_is_unstable</code> (nan/inf in the message) admits a run to the ladder instead of
+returning <code>failed</code> — which is how Toto-2.0-313m trains.</p>
+<h2 id="out-of-scope-and-why">Out of scope (and why)<a class="headerlink" href="#out-of-scope-and-why" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Moirai 2.0-R-base / -large</strong>: the repositories do not exist (404), gated or not.</li>
+<li><strong>Yug-1 (commercial)</strong>: no weights. <code>birlaailabs/yug</code> (CC-BY-NC) is registered instead,
+  with the license recorded in the row.</li>
+<li><strong>VisionTS++ / t0-α/β/γ base weights</strong>: the authors host them outside the Hub; the
+  rows carry <code>weights: null</code> plus a pointer instead of pretending they are fetchable.</li>
+<li>Any model whose weights require a login we do not have.</li>
+</ul>
+<h2 id="second-pass-per-machine-matrix-three-classify-levels">Second pass: per-machine matrix, three classify levels<a class="headerlink" href="#second-pass-per-machine-matrix-three-classify-levels" title="Permanent link">&para;</a></h2>
+<p>The matrix is now run on two machines (x86 laptop, RTX 1000 Ada 6 GB; aarch64 DGX Spark,
+GB10 unified memory) and merged. What that surfaced:</p>
+<ul>
+<li><strong>One row per (model, env), the working row wins.</strong> When the two machines disagree —
+  TiRex-2 compiles on sm8.9 but its Triton kernel raises <code>CompilationError</code> on the GB10;
+  MOMENT-large fine-tunes on 6 GB fp16 but OOMs then recovers on unified memory —
+  <code>dedupe()</code> keeps the row that ran and records the other machine's reason under
+  <code>other machine:</code>, so a failure never disappears, it moves to a footnote. <code>--keep-both</code>
+  opts out. A row whose <code>env</code> no longer matches the registry is dropped at merge time:
+  the model moved environments, and listing it twice double-counts it.</li>
+<li><strong>Machine gap ≠ model failure.</strong> <code>UnavailableError: needs Triton and an sm10.0+ GPU, or
+  nvcc for the MLSTM fallback</code> is an <em>environment</em> statement. The same model is ✅ on the
+  other machine. The matrix prints both columns; the prose in this file is where the
+  difference is explained.</li>
+<li><strong><code>trust_remote_code</code> on a shared box</strong>: <code>HF_MODULES_CACHE</code> must point somewhere
+  writable, or every custom-code model (Chronos-Bolt variants, VisionTS, Sundial, Kairos)
+  fails identically at import time.</li>
+<li><strong>Vendor envs are architecture-specific.</strong> A <code>freeze.txt</code> generated on x86_64 cannot be
+  installed on aarch64. On the DGX the Toto env had to be rebuilt from the <em>local</em> core
+  freeze plus the Toto delta (<code>transformers==5.10.1</code>, <code>safetensors==0.4.5</code>,
+  <code>tokenizers==0.22.2</code>, <code>torchmetrics</code>, <code>setuptools&lt;81</code>); with the frozen x86 file it
+  silently ends up without <code>transformers</code> at all and every row says <code>missing package</code>.</li>
+<li><strong>TimesFM 2.0/2.5 are v1-API models</strong> (<code>timesfm==1.2.9</code> + JAX). The PyPI package's 2.x
+  and 3.x lines are different checkpoints with a different API; the adapter pins the arch
+  dict (<code>num_layers=50, num_heads=16, model_dims=1280, input_patch_len=32,
+  output_patch_len=128</code>) because the config in the repo doesn't carry it.</li>
+<li><strong>Aurora's <code>load_model()</code> returns a model in train mode</strong>, so its norm layers raise
+  <code>Expected more than 1 value per channel</code> on the batch of one that inference is made of;
+  the adapter calls <code>.eval()</code>. Its flow-matching head has no public training path, so
+  fine-tune and reward report <code>—</code>, not <code>❌</code>.</li>
+<li><strong>Hirondel fine-tunes in its own normalised space.</strong> <code>HirondelModel.forward(x,
+  observed, horizon)</code> returns quantiles after mean/sd + <code>asinh</code> scaling; the adapter's
+  <code>training_step</code> applies <code>_scale</code> to the context and the same transform to the target
+  before the pinball loss, so the optimised objective is the one the forecaster inverts.
+  Reward runs as <code>rft</code> (its head is not a differentiable quantile head in the sense
+  <code>reward_descent</code> needs).</li>
+<li><strong>Kairos emits 128 steps for a 16-step request</strong> (its <code>prediction_length</code> is fixed by
+  the checkpoint). The adapter slices; fine-tune remains open because the vendor forward
+  branches on tensor truthiness — reported as <code>❌ Boolean value of Tensor ...</code>, not hidden.</li>
+<li><strong>MOMENT's native classification head</strong> takes <code>num_class</code> (not <code>n_class</code>), and its
+  pipeline <code>forward</code> is keyword-only (<code>x_enc=</code>). Both appear in <code>fit_native</code>, which now
+  tries positional then keyword. The pipeline object is cached: calling <code>pipeline()</code> per
+  step re-downloads.</li>
+<li><strong>Reward: <code>--steps</code> beats <code>reward_steps</code>.</strong> <code>reward_steps</code> is the <em>matrix</em> cap (a
+  reward row checks that post-training runs, in seconds). Silently trimming a requested
+  48-step demonstrator to 6 was how a run "did not improve". The cap now applies only
+  when no step count was given.</li>
+<li><strong>Reward trend is reported by quartile means</strong> (<code>reward_early_mean</code> vs
+  <code>reward_late_mean</code>), not first step vs last step. First-vs-last called a run that
+  improved (1.72 → 1.83 across quartiles) a regression, because step 1 happened to be a
+  lucky batch.</li>
+</ul>
+<h2 id="third-pass-sundial-toto-10-and-what-a-moving-repository-does-to-a-matrix">Third pass: Sundial, Toto 1.0, and what a moving repository does to a matrix<a class="headerlink" href="#third-pass-sundial-toto-10-and-what-a-moving-repository-does-to-a-matrix" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Sundial's Hub repo changed under us.</strong> The current revision has no
+  <code>prepare_input_ids</code>, ships <strong>no tokenizer files</strong>, and its model card's Quickstart is
+  the truth: <code>model.generate(torch.randn(B, lookback), max_new_tokens=H, num_samples=k)</code>
+  → <code>(B, k, H)</code> de-normalised samples (the mixin does revin itself). The older
+  <code>prepare_input_ids(X=…, system="forecast")</code> + <code>tokenizer=</code> call is still in a lot of
+  second-hand examples and no longer exists; the adapter prefers whichever API the
+  loaded code provides. Two version facts, both verified on the matrix machine:
+  <code>transformers==4.40.1</code> is required (4.42.x mis-builds the causal mask for patched
+  inputs and <code>generate</code> dies with a 256-vs-16 shape error), and <code>device_map=</code> must not be
+  passed to this remote code (accelerate re-dispatches through the Auto mapping, which
+  does not know <code>model_type: sundial</code>, and raises "Unrecognized configuration class").</li>
+<li><strong>Sundial fine-tune is declined, not failed.</strong> <code>forward(labels=…)</code> reaches their
+  TimeFlow loss, whose packing (<code>output_token_lens</code>, <code>diffusion_batch_mul</code>, <code>mask_y</code>) is
+  set by the training scripts rather than the checkpoint config. Calling it with the
+  checkpoint's own config fails on shape (<code>addmm: (8x17664) @ (768x768)</code>). Writing an
+  invented objective to turn that row green is exactly what this repository is not for,
+  so the row says <code>—</code> and points at <code>thuml/Sundial</code>'s <code>scripts/</code>.</li>
+<li><strong>Toto-Open-1.0 does not go through <code>transformers</code> at all</strong> — the repo has no remote
+  code and no <code>model_type</code>, so the Auto path raises "Should have a <code>model_type</code> key".
+  The vendor package <code>toto-ts</code> is the implementation:
+  <code>Toto.from_pretrained(repo, map_location=...)</code> (a <code>ModelHubMixin</code> loader — no
+  <code>device_map</code>/<code>dtype</code> kwargs, they get forwarded into the model config and crash the
+  constructor), then <code>TotoForecaster(model=model.model)</code> — it wants the <strong>backbone</strong> —
+  and a <code>MaskedTimeseries</code> built exactly like their own <code>evaluation/fev</code> pipeline
+  (relative timestamps, <code>time_interval_seconds=1</code>, <code>id_mask</code> ones). <code>num_samples</code> must be
+  divisible by <code>samples_per_batch</code>; intervals are empirical quantiles of the sampled
+  paths and <code>Pred.meta</code> says so. Fine-tune uses their <code>CombinedLoss</code> (NLL + general
+  robust loss) on the causally-scaled window, which is the pretraining objective.</li>
+<li><strong>PatchTST-FM (tsfm_public) declares no target argument</strong> in the installed build
+  (<code>forward(past_values, past_observed_mask, pad_mask, prediction_length, quantile_levels,
+  return_loss)</code>), so a fine-tune that passed <code>future_values=</code> used to be a <code>TypeError</code>.
+  The adapter now picks the target kwarg from the signature and, when there is none,
+  declines with the signature in the reason. Its head is <code>backbone.out_layer</code>, so
+  <code>head_prefixes</code> had to be declared — <code>heads_only</code> (the reward ladder profile) was
+  failing with "matched no parameters" against generic prefixes.</li>
+<li><strong>TiRex-2 fails on both machines, for different reasons</strong>, and the matrix says so:
+  x86 (sm8.9, no nvcc) → neither Triton nor the CUDA fallback is available
+  (<code>UnavailableError</code>); aarch64 GB10 → Triton <em>starts</em> compiling their recurrent kernel
+  and raises <code>CompilationError</code> inside it. It is the only registered model that does not
+  forecast anywhere here, and it stays ❌ rather than being dropped from the table.</li>
+<li><strong><code>tsfm_trl</code> now fixes the HF dynamic-module cache at import</strong> if
+  <code>~/.cache/huggingface/modules</code> is not writable (someone ran a pipeline as root on the
+  box). Without it, <em>every</em> <code>trust_remote_code</code> model fails with <code>PermissionError</code>, which
+  a compatibility matrix would file as 6 model failures. The redirect prints one line to
+  stderr rather than happening silently.</li>
+</ul>
+<h2 id="fourth-pass-three-fine-tune-refusals-that-turned-out-to-be-ours">Fourth pass: three fine-tune refusals that turned out to be ours<a class="headerlink" href="#fourth-pass-three-fine-tune-refusals-that-turned-out-to-be-ours" title="Permanent link">&para;</a></h2>
+<p>The fine-tune column carried <code>—</code> for Moirai 1.1/MoE and Sundial, and ❌ for Kairos. All
+three were harness bugs wearing a model's face; each is now ✅, and the fix in each case
+was to stop inventing a step and go read what the vendor's own training does.</p>
+<ul>
+<li><strong>Moirai 1.1 / MoE</strong> — <code>forward()</code> returns a <em>distribution</em>; <code>predict</code> samples from it.
+  Because the sampled path is gradient-free, the adapter declared "no differentiable
+  head". The supervised step was in the same class the whole time: <code>MoiraiForecast</code> builds
+  packed fields (<code>target/observed_mask/sample_id/time_id/variate_id/prediction_mask</code>) and
+  scores them with <code>PackedNLLLoss</code> — uni2ts' own <code>MoiraiFinetune</code> default. The adapter now
+  calls <code>_convert(...)</code> with the true future as <code>future_target</code> and optimises that.
+  Trainable: 4.1 M (<code>heads_only</code>) / 5.9 M (LoRA) on <code>moirai-1.1-R-small</code>, 13.5 M on the
+  base, 7.2 M on MoE. <code>loss: vendor</code> in the registry now says what the objective is.</li>
+<li><strong>Sundial</strong> — supervised <code>forward(labels=…)</code> with the shipped config fails on shape
+  because <code>output_token_lens=[720]</code> is a <em>generation</em> setting: labels get trimmed to
+  <code>seq_len − input_token_len + 720</code>, a length a short window never reaches. Their
+  fine-tune config sets the output token length per run; <code>prepare_training</code> now does the
+  same and rebuilds <code>flow_loss.FlowLoss(16, 768, 3, 768, 50)</code> at <code>input_token_len</code>.
+  Cost, stated in the adapter docstring: that head is <strong>re-initialised</strong> (11.4 M params),
+  the 12-layer trunk transfers. Frozen trunk + new head on 12 steps: 3.77 → 0.25.
+  <code>peft.lora_trains_head</code> exists for exactly this case — a rebuilt head has no pretrained
+  weights for LoRA to nudge, so it trains outright next to the trunk adapters.</li>
+<li><strong>Kairos</strong> — <code>RuntimeError: Boolean value of Tensor with more than one value is
+  ambiguous</code> looked like a gradient-unsafe vendor forward. It was our own
+  <code>if not torch.isfinite(loss)</code> running on the <strong>per-window loss vector</strong> their supervised
+  forward returns. The trainer now reduces non-scalar losses to their mean (and says so in
+  the run notes); 10 M/50 M train at 2.97 M / 7.17 M LoRA parameters.</li>
+</ul>
+<p>One more honesty note that came out of this pass: the loss <em>curve</em> of a 2-step smoke says
+nothing — <code>smoke=True</code> caps the run at two steps, and Moirai's packed NLL swings ±0.9
+between random batches. The matrix ✅ means "a differentiable vendor objective ran and
+logged"; direction needs ≥20 steps (<code>docs/03_fine_tune.md</code>).</p>
+<h2 id="peftlora-used-to-include-the-trunk"><code>peft="lora"</code> used to include the trunk<a class="headerlink" href="#peftlora-used-to-include-the-trunk" title="Permanent link">&para;</a></h2>
+<p>Worth its own heading because it inflates every LoRA number recorded before the fix:
+<code>apply_lora._inject</code> froze the <code>nn.Linear</code>s it wrapped and enabled their adapters, but
+froze nothing else, and HF models load with <code>requires_grad=True</code>. <code>make_trainable</code> now
+freezes all parameters before injecting, then re-enables the adapters (and, for adapters
+that <em>re-initialise</em> a head — <code>lora_trains_head</code>, used by Sundial — that head). Two
+symptoms that were easy to misread as model behaviour: t0-gamma's 156 M "trainable"
+parameters, and a t0 LoRA loss that rose from 2.2 to 6.0 in two steps because the trunk
+was being moved at the fine-tuning rate.</p>
+<p>Related: the <code>lora_trains_head</code> branch called a helper that did not exist
+(<code>_matches_any</code> instead of <code>_match</code>), which is a NameError waiting inside a path only
+Sundial takes. <code>ruff check tsfm_trl --select F,E9</code> catches it; <code>check.sh</code> runs that
+before the matrix, which is exactly why <code>check.sh</code> exists.</p>
+<h2 id="fifth-pass-two-dead-cli-paths-and-chronos-2s-output-patch-cap">Fifth pass: two dead CLI paths, and Chronos-2's output-patch cap<a class="headerlink" href="#fifth-pass-two-dead-cli-paths-and-chronos-2s-output-patch-cap" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><code>tsfm-trl evaluate</code> and <code>tsfm-trl info</code> were both broken and untested.</strong> <code>evaluate</code>
+  called <code>_load_model(a.model)</code> where the function wants the whole namespace
+  (<code>'str' object has no attribute 'model'</code>); <code>info</code> printed <code>s.note</code> while the registry
+  field is <code>notes</code>. Neither path is used by the matrix or the examples, so 32 green tests
+  said nothing about them. <code>tests/test_cli.py</code> now drives the CLI surface on the
+  statistical baselines — no weights, no GPU, two seconds — which is exactly the layer
+  that had no coverage.</li>
+<li><strong>Chronos-2's supervised forward is capped by <code>num_output_patches</code>, default 1.</strong> The
+  adapter called <code>model(context=…, future_target=…)</code> without it, so any horizon above one
+  output patch (16 steps) died in <code>_validate_input</code>, and the channels-last retry below it
+  turned that into the still more misleading <code>context must have shape
+  (batch_size, context_length)</code>. The vendor derives the argument from the prediction
+  length; the adapter does the same now (<code>ceil(H / output_patch_size)</code>), so
+  fine-tune/reward work at 16/21/64. Nothing about the checkpoint is rebuilt — the output
+  embedding is applied per patch.</li>
+<li><strong>A fallback must not eat the original error.</strong> That row's captured reason was the
+  <em>retry's</em> message, which named neither the argument nor the cap. The retry now re-raises
+  the first exception.</li>
+<li><strong><code>TSFMTRL_DEBUG=1</code></strong> prints the traceback of anything the matrix swallows, from the
+  row capture and from every rung of the reward-mode ladder. The report keeps only
+  messages (one bad model must not end a 46-model run), which is right for the table and
+  useless for fixing a failure that only appears inside the matrix. It goes to stderr;
+  stdout stays the data channel.</li>
+<li><strong>Vendor loops log on their own interval.</strong> A Chronos-2/Kronos vendor fine-tune at smoke
+  size produces no loss pair in the matrix cell; recorded rather than hidden
+  (<code>docs/03_fine_tune.md</code>).</li>
+</ul>
+<h2 id="normalising-an-interpreter-path-can-leave-the-venv">Normalising an interpreter path can leave the venv<a class="headerlink" href="#normalising-an-interpreter-path-can-leave-the-venv" title="Permanent link">&para;</a></h2>
+<p>Recording <em>which</em> interpreter produced a row means storing its path, and the obvious
+<code>Path(py).resolve()</code> is a trap: <code>env/bin/python</code> is a symlink to the base interpreter that
+built the venv, so <code>resolve()</code> hands back something under uv's python directory with none
+of the family's pinned packages. The run then dies on <code>import numpy</code> in 0.0 s and the
+failure looks like a broken model environment. <code>scripts/sweep_evaluate.py</code> uses
+<code>os.path.abspath()</code> (lexical, no symlink following) and <code>tests/test_sweep_paths.py</code> keeps
+that true — the same distinction that makes <code>sys.executable</code> and <code>realpath(sys.executable)</code>
+different tools.</p>
+<h2 id="a-family-env-can-silently-lose-its-gpu">A family env can silently lose its GPU<a class="headerlink" href="#a-family-env-can-silently-lose-its-gpu" title="Permanent link">&para;</a></h2>
+<p>Lock-file rebuilds on aarch64 resolved CPU wheels in three of the twelve DGX environments
+(<code>toto</code> → <code>torch 2.7.0+cpu</code>, <code>timesfm20</code> and <code>new</code> → <code>torch 2.8.0+cpu</code>). Nothing about the
+run looked wrong: <code>--device auto</code> quietly chose CPU, the numbers came out plausible, and a
+run that <em>asked</em> for CUDA failed with <code>Torch not compiled with CUDA enabled</code> — which reads
+like a model or harness failure and is neither. Two mitigations are now in the tooling:</p>
+<ul>
+<li>the sweep probes each env's interpreter once (<code>torch.__version__</code>,
+  <code>torch.cuda.is_available()</code>, device name), prints a NOTE when <code>--device cuda</code> was asked
+  for and the env has no CUDA, and writes the probe into every record and into the report's
+  provenance table;</li>
+<li>the reward seeding script does the same for the child interpreter before spending
+  minutes on a doomed run.</li>
+</ul>
+<p>The lesson generalises: <strong>a benchmark row is its environment.</strong> A CPU row and a GPU row for
+the same model are different experiments, and "it ran" is not evidence about which one you
+got.</p>
+<h2 id="seventh-pass-101-series-and-three-ways-a-number-can-be-wrong-without-any-code-erroring">Seventh pass: 101 series, and three ways a number can be wrong without any code erroring<a class="headerlink" href="#seventh-pass-101-series-and-three-ways-a-number-can-be-wrong-without-any-code-erroring" title="Permanent link">&para;</a></h2>
+<h3 id="a-checkpoints-context-length-is-an-interface-not-a-suggestion">A checkpoint's context length is an interface, not a suggestion<a class="headerlink" href="#a-checkpoints-context-length-is-an-interface-not-a-suggestion" title="Permanent link">&para;</a></h3>
+<p><code>granite-timeseries-ttm-r3</code> declares <code>context_length = 512</code>. Fed the protocol window of 256
+it pads its own input with zeros, and the whole forecast comes back scaled by the fraction
+of real history: measured on one equity series, the mean prediction is 0.25x the context at
+ctx 128, <strong>0.50x at ctx 256</strong>, 0.99x at 512. In the first pass-3 ranking that read as
+"median MASE 13x naive, 0% of series beaten" for a model whose weights are fine. The
+artifact was our window.</p>
+<p>Fix: <code>TSFMModel.min_context</code> (read by the Granite adapter from the checkpoint config).
+<code>forecast_eval</code> raises the benchmark context to it when the span allows and writes
+<code>context raised 256-&gt;512 (checkpoint contract)</code> into the row's <code>ctx_note</code>; when the span
+cannot supply it the adapter pads on the left with the oldest observation instead of letting
+vendor code feed zeros, and says so in <code>Pred.meta</code>. The row's <code>ctx</code> column then shows 512
+for those models, which is why the effectiveness table has a <code>ctx</code> column per row at all.</p>
+<p>The honest residual: with the contract honoured, TTM r2 behaves normally (MASE ~3-9) and
+<strong>r3 still loses badly on financial series</strong> because its forecast is nearly flat (std ~0.8
+against a truth std ~8 on a volatile equity) - an approximate mean-forecaster on
+low-volatility price data. Finding and artifact are now separable; before, they were the
+same number.</p>
+<p><code>min_context</code> is set only where the padding artifact was measured. A contract probe over the
+sweep models (one equity series, level ratio at ctx 256 versus the declared length) found
+FlowState declaring 2048 and PatchTST-FM 8192 while both score normally at 256 - FlowState
+actually gets <em>worse</em> at its declared length (level ratio 0.587 at 2048 against 1.135 at
+256). Those models accept short windows honestly, so raising their context would change the
+experiment rather than repair it. The rule is: measure the padding behavior, then declare
+the contract - do not read a config number and treat it as a requirement.</p>
+<h3 id="nan-is-a-failed-measurement-not-a-metric-value">NaN is a failed measurement, not a metric value<a class="headerlink" href="#nan-is-a-failed-measurement-not-a-metric-value" title="Permanent link">&para;</a></h3>
+<p>TTM r3 also emits an all-NaN point head <em>intermittently</em>: the same 512-point window was
+clean in one process and NaN in the next. Two wrongs were hiding in the old path: the
+vendor model returned NaN without raising, and <code>forecast_report</code> is nan-safe, so it scored
+the surviving 3 of 4 windows while the row still claimed <code>n_windows: 4</code>. My own ranking
+script then aggregated a column containing NaN and printed "median MASE nan" for the
+model - which looks like a joke and reads like one.</p>
+<p>Now: retry each affected window alone (a batch can poison a model's own per-instance
+normalisation), drop whatever is still non-finite from the scoring set, record
+<code>pred_nan_windows</code> plus an <code>error</code> string, set <code>n_windows</code> to the number actually scored,
+and emit <code>None</code> rather than NaN in metric columns.</p>
+<h3 id="report-sections-that-iterate-the-wrong-collection-under-count-across-lanes">Report sections that iterate the wrong collection under-count across lanes<a class="headerlink" href="#report-sections-that-iterate-the-wrong-collection-under-count-across-lanes" title="Permanent link">&para;</a></h3>
+<p><code>report()</code> merges cells per <code>(model, series, span, horizon)</code> but keeps one <em>raw record</em> per
+model in <code>rec_by_model</code>. The tables read the merged cells; the "Not scoreable on some
+series" section and the new untrained-head section read <code>recs</code>. With two GPU lanes each
+carrying half the corpus, the flag list showed 33 of 66 flagged MOMENT series, and the
+covariate-panel section was under-counted in pass 2 the same way. Both now read the merged
+rows, and a model that scored anywhere is no longer listed as dataset-unscoreable.
+Symptom to remember: a summary section whose count is exactly one lane's worth.</p>
+<h3 id="shared-cards-free-at-launch-is-not-free-during">Shared cards: free at launch is not free during<a class="headerlink" href="#shared-cards-free-at-launch-is-not-free-during" title="Permanent link">&para;</a></h3>
+<p><code>chronos-t5-base</code> lost 33 of 66 series to <code>torch.OutOfMemoryError</code> with the error reporting
+44.94 MiB free, minutes after <code>nvidia-smi</code> showed ~10 GiB - another user's process grew to
+26 GiB mid-run, and our own peak was 7.09 GiB. The lane runner's <code>--min-free-mib</code> guard is
+necessary, not sufficient. Two operational rules follow: pin <code>CUDA_VISIBLE_DEVICES</code> to the
+index you chose (a retry that picked "cuda" from a free-memory total landed on the
+contended GPU 0 anyway), and treat a mid-run OOM as an environment event to re-run, never
+as a model result. Where the cards stay full, the retry runs on CPU lanes and the rows
+carry <code>device: cpu</code>.</p>
+<h3 id="two-small-tooling-facts-from-this-pass">Two small tooling facts from this pass<a class="headerlink" href="#two-small-tooling-facts-from-this-pass" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>--md path/to/report.md</code> now creates the parent directory; before, the first invocation
+  into a fresh run directory died on <code>FileNotFoundError</code> after doing all the merge work.</li>
+<li>The trux <code>core</code> env has no ruff, so <code>scripts/check.sh</code> stops at the lint stage there.
+  Tests, registry consistency and the mini matrix are run on trux; lint stays a laptop
+  gate. That is a real gap in the multi-machine story, not a covered one.</li>
+</ul>
+<h3 id="syncing-a-checkout-with-rsync-delete-deletes-the-environments-living-inside-it">Syncing a checkout with <code>rsync --delete</code> deletes the environments living inside it<a class="headerlink" href="#syncing-a-checkout-with-rsync-delete-deletes-the-environments-living-inside-it" title="Permanent link">&para;</a></h3>
+<p>The harness exists twice on the laptop: the standalone repo and <code>trl/</code> in this checkout,
+which is what the other machines fetch. Bringing the standalone repo up to date with
+<code>rsync -a --delete</code> overwrote more than the code. Two things were gone before I looked at
+the file list:</p>
+<ul>
+<li><strong><code>.github/workflows/docs.yml</code></strong> — this tree has no <code>.github/</code>, so <code>--delete</code> removed the
+  Pages build. Nothing in the harness test suite notices a missing CI file.</li>
+<li><strong>Every family venv under <code>envs/</code></strong> (several GB, built over days) — same reason: they are
+  in the destination and not in the source. The locks and <code>envs.toml</code> survived, so the fix
+  is <code>scripts/make_envs.sh</code>, not an archaeology hunt, but the run I was mid-way through on
+  the laptop was over.</li>
+</ul>
+<p>Nothing tracked by git was lost (<code>git status</code> showed 89 modified/added paths, 0 deletions),
+which is the only reason this was an afternoon and not a data-loss incident. The rule now:
+when one checkout feeds another, list what may move (<code>git ls-files</code>, plus the probe and
+report text manifests) and copy <em>that</em>, or keep <code>--delete</code> off and let git show what is
+missing. A working tree that holds installed environments is never a safe rsync target.</p>
+<p>Because the two checkouts drift, the standalone repo is now pushed (<code>master</code> @ the sync
+commit, plus a <code>pre-sync-2026-11-26</code> branch holding the state before it), and this tree
+stays the source the machines clone. Docs edits are meant to land in both; where they
+haven't yet, this file is the one to trust.</p>
+<h3 id="a-rows-model-field-is-the-adapters-family-key-and-ten-checkpoints-collide-on-it">A row's <code>model</code> field is the adapter's family key, and ten checkpoints collide on it<a class="headerlink" href="#a-rows-model-field-is-the-adapters-family-key-and-ten-checkpoints-collide-on-it" title="Permanent link">&para;</a></h3>
+<p>The registry key (<code>chronos-bolt-small</code>) is not what lands in a result row. The adapter
+writes its <em>family</em> key (<code>chronos-bolt</code>), so one row-level id can come from several
+checkpoints. Across the registry there are ten such collisions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>chronos-bolt   &lt;- chronos-bolt-small, chronos-bolt-base
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>chronos-t5     &lt;- chronos-t5-small,   chronos-t5-base
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>ttm-r2         &lt;- ttm-r2,             ttm-r3
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>kronos-small   &lt;- kronos-small,       kronos-base,  kronos-mini
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>moment-1-large &lt;- moment-1-small,     moment-1-large
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>moirai-1.1, toto-2-22m, kairos-10m, ... (same pattern)
+</code></pre></div>
+<p>The report was safe (it keys merges on the record-level registry key and stamps
+<code>model_key</code> when reading), but nothing said that out loud, and my own comparison script
+keyed on the row field. The result was a fabricated finding: "<code>chronos-bolt</code> disagrees by
+3-40% between the pass-3 run and today's re-run" — which was really <em>bolt-small vs
+bolt-base</em> being averaged together, and it nearly sent me chasing cuBLAS nondeterminism
+across GPU generations. After the fix, GB10 (gpu7) and RTX 6000 Ada agree <strong>bit-exactly</strong>
+(0.000%) on every overlapping cell, baselines and neural models alike.</p>
+<p>Two changes: every written row now carries <code>model_key</code> (<code>stamp_rows</code>), and the merge keeps
+its <code>model_key</code> stamp on read for older files. <code>probes/trux/cross_machine_check.py</code> keys
+on the registry key for the same reason. The trap generalises: a label chosen by the code
+under test is not an identifier for the analysis on top of it.</p>
+<p><strong>Follow-up, because the first reading of the duplicates was also wrong.</strong> With the key
+fixed, the merge's 404 repeated cell keys were re-scored by protocol signature (ctx,
+ctx_note, device, code_sha, torch). They are overwhelmingly <em>supersessions</em>: a TTM cell
+measured at ctx 256 (MASE 30.1, the zero-padding artifact) and the same cell at its
+contract ctx 512 (MASE 4.3). Only repeats with an identical signature can be read as run
+variance, and once separated they are small: 254 repeated comparisons on trux - pass-3
+lanes at sha <code>1d2f3ae</code> against re-runs at <code>28fd7e7</code> - agree to 0.143%, and the DGX Spark
+matches trux to 0.000%. So the journal's earlier "neural cells vary 2-200% run to run" was
+one artifact (the collided key) compounding another (a fixed protocol change counted as
+noise). Reproducibility in this benchmark is now measured, not assumed, and the report
+section says which of the two a repeated key is before it quotes a number.</p>
+<h3 id="a-gpu-that-answers-na-for-memory-is-a-scheduler-bug-waiting-to-happen">A GPU that answers <code>[N/A]</code> for memory is a scheduler bug waiting to happen<a class="headerlink" href="#a-gpu-that-answers-na-for-memory-is-a-scheduler-bug-waiting-to-happen" title="Permanent link">&para;</a></h3>
+<p>The DGX Spark (GB10, aarch64, unified memory) reports <code>memory.free</code> and <code>memory.total</code>
+as <code>[N/A]</code> while <code>torch.cuda.is_available()</code> is true and the device works. The lane
+scheduler parsed those rows away, so <code>gpu_free()</code> returned an empty pool and <em>every</em> lane
+fell back to CPU on a machine with a working GPU — the row would still have been written,
+just labelled <code>device: cpu</code>, which is how a new arm of the benchmark would have produced a
+table of CPU numbers under a GPU heading. <code>parse_gpu_rows</code> now drops only non-numeric
+memory rows and tolerates extra trailing columns; <code>gpu_free()</code> falls back to
+<code>torch.cuda.mem_get_info()</code> and tags the row <code>reported_by: torch</code>, because a number used
+for scheduling should say where it came from. Two facts to keep straight: <code>nvidia-smi</code>
+knowing the GPU exists is not the same as knowing its free memory, and strict unpacking of
+a tool's csv turns a column change into silently empty output.</p>
+<h2 id="sixth-pass-moving-the-harness-onto-other-machines">Sixth pass: moving the harness onto other machines<a class="headerlink" href="#sixth-pass-moving-the-harness-onto-other-machines" title="Permanent link">&para;</a></h2>
+<p>The same code went to trux (2× RTX 6000 Ada) and watson (SLURM, A6000). What broke was not
+the models; it was the boundary between "a machine that has this project" and "a machine
+that has the right <em>environments</em>".</p>
+<p><strong>A recorded skip is sticky.</strong> On watson the first run had no <code>envs/local.json</code>, so all 16
+models were written as env-skips — the resolver refusing to run a family in a foreign
+interpreter, exactly as designed. After writing the mapping, the next run printed
+<code>0 ok / 0 failed / 0 env-skipped</code>, which reads like a working sweep: the models already
+appear in the incremental JSONL, so resume treats them as done. Fixing the environment is
+not enough — the log needs <code>--fresh</code>. The merge rule ("rows beat errors") hides the
+symptom in a report, not the trap at launch.</p>
+<p><strong>Seven of twelve lock files do not re-resolve</strong> (<code>core</code>, <code>moment</code>, <code>new</code>, <code>timemoe</code>,
+<code>tirex2</code>, <code>toto</code>, <code>ttm</code>): <code>uv</code> proves the frozen set contradicts itself, e.g. <code>gluonts</code>
+wants <code>pandas&lt;2.2</code> while the freeze pins <code>2.3.3</code>. Those freezes were taken from layered
+installs, so they are a <em>record</em> of what worked, not a recipe a solver can reproduce.
+<code>uv pip install --no-deps -r &lt;lock&gt;</code> reinstalls exactly the recorded set; a solver-driven
+install does not. <code>core.lock.txt</code> also carries no <code>torch</code> pin by design (torch is
+platform-specific and installed separately), which surprises anyone expecting one command
+to rebuild an env. Related drift: <code>envs.toml</code> notes <code>transformers==4.57.6</code> for core while
+the committed lock pins <code>5.22.1</code> — the lock records a <em>later</em>, drifted env, not the one
+that produced the published matrix.</p>
+<p><strong>A plausible command line is not the real one.</strong> The lane runner had been written against
+a remembered CLI: <code>--windows</code> and positional series do not exist (<code>--max-windows</code>,
+repeatable <code>--series</code>). It died at launch, which is the cheap way to find out. Now
+<code>probes/trux/selftest/</code> keeps a stub whose argparse mirrors <code>sweep_evaluate.py --help</code>, so
+an interface drift fails a 1-second test instead of a 12-hour sweep. Note that the real CLI
+inherits argparse prefix matching, so a typo like <code>--windows=3</code> is <em>silently accepted</em> as
+<code>--max-windows=3</code>; the stub forbids abbreviations so a runner cannot lean on that hazard.</p>
+<p><strong>Flattening the corpus needs a rule, not a shrug.</strong> The corpus stores parquet splits, the
+sweep documents <code>timestamp,close</code> CSVs. Flattening found 19 series whose splits share
+timestamps — always <em>across</em> splits, never within one, which is lookback context reuse.
+But <code>open/sp500_daily</code>'s train range runs <em>past</em> its validation range, with validation
+entirely inside train. Zero-shot rows sliding over the whole series are unaffected;
+calling those splits held-out data is wrong. The converter now records overlap kind and
+range per series, and refuses to flatten a timestamp that carries <em>different</em> values.</p>
+<p><strong>A green cell can still be an untrained head.</strong> MOMENT's released checkpoint contains one
+head — <code>head.linear</code> (8, d_model), reconstruction. Asking for <code>task_name="forecasting"</code>
+loads that head unchanged (transformers reports "0 missing keys" because the new head has
+different <em>shapes</em>), and the <code>init()</code> the model card tells you to call replaces it with a
+randomly initialised one. The compatibility matrix therefore shows a pass; the benchmark
+rows say what ran — MASE 7.0–19.6 where a naive forecast gets 2.1–8.4, <code>large</code> within ~1 of
+<code>small</code>. Rows now carry <code>head_from_checkpoint</code> and <code>head_trained_here</code>, and the report
+lists flagged models under "Flagged: the scored head was never trained" while keeping the
+numbers.</p>
+<h2 id="fine-tune-pass-the-lr-moved-the-number-and-the-job-script-lost-its-own-summary">Fine-tune pass: the lr moved the number, and the job script lost its own summary<a class="headerlink" href="#fine-tune-pass-the-lr-moved-the-number-and-the-job-script-lost-its-own-summary" title="Permanent link">&para;</a></h2>
+<p>MOMENT is now the only family with both zero-shot and fine-tuned cells on the same series
+(12 series, A6000, <code>reports/moment_ft_watson/lane_ft.jsonl</code>). Two findings:</p>
+<p><strong>Learning rate dominated the adaptation scope.</strong> At lr 1e-6, training only the head left
+the score where zero-shot left it (2.42x naive vs 2.56x); at lr 1e-4 with only the head
+trainable it reached 1.67x, matching a full fine-tune of the whole model. Sweeping
+<code>heads_only</code> vs <code>full</code> while leaving lr at a default compares two things when one knob
+matters. <code>--configs</code> therefore accepts <code>peft:budget[:lr]</code> and the sweep records <code>lr</code> per
+run, so a null result can be attributed instead of being read as a property of the family.</p>
+<p><strong>A batch job can succeed and still print nothing useful.</strong> The MOMENT job finished —
+2373 s, 156 run records, <code>done in 2373s -&gt; reports/moment_ft_watson/lane_ft.jsonl</code> — and
+then its trailing summary line failed with <code>envs/core/bin/python: No such file or
+directory</code>, because the script used a path relative to a directory SLURM had not made the
+cwd. The results survived only because the lane file is written as it goes; a harness that
+emits its numbers at the end of the script would have produced a successful-looking job
+with no data. Job scripts should use absolute paths for their own environment, and the
+lane file should be append-as-you-go (it is).</p>
+<h2 id="a-dispatched-bridge-job-is-one-file-three-failures-one-rule">A dispatched bridge job is one file: three failures, one rule<a class="headerlink" href="#a-dispatched-bridge-job-is-one-file-three-failures-one-rule" title="Permanent link">&para;</a></h2>
+<p>Getting the GB10 replication job to run took four attempts, and all three failures were the
+same fact approached from a different angle: <code>trux_dispatch.sh</code> transfers <strong>one</strong> file to the
+worker's inbox, and the worker runs it in a fresh shell on the far machine.</p>
+<table>
+<thead>
+<tr>
+<th>attempt</th>
+<th>what was assumed</th>
+<th>what happened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>job_006</td>
+<td><code>SERIES_LIST=... bash trux_dispatch.sh job.sh</code> would carry the argument</td>
+<td><code>FATAL: SERIES_LIST required</code> - the env never crosses</td>
+</tr>
+<tr>
+<td>job_007</td>
+<td>the job may read a sibling file (<code>gpu7_watson12.series</code>) "next to the script"</td>
+<td><code>cat: .../inbox/gpu7_watson12.series: No such file</code> - only the job file lands there</td>
+</tr>
+<tr>
+<td>job_008</td>
+<td>the job may <code>exec</code> the real runner from the repo clone by relative path</td>
+<td><code>bash: .../inbox/gpu7_030_replicate.sh: No such file</code> - <code>$0</code> is in the inbox, not the repo</td>
+</tr>
+</tbody>
+</table>
+<p>The job that works (job_009+) is generated: the runner body plus the series list inlined.
+Two side lessons from the same loop. The generated file had a literal <code>\n</code> spliced into a
+line continuation, which bash read as the word <code>n</code> passed to <code>git pull</code>, so the repo never
+advanced and the failure surfaced as a <code>WARN</code> - a generator that concatenates strings needs
+the same lint as hand-written code. And <code>--models chronos2</code> died with <code>unknown model(s)</code>:
+the registry <em>key</em> is <code>chronos-2</code> while the <em>family</em> is <code>chronos2</code>; the sweep validating
+model names at startup, rather than defaulting to a substring match, is what made that a
+five-second failure instead of a silently empty lane.</p>
+<h2 id="the-same-series-name-can-be-two-different-measurements-csv-vs-arena-directory">The same series name can be two different measurements: CSV vs arena directory<a class="headerlink" href="#the-same-series-name-can-be-two-different-measurements-csv-vs-arena-directory" title="Permanent link">&para;</a></h2>
+<p>The GB10 replication lane was the first real overlap between machines: 12 series watson had
+already scored, 216 shared cells. <code>probes/trux/cross_machine_check.py</code> called 212 of them
+disagreements, with MASE off by 14.98%, 37.68%, 30.80% — up to 122.9%. None of it was
+hardware. The signature of the bug was in what <em>agreed</em>: RMSE matched to about the eighth
+decimal, directional accuracy was identical, and both horizons of one series were off by
+exactly the same ratio.</p>
+<p><code>mase(y, p, train)</code> is <code>mean|y-p| / mean|diff(train)|</code>. The numerator is the forecast; the
+denominator is a property of <strong>which split the loader invented</strong>. trux and gpu7 read the
+arena directory <code>std_equity_1d_10104</code> (publisher's train/validation/test parquets, train
+n=1510, naive MAE 0.375671). Watson's pass-3 job read <code>~/pass3_csv/std_equity_1d_10104.csv</code>,
+a flat file, so <code>SeriesDataset</code> synthesized a 70/15/15 split (train n=1937, naive MAE
+0.431936). Their ratio is 0.8697; its reciprocal 1.1498 is the observed MASE ratio for that
+series to four decimals. The forecasts were the same numbers.</p>
+<p>What that does to the published table:</p>
+<ul>
+<li><strong>Survives</strong>: <code>beats naive</code> per cell (the naive baseline in the same lane shares the
+  denominator), and the unscaled metrics — <code>rmse</code>, <code>mae</code>, <code>dir_acc</code>. Cross-machine on those:
+  bit-exact.</li>
+<li><strong>Does not survive</strong>: any absolute MASE comparison between the watson block (35 series,
+  CSV) and the trux block (66 series, arena dirs). They are two scales of the same quantity,
+  differing per series by 1.0x–2.2x depending on where the publisher's train boundary sits
+  relative to 70%.</li>
+</ul>
+<p>The fix is a fingerprint, not a rule to remember. <code>SeriesDataset</code> now stamps
+<code>data_hash</code> — sha1 over the loaded values <em>and</em> the split boundaries, 12 hex chars — and
+<code>data_kind</code> (<code>arena_dir</code> / <code>csv</code> / <code>parquet_file</code> / <code>in-memory</code> / <code>frame</code>) into <code>meta</code>, and
+<code>forecast_eval</code> copies both onto every scored row. <code>scripts/sweep_evaluate.py</code> adds the lane
+meta field <code>data_kinds</code>, and both consumers use it: the merge's protocol signature includes
+the data path, so a CSV/arena repeat of one cell is filed under <em>superseded</em> rather than
+<em>run variance</em>; <code>cross_machine_check.py</code> refuses to call it a machine disagreement and exits
+2 (inconclusive), with a fallback for legacy lanes that predate the row-level stamp — their
+meta line still lists the input names, and <code>.csv</code> versus a bare directory name is enough to
+tell which split was loaded.</p>
+<p>The general form: <strong>a series name identifies a file, not a measurement.</strong> Anything scaled by
+a quantity derived from the data (MASE by the train-split naive error, any z-scored metric,
+any "beat baseline by X%" claim) silently changes when the data path changes, and the only
+durable defence is to write down the bytes and the split next to the number.</p>
+<h2 id="-device-is-a-record-not-a-constraint-until-the-adapter-enforces-it"><code>--device</code> is a record, not a constraint - until the adapter enforces it<a class="headerlink" href="#-device-is-a-record-not-a-constraint-until-the-adapter-enforces-it" title="Permanent link">&para;</a></h2>
+<p>A trux lane run with <code>--device cpu</code> wrote <code>device: cpu</code> into its meta and then died with
+<code>CUDA out of memory. Tried to allocate 50.00 MiB. GPU 0 has a total capacity of 47.37 GiB of
+which 14.94 MiB is free</code> - from TimesFM-2.5, which was never supposed to touch GPU 0. In the
+vendor package (<code>timesfm/timesfm_2p5/timesfm_2p5_torch.py:72</code>) <code>TimesFMModel.__init__</code> sets
+<code>self.device = torch.device("cuda:0")</code> whenever <code>torch.cuda.is_available()</code> and calls
+<code>self.to(self.device)</code> <strong>inside the constructor</strong>; <code>from_pretrained</code> accepts no device
+argument, and <code>compile()</code> later sizes work as <code>per_core_batch_size * model.device_count</code>.</p>
+<p>Two rounds of pinning failed before one worked. <code>.to("cpu")</code> after <code>compile()</code> was too late
+and left the cached <code>device</code>/<code>device_count</code> pointing at the GPU; pinning right after
+<code>from_pretrained</code> still OOMed because the <em>load itself</em> allocates there. What works
+(<code>TimesFM25._load_off_gpu</code>): when cpu was requested, hide the device for the duration of
+construction (<code>torch.cuda.is_available -&gt; False</code>, <code>device_count -&gt; 0</code>), then move the module,
+correct the cached attributes, and verify placement - raising <code>UnavailableError</code> rather than
+writing a row that names a device it did not run on. Verified on the saturated trux card: one
+series, one window, ok in 4.6 s, CPU.</p>
+<p>The rule for every adapter: <strong>the device column is a claim you have to earn.</strong> Check
+<code>next(model.parameters()).device</code> after loading and refuse on mismatch. An adapter that
+ignores <code>device=</code> does not just run in the wrong place - it falsifies the provenance of the
+row, which is the one thing a benchmark row is supposed to be able to do.</p>
+<h2 id="one-model-family-is-device-sensitive-the-rest-agree-bit-for-bit-across-machines">One model family is device-sensitive; the rest agree bit-for-bit across machines<a class="headerlink" href="#one-model-family-is-device-sensitive-the-rest-agree-bit-for-bit-across-machines" title="Permanent link">&para;</a></h2>
+<p>With the data path finally held constant (both lanes reading arena directories), the GB10
+replication lane and a trux lane give 216 shared cells (12 series x 2 horizons x 9 models,
+once the TimesFM CPU lane was re-run), gpu7 on CUDA vs trux on CPU:</p>
+<table>
+<thead>
+<tr>
+<th>model_key</th>
+<th style="text-align: right;">n cells</th>
+<th style="text-align: right;">median rel. diff (mase)</th>
+<th style="text-align: right;">max</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>naive, seasonal_naive, arima, chronos-2, chronos-bolt-small, chronos-bolt-base, timesfm-2.5-200m, ttm-r2</td>
+<td style="text-align: right;">24 each</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0.000%</td>
+</tr>
+<tr>
+<td>chronos-t5-small</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">3.48%</td>
+<td style="text-align: right;">13.44%</td>
+</tr>
+</tbody>
+</table>
+<p>Eight of nine families are identical to the last decimal across an aarch64/CUDA box and an
+x86/CPU box - which is a stronger reproducibility statement than anything this project had
+before. The exception is instructive: Chronos-T5 is the one path that <em>generates</em> (beam/
+sample decoding), and generation is where a different BLAS, a different kernel, or a bf16
+accumulation compounds into different sampled quantiles. Its pass-3 rows already mix CUDA
+(33 cells) and CPU (33 cells, the OOM retries), so those cells are not the same measurement -
+read <code>device</code> before comparing TTM-style, and treat T5 cross-device gaps of a few percent as
+expected rather than as a bug.</p>
+<p>Three machines, same protocol, same bytes (2026-11-27). Watson's 35-series lane was re-run
+reading arena directories (<code>reports/pass4_watson_arena</code>: RTX A6000, CUDA, 16 models, 0 failures), so its 12 overlap series now share a data path with gpu7 and trux. Pairwise MASE on those cells:</p>
+<table>
+<thead>
+<tr>
+<th>machine pair</th>
+<th>hardware</th>
+<th>identical</th>
+<th>out of tolerance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gpu7 | sedan-gpu1</td>
+<td>GB10 CUDA | A6000 CUDA</td>
+<td>8 of 9 families at 0.000%</td>
+<td>18 cells, all <code>chronos-t5-small</code> (median 5.38%, max 11.32%)</td>
+</tr>
+<tr>
+<td>gpu7 | trux-tsubame</td>
+<td>GB10 CUDA | x86 CPU</td>
+<td>8 of 9 families at 0.000%</td>
+<td>T5 only</td>
+</tr>
+<tr>
+<td>sedan-gpu1 | trux-tsubame</td>
+<td>A6000 CUDA | x86 CPU</td>
+<td>8 of 9 families at 0.000%</td>
+<td>T5 only</td>
+</tr>
+</tbody>
+</table>
+<p>Two CUDA stacks that share nothing - different GPU architecture, different torch build - reproduce each other exactly. That is the strongest form of the claim available, and it locates the exception in the <em>decoding path</em>: <code>chronos-t5-base</code> ran only on watson in this pass, so it still has no cross-machine pair.</p>
+<p><strong>The 66-series replication (pass 5, 2026-11-27) settles it.</strong> Watson re-scored gpu7's 66 series
+on an A6000 (<code>reports/pass5_watson_66</code>, node <code>sedan-gpu3</code>), giving <strong>1,452 shared cells</strong> —
+66 series x 2 horizons x 11 models — with <code>gpu7</code> (GB10, CUDA, torch 2.9.1+cu130) and watson
+(A6000, CUDA, torch 2.7.1+cu128) reading the same arena bytes:</p>
+<table>
+<thead>
+<tr>
+<th>model_key</th>
+<th style="text-align: right;">cells</th>
+<th style="text-align: right;">median diff</th>
+<th style="text-align: right;">max diff</th>
+<th style="text-align: right;">cells &gt; 2%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>naive, seasonal_naive, arima, theta, moving_average, chronos-2, chronos-bolt-small, chronos-bolt-base, timesfm-2.5-200m, ttm-r2</td>
+<td style="text-align: right;">132 each</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>chronos-t5-small</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">5.730%</td>
+<td style="text-align: right;">17.406%</td>
+<td style="text-align: right;">109</td>
+</tr>
+</tbody>
+</table>
+<p>Ten of eleven families are bit-identical to the last decimal on 132 cells each; every out-of-tolerance
+cell in the whole 1,452-cell stratum belongs to <code>chronos-t5-small</code> (rmse behaves the same way: median
+0.000% everywhere except T5, where it reaches 23.2%). The same generator produced <code>ttm-r2</code> bit-exactly,
+and TTM had been suspected of device sensitivity earlier — it was the context-length contract, not the
+device. So the rule to carry forward is narrow and checkable: <strong>anything that samples tokens at decode
+time may differ across stacks by several percent; everything else should be compared to zero.</strong></p>
+<p><strong>The five families gpu7 had never scored (2026-11-27, <code>reports/pass5_gpu7_extra</code>) widen the stratum
+to 1,980 cells and break the tidy version of that rule.</strong> The model list made the 1,452-cell claim look
+wider than it was: <code>chronos-t5-base</code>, <code>flowstate-r1</code>, <code>timesfm-3.0</code>, <code>ttm-r3</code> and <code>patchtst-fm-r2</code> had
+been run on watson only, so they had no cross-machine pair anywhere. Scoring them on gpu7 gives 132
+cells each:</p>
+<table>
+<thead>
+<tr>
+<th>model_key</th>
+<th style="text-align: right;">cells</th>
+<th style="text-align: right;">median diff</th>
+<th style="text-align: right;">max diff</th>
+<th style="text-align: right;">cells &gt; 2%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flowstate-r1</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>timesfm-3.0</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0.000%</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>patchtst-fm-r2</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">0.078%</td>
+<td style="text-align: right;">0.633%</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>ttm-r3</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">0.913%</td>
+<td style="text-align: right;">9.229%</td>
+<td style="text-align: right;">24</td>
+</tr>
+<tr>
+<td>chronos-t5-base</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">5.414%</td>
+<td style="text-align: right;">29.323%</td>
+<td style="text-align: right;">110</td>
+</tr>
+</tbody>
+</table>
+<p>Three separate behaviours, and only one of them is token sampling:</p>
+<ul>
+<li><strong>Bit-exact</strong> (<code>flowstate-r1</code>, <code>timesfm-3.0</code>): same bytes, same protocol, identical to the last
+  decimal on a different architecture and torch build.</li>
+<li><strong>Small drift, always inside tolerance</strong> (<code>patchtst-fm-r2</code>: 0.078% median, 0.63% worst cell). Not
+  zero, so a strict "compare to zero" gate would call it a failure; it is float-order noise in an
+  attention stack that never amplifies past a percent. Worth knowing before anyone wires a CI check
+  that requires 0.000%.</li>
+<li><strong>Pre-existing instability, made device-visible</strong> (<code>ttm-r3</code>). This is the family that emitted NaN
+  forecasts on <em>both</em> machines in pass 3, so its NaN policy drops a variable number of windows per
+  stack: only 74 of its 132 cells have a MASE on both sides, and those 74 differ at 0.91% median and
+  9.2% worst. That is not the hardware inventing numbers; a run that is already on a cliff edge
+  falls off it at different windows depending on rounding order. The honest reading is that
+  <code>ttm-r3</code>'s per-cell MASE is not a stable quantity on this corpus, on any machine.</li>
+<li><strong>Generative decoding</strong> (<code>chronos-t5-base</code>): 5.4% median, 29.3% worst, 110 of 132 cells outside
+  tolerance - same signature as <code>chronos-t5-small</code>, larger magnitude.</li>
+</ul>
+<p>So the rule survives, but the exception is bigger than "sampling at decode time": a family whose
+forecasts are numerically unstable on the corpus (TTM-r3) is effectively device-sensitive too, because
+which windows survive the NaN policy is itself a rounding-order question. Compare to zero for the
+bit-exact majority; expect sub-percent drift for well-conditioned attention stacks; expect several
+percent - and occasionally a changed denominator - for anything that samples tokens or already
+produces NaNs.</p>
+<h2 id="a-2-mb-documentation-page-is-published-but-not-served">A 2 MB documentation page is published but not served<a class="headerlink" href="#a-2-mb-documentation-page-is-published-but-not-served" title="Permanent link">&para;</a></h2>
+<p><code>scripts/build_docs.sh</code> builds strictly and CI commits the site to <code>gh-pages</code>. The benchmark
+page used to be the full per-cell table (3,628 rows -&gt; 2.19 MB of HTML). GitHub Pages returned
+404 for <code>/effectiveness/</code> while <code>/matrix/</code> and every other page served, and the file itself
+was reachable at <code>/effectiveness/index.html</code> - a URL nothing links to, because mkdocs uses
+directory URLs. The page was invisible exactly where the navigation pointed.</p>
+<p><code>--summary-only</code> now generates aggregates for the site (headline ranking, provenance,
+interpreter table); the full per-cell table stays in the repo's merged report, which is also
+the readable choice.</p>
+<p>Separately, <code>actions/deploy-pages</code> never worked on this account: every attempt failed with
+"Failed to create deployment (status: 404) ... Cannot find any run with github.run_id", both
+before and after the repository went public and after recreating Pages with
+<code>build_type=workflow</code>. The branch-push route (<code>git push HEAD:gh-pages</code>) does publish - the
+same mechanism the TSFM4Finance leaderboard site uses - so the docs workflow does that now.</p>
+<h2 id="re-dispatching-a-bridge-job-under-a-used-number-never-runs">Re-dispatching a bridge job under a used number never runs<a class="headerlink" href="#re-dispatching-a-bridge-job-under-a-used-number-never-runs" title="Permanent link">&para;</a></h2>
+<p>The Spark/GPU7 worker picks the first <code>inbox/*.sh</code> that has <strong>no</strong> matching
+<code>outbox/&lt;name&gt;.log</code>, because trux leaves the job file in the inbox until it is reaped and
+<code>rsync</code> would otherwise hand the same job back forever. That rule makes job numbers
+single-use: after <code>job_013</code> ran and reported, dropping a corrected <code>job_013</code> back into the
+inbox left it sitting there for an hour, with a live worker and a fresh heartbeat, and no
+error anywhere — from the worker's point of view it was already finished.</p>
+<p>Two facts to keep separate: the run I was waiting for had actually completed (<code>job_013.log</code>
+on trux: 11 models ok / 0 failed over 66 series), and the file I re-dispatched was a stale
+duplicate of my own making. Housekeeping rule: a dispatch is a new number or nothing; if a
+name has a log, the answer is already in that log.</p>
+<h2 id="the-job-that-ran-is-not-the-job-you-wrote-five-failures-one-bridge">The job that ran is not the job you wrote: five failures, one bridge<a class="headerlink" href="#the-job-that-ran-is-not-the-job-you-wrote-five-failures-one-bridge" title="Permanent link">&para;</a></h2>
+<p>A lane for five model families on the Spark worker took six dispatches and six diagnoses to start.
+Nothing in it was exotic; each layer hid the previous one.</p>
+<p><strong>1. An unquoted value in the endpoint file silently truncated a command.</strong> <code>bridge.env</code> carried
+<code>TRUX_SSH=ssh -i /raid/yewei/.ssh/id_ed25519_gm_transfer -o StrictHostKeyChecking=accept-new</code>.
+Sourcing that line assigns <code>TRUX_SSH="ssh"</code> and then tries to <em>run</em> <code>-i /raid/...</code> as a command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bridge.env: line 12: -o: command not found
+</code></pre></div>
+<p>The variable was non-empty, so every "is it set" check passed. The key had quietly disappeared.</p>
+<p><strong>2. The generator died, and its previous output was still in <code>/tmp</code>.</strong> <code>gpu7_generate.sh</code> runs
+under <code>set -e</code>, so the sourcing error above killed it before it wrote anything. The next command in
+the same shell was <code>trux_dispatch.sh /tmp/job_extra5.sh</code> - and that file existed, from the previous
+attempt, generated from the <em>previous</em> template. Dispatch queued it. The job that ran printed a
+corpus line the current template no longer contains, which is the only reason the mismatch was
+detectable at all.</p>
+<p><strong>3. A key path from the control plane sat in the worker's ssh config.</strong> The rsync then fell back to
+default ssh, and gpu7's <code>~/.ssh/config</code> names <code>IdentityFile /raid/yewei/.ssh/...</code> - a path that
+exists only on trux:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Warning: Identity file /raid/yewei/.ssh/id_ed25519_gm_transfer not accessible: No such file or directory.
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Permission denied, please try again.
+</code></pre></div>
+<p>Same symptom in job_015 and job_021, different cause each time (wrong variable in one, truncated
+variable in the other).</p>
+<p><strong>4. The corpus pull was unconditional.</strong> All 66 arena directories were already on gpu7 (<code>missing=0
+of 66</code> in a diagnostic job), yet the template rsynced every one of them before scoring. A two-hour
+lane died in its first second over bytes that did not need moving.</p>
+<p><strong>5. Two diagnostics were wrong before one was right.</strong> <code>pgrep -fa inbox</code> reported "two pollers" on
+gpu7; the second match was an rsync child whose command line contains the word <code>inbox</code>. A job that
+grepped for <code>TRUX_KEY=</code> in the templates found nothing, because the template uses <code>$TRUX_SSH</code>, not a
+key variable. The diagnostic that finally settled it printed the <em>generated</em> file's own header and
+the corpus line the job had emitted - i.e. it compared the artifact to its source instead of
+describing the symptom.</p>
+<p>What the bridge does now, in order: the generator fills every placeholder (series list, control-plane
+endpoints, and <code>GPU_SSH</code>, the credential the <em>worker</em> holds) and refuses to emit a file containing
+any remaining <code>@@TOKEN@@</code>; it stamps the output with a generation timestamp; <code>trux_dispatch.sh</code>
+refuses a file with no stamp or a stamp older than 30 minutes; and the job itself refuses to score on
+a machine whose hostname is not the Spark box, because every row it writes will claim that machine as
+its origin. Existing corpus directories are skipped instead of re-pulled.</p>
+<p>The general shape: a pipeline with more than one stage must refuse to consume the previous stage's
+leftovers. A filename in <code>/tmp</code> is not a proof of provenance.</p>
+<h2 id="a-hand-written-file-on-a-remote-clone-blocks-the-pull-that-brings-the-next-job">A hand-written file on a remote clone blocks the pull that brings the next job<a class="headerlink" href="#a-hand-written-file-on-a-remote-clone-blocks-the-pull-that-brings-the-next-job" title="Permanent link">&para;</a></h2>
+<p>Both remote harness clones stopped fast-forwarding for the same reason, an hour apart. On trux:
+<code>reports/pass4_watson_arena/lane_arena.jsonl</code>, left there as scratch output in an earlier session and
+committed from the laptop afterwards. On watson: <code>probes/watson/watson_pass5_66.sh</code>, written by hand
+on the remote box and committed from the laptop afterwards. Git refuses to overwrite an untracked
+file during a merge, so <code>git pull --ff-only</code> aborts with "The following untracked working tree files
+would be overwritten" - and a dispatch script that pipes its own output through <code>tail -4</code> shows the
+pull line but not the abort, so the job runs on the <em>old</em> code and records an old <code>code_sha</code>.</p>
+<p>The fix is mechanical (move the file aside, pull, compare, delete if identical), and in both cases
+the scratch copy was byte-identical to the committed one. The lesson is about direction of travel:
+artifacts written on a compute box have to come back to the control machine and into git, or they
+turn the compute box into an island whose pull is permanently broken. Anything worth keeping on a
+remote lane belongs in the repo; anything not worth keeping belongs in a directory git does not
+track (<code>/scratch/&lt;job&gt;/</code>).</p>
+<h2 id="-max-windows-draws-the-test-windows-at-random-so-a-different-seed-is-a-different-measurement"><code>--max-windows</code> draws the test windows at random, so a different seed is a different measurement<a class="headerlink" href="#-max-windows-draws-the-test-windows-at-random-so-a-different-seed-is-a-different-measurement" title="Permanent link">&para;</a></h2>
+<p>Reproducibility work had ruled out hardware, code drift and data path. What it had not measured
+was the sampling design. <code>windows()</code> strides the test span and, when <code>max_windows</code> caps the
+count, picks the subset <strong>uniformly at random</strong> (same seed, same windows — which is exactly why
+the fleet never noticed: every model on every machine used seed 0 and therefore the <em>same</em>
+windows, so cross-machine comparisons stayed bit-exact).</p>
+<p>What seed 0 vs seed 1 means on four arena series (x86 CPU, identical bytes, identical code):</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">windows/cell</th>
+<th>naive's own MASE, seed-to-seed</th>
+<th>chronos-bolt MASE</th>
+<th>paired ratio model/naive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">8 (fleet default)</td>
+<td>median <strong>55%</strong>, max 100%</td>
+<td>median 54%, max 124%</td>
+<td>median <strong>12%</strong>, max 25%</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td>median 21%, max 57%</td>
+<td>median 13%, max 69%</td>
+<td>median <strong>7%</strong>, max 17%</td>
+</tr>
+</tbody>
+</table>
+<p>Read the first column again: the <em>naive baseline's own MASE</em> doubles between seeds. A per-cell
+MASE at 8 windows is a one-digit estimate, not a measurement.</p>
+<p>What survives: paired comparisons inside one seed (every model sees the same windows), and
+aggregate shares over hundreds of cells — the leaderboard's "41% vs 40%" is a count across
+~1,400 cells, so its noise is far smaller than any single cell's. What does not survive: calling
+one cell a win or a loss when its ratio sits within ~12% of parity, and any per-cell number
+quoted without its window count.</p>
+<p>Two fixes, both about not letting the merge machinery blur the sample:</p>
+<ul>
+<li><code>proto()</code> — the merge's protocol signature — now carries <code>n_windows</code> and the lane <code>seed</code>, so a
+  32-window row cannot silently supersede an 8-window row; it becomes a supersession whose gap
+  measures the protocol change.</li>
+<li><code>cross_machine_check.py</code> refuses to compare rows whose <code>n_windows</code> differ, as it already
+  refuses rows whose <code>data_hash</code> differ.</li>
+</ul>
+<p>The ranking table prints <code>win</code> per model and states the paired-ratio noise next to itself. For
+any pass whose per-cell numbers will be quoted individually, raise <code>--max-windows</code> to 32+ and
+budget roughly double the wall time.</p>
+<h2 id="a-partitioned-corpus-makes-a-merged-report-look-cross-checked-when-it-is-not">A partitioned corpus makes a merged report look cross-checked when it is not<a class="headerlink" href="#a-partitioned-corpus-makes-a-merged-report-look-cross-checked-when-it-is-not" title="Permanent link">&para;</a></h2>
+<p>The multi-machine fleet was designed to avoid duplicate work: watson scored 35 series,
+trux/gpu7 scored 66, and the two sets <strong>do not intersect</strong>. A merged 101-series report is
+therefore not 101 series measured twice; it is 101 series measured once each. When the
+pass-4 arena lanes were fed to the cross-machine checker it reported
+<code>cells seen: 2546, on &gt;=2 machines: 216</code> and zero gpu7-vs-watson pairs — with no disagreement
+flag, because there was nothing to compare.</p>
+<p>This is the mirror image of the duplicate-key trap. Too many rows for one cell hides which
+measurement applies; too few rows per cell silently removes the ability to check at all.
+<code>probes/watson/watson_pass5_66.sh</code> re-scores gpu7's 66 series on the A6000 (different GPU
+architecture, different torch build, same arena parquet bytes) so the bit-exactness claim
+that currently rests on 12 series rests on 66.</p>
+<p><strong>Resolved the same day (pass 5).</strong> Watson re-scored gpu7's 66 series (<code>reports/pass5_watson_66</code>,
+SLURM 3291, 16 models, 0 failures). The cross-machine stratum went from 216 cells to <strong>1,452</strong>, and
+the merged arena report now contains real replication for 66 of 101 series rather than a partition
+dressed up as coverage. The lesson generalises: a fleet that avoids duplicate work is efficient and
+unfalsifiable at the same time — decide <em>before</em> dispatching which cells will be measured twice.</p>
+<h2 id="superseded-by-a-fix-and-re-measured-on-another-machine-are-not-the-same-sentence">"Superseded by a fix" and "re-measured on another machine" are not the same sentence<a class="headerlink" href="#superseded-by-a-fix-and-re-measured-on-another-machine-are-not-the-same-sentence" title="Permanent link">&para;</a></h2>
+<p>The merge report classifies repeated <code>(model, series, span, horizon)</code> keys by their protocol
+signature, and until now every differing pair was described as <em>superseded by a fix</em>, with the gap
+called "the size of that fix". That was true of pass 3 (ctx 256 vs 512, CSV vs arena) and false of
+pass 4/5, where <strong>1,668</strong> pairs differ only in <code>device</code>, <code>torch</code> build and <code>code_sha</code>: same context,
+same <code>data_hash</code>, same window count. Calling those a correction tells a reader the older numbers were
+wrong; they are the reproducibility measurement, and their gap (median 0.000%, max 17.4%, all of it
+<code>chronos-t5-small</code>) is the answer to "how much does the hardware cost".</p>
+<p><code>proto()</code> is now <code>proto_core()</code> (what was measured: ctx, ctx_note, data_kind, data_hash, n_windows)
+plus the stack fields, and the report prints three buckets that mean different things: <strong>re-measured
+on another stack</strong> (gap = reproducibility), <strong>superseded by a protocol change</strong> (gap = the size of
+that change), <strong>identical signature</strong> (gap = run variance). Two tests pin the direction: the same
+bytes on two machines must not say "protocol change", and 8-vs-32 windows on one machine must not say
+"another stack".</p>
+<h2 id="the-gpu-floor-was-written-as-a-verdict-and-it-would-have-put-a-200m-sweep-on-cpu">The GPU floor was written as a verdict, and it would have put a 200M sweep on CPU<a class="headerlink" href="#the-gpu-floor-was-written-as-a-verdict-and-it-would-have-put-a-200m-sweep-on-cpu" title="Permanent link">&para;</a></h2>
+<p><code>gpu7_050_extra5.sh</code> picks its device once, at launch: if torch reports less than 4 GiB free, the
+lane runs on CPU and says so. That was the right fix for <code>nvidia-smi</code> answering <code>[N/A]</code> on a GB10,
+but pass 7 exposed the other half of the problem. The audit before job_023 showed <strong>1.1 GiB free</strong>,
+and this lane is 8 models x 66 series x 2 horizons at 32 and then 64 windows: ~2,100 cells of
+Chronos inference. On 20 CPU cores that is most of a day, on the GPU it is under an hour, and the
+free memory on that box swings from 1 GiB to 40 GiB within minutes because it is shared.</p>
+<p>So the floor became a <strong>wait</strong>: <code>pick_device</code> polls torch every <code>GPU_RETRY_SECS</code> (default 120 s) for
+up to <code>GPU_WAIT_SECS</code> (default 45 min), and only then falls back to CPU - with a <code>WARN</code> in the log,
+because the <code>device</code> column of every row in that lane file depends on which branch was taken. The
+choice is also re-made <strong>per lane file</strong>, not once per job: a lane is one device for all its cells,
+so a decision made before a 10-hour lane would mislabel the second half of it.</p>
+<p>Two traps this surfaced, both now tested:</p>
+<ul>
+<li><code>DEV=$(pick_device)</code> captures <strong>stdout</strong>, so the <code>waiting for the GPU: 1173 MiB free</code> progress line
+  became the device string, and the sweep would have run with
+  <code>--device '  waiting for the GPU: 1173 MiB free ...'</code>. A function whose return value is captured
+  may narrate only on stderr - <code>test_the_device_chooser_returns_only_a_device_name</code> runs the real
+  chooser against a stub interpreter and asserts the stdout is exactly <code>cuda</code> or <code>cpu</code>.</li>
+<li>A <strong>queued bridge job is still yours until the worker claims it.</strong> The Spark worker only learns a
+  job exists by moving it from <code>inbox/</code> to <code>inbox_done/</code>, so until that move, <code>mv</code> it back and it
+  never ran. <code>trux_dispatch.sh --hold</code> makes that deliberate: stage a generated job in <code>hold/</code>
+  (no number allocated, stamp still validated), release it later with the same command. job_023 was
+  withdrawn this way after the memory audit; job_024 is the version above.</li>
+</ul>
+<p>And while wiring the <code>--hold</code> test: <code>trux_dispatch.sh --hold job.sh</code> read <code>--hold</code> as the <strong>job
+path</strong> and rejected it for missing a GENERATED stamp, and the repo's own <code>bridge.env.example</code> still
+carried the unquoted-ssh-value bug that killed job_021 (<code>TRUX_SSH=ssh -i ...</code> assigns <code>ssh</code>, then the
+shell tries to run <code>-i</code>). Both are pinned: flags are now parsed positionally with an explicit
+unknown-flag failure, and every multi-word value in the example is quoted and sourced by a test.</p>
+<h2 id="the-beat-naive-share-is-a-threshold-on-a-noisy-number-and-32-windows-lowers-every-models-share">The beat-naive share is a threshold on a noisy number, and 32 windows lowers every model's share<a class="headerlink" href="#the-beat-naive-share-is-a-threshold-on-a-noisy-number-and-32-windows-lowers-every-models-share" title="Permanent link">&para;</a></h2>
+<p>Pass 7 re-scored the same 66 arena series on the same watson node at 32 windows instead of 8 (<code>reports/pass7_watson_win</code>, 8 models, same bytes, same seed, <code>n_windows</code> in the protocol signature so nothing merges across the two). The headline result is not a tie resolving - it is that <strong>every model's beat-naive share falls</strong>, and the ordering moves with it:</p>
+<p>The 64-window pass (same node, same bytes) is included to show where it stops moving: 32 is
+already the plateau, so the extra cost of 64 buys nothing.</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th style="text-align: right;">beat naive @ 8w</th>
+<th style="text-align: right;">@ 32w</th>
+<th style="text-align: right;">@ 64w</th>
+<th style="text-align: right;">8w → 32w</th>
+<th style="text-align: right;">32w → 64w</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>arima</code></td>
+<td style="text-align: right;">56.1%</td>
+<td style="text-align: right;">40.9%</td>
+<td style="text-align: right;">44.7%</td>
+<td style="text-align: right;">-15.2 pp</td>
+<td style="text-align: right;">+3.8 pp</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-small</code></td>
+<td style="text-align: right;">42.4%</td>
+<td style="text-align: right;">15.2%</td>
+<td style="text-align: right;">15.9%</td>
+<td style="text-align: right;">-27.3 pp</td>
+<td style="text-align: right;">+0.7 pp</td>
+</tr>
+<tr>
+<td><code>chronos-2</code></td>
+<td style="text-align: right;">39.4%</td>
+<td style="text-align: right;">22.0%</td>
+<td style="text-align: right;">13.6%</td>
+<td style="text-align: right;">-17.4 pp</td>
+<td style="text-align: right;">-8.4 pp</td>
+</tr>
+<tr>
+<td><code>theta</code></td>
+<td style="text-align: right;">34.1%</td>
+<td style="text-align: right;">15.9%</td>
+<td style="text-align: right;">13.6%</td>
+<td style="text-align: right;">-18.2 pp</td>
+<td style="text-align: right;">-2.3 pp</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-base</code></td>
+<td style="text-align: right;">32.6%</td>
+<td style="text-align: right;">12.1%</td>
+<td style="text-align: right;">11.4%</td>
+<td style="text-align: right;">-20.5 pp</td>
+<td style="text-align: right;">-0.7 pp</td>
+</tr>
+<tr>
+<td><code>chronos-t5-small</code></td>
+<td style="text-align: right;">33.3%</td>
+<td style="text-align: right;">9.1%</td>
+<td style="text-align: right;">9.8%</td>
+<td style="text-align: right;">-24.2 pp</td>
+<td style="text-align: right;">+0.7 pp</td>
+</tr>
+<tr>
+<td><code>seasonal_naive</code></td>
+<td style="text-align: right;">17.4%</td>
+<td style="text-align: right;">6.8%</td>
+<td style="text-align: right;">4.5%</td>
+<td style="text-align: right;">-10.6 pp</td>
+<td style="text-align: right;">-2.3 pp</td>
+</tr>
+</tbody>
+</table>
+<p>Head-to-head on the same cells (8w / 32w / 64w):</p>
+<table>
+<thead>
+<tr>
+<th>pair</th>
+<th style="text-align: right;">8w</th>
+<th style="text-align: right;">32w</th>
+<th style="text-align: right;">64w</th>
+<th>reading</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>arima</code> &gt; <code>chronos-bolt-small</code></td>
+<td style="text-align: right;">58.3%</td>
+<td style="text-align: right;">84.1%</td>
+<td style="text-align: right;">83.3%</td>
+<td>real, and far bigger than 8 windows showed</td>
+</tr>
+<tr>
+<td><code>chronos-2</code> &gt; <code>chronos-t5-small</code></td>
+<td style="text-align: right;">55.3%</td>
+<td style="text-align: right;">69.7%</td>
+<td style="text-align: right;">70.5%</td>
+<td>real</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-small</code> &gt; <code>chronos-2</code></td>
+<td style="text-align: right;">53.8%</td>
+<td style="text-align: right;">40.2%</td>
+<td style="text-align: right;">38.6%</td>
+<td>the 8-window "tie" resolves <strong>against</strong> bolt-small</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-base</code> &gt; <code>chronos-t5-small</code></td>
+<td style="text-align: right;">48.5%</td>
+<td style="text-align: right;">50.0%</td>
+<td style="text-align: right;">47.0%</td>
+<td>genuinely a tie: it does not move</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The published table is internally inconsistent at 8 windows, not just noisy.</strong> A tie that becomes a
+61%-to-39% gap when the window sample quadruples was never a tie; it was the sample. 33.0% of cells
+(305/924) change winner between 8 and 64 windows.</p>
+<p>Why: the share counts a cell as a win when <code>mase_model &lt; mase_naive</code>, i.e. when a <strong>noisy ratio lands
+below 1.0</strong>. The ratio distributions show both halves of the problem at once - the 8-window draws are
+wider <em>and</em> sit closer to parity:</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th style="text-align: right;">median ratio @8w</th>
+<th style="text-align: right;">IQR @8w</th>
+<th style="text-align: right;">within ±10% of parity @8w</th>
+<th style="text-align: right;">median @32w</th>
+<th style="text-align: right;">IQR @32w</th>
+<th style="text-align: right;">within ±10% @32w</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chronos-bolt-small</code></td>
+<td style="text-align: right;">1.029</td>
+<td style="text-align: right;">[0.956, 1.134]</td>
+<td style="text-align: right;">60.6%</td>
+<td style="text-align: right;">1.053</td>
+<td style="text-align: right;">[1.012, 1.086]</td>
+<td style="text-align: right;">81.1%</td>
+</tr>
+<tr>
+<td><code>chronos-2</code></td>
+<td style="text-align: right;">1.023</td>
+<td style="text-align: right;">[0.975, 1.076]</td>
+<td style="text-align: right;">78.8%</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">[1.004, 1.066]</td>
+<td style="text-align: right;">84.1%</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-base</code></td>
+<td style="text-align: right;">1.037</td>
+<td style="text-align: right;">[0.978, 1.136]</td>
+<td style="text-align: right;">62.1%</td>
+<td style="text-align: right;">1.076</td>
+<td style="text-align: right;">[1.026, 1.126]</td>
+<td style="text-align: right;">62.1%</td>
+</tr>
+<tr>
+<td><code>arima</code></td>
+<td style="text-align: right;">1.000</td>
+<td style="text-align: right;">[0.997, 1.002]</td>
+<td style="text-align: right;">100%</td>
+<td style="text-align: right;">1.001</td>
+<td style="text-align: right;">[0.998, 1.003]</td>
+<td style="text-align: right;">100%</td>
+</tr>
+</tbody>
+</table>
+<p>Centre the noise on a value that is already just <strong>above</strong> 1, and a threshold at 1.0 counts far more
+false wins than true ones: at 8 windows 60.6% of <code>chronos-bolt-small</code>'s cells are inside ±10% of
+parity, and <strong>32.3% of all cells (256/792) change winner between 8 and 32 windows</strong>. A single cell at
+this resolution was never a measurement of model quality; it was a measurement of that window draw.
+<code>arima</code> is the extreme case and also the reason it tops the table: its fitted forecasts are
+indistinguishable from persistence on these series (median ratio 1.000, IQR 0.005), so it neither
+wins nor loses - it is naive with extra steps, and its "share" is pure coin-toss mass around parity.</p>
+<p>Cross-machine at the new protocol (<code>reports/pass7_watson_win/lane_win32.jsonl</code> vs
+<code>reports/pass7_trux_win/lane_cuda-?.jsonl</code>, 990 shared cells: watson A6000 CUDA vs trux RTX 6000 Ada
+CUDA and trux CPU, same bytes, seed 0): seven of eight families <strong>0.000% median and 0.000% max</strong>
+(132 cells each), <code>chronos-t5-small</code> again the only outlier - and its median falls from 5.73% (8
+windows, pass 5) to <strong>2.165%</strong> (32 windows). The generative family's stack sensitivity was partly
+window noise all along. <code>chronos-t5-small</code> OOM'd on trux's GPU mid-lane (another user's process held
+26.6 GiB of 47.4); the lane file records it as a <code>failed</code> model with the CUDA error, and the CPU lane
+covered those 33 series - which is why the surviving t5 pair is CUDA-vs-CPU, and why the device column
+is part of the number and not decoration.</p>
+<p>What this changes:
+* <strong>The default window count for any pass whose numbers get quoted is 32, not 8</strong> (<code>sweep_evaluate.py</code>
+  defaults to 32 as of pass 7). 8 windows is fine for a smoke test of whether a family runs at all
+  (which is what it was used for). Pass 7b (<code>probes/watson/watson_pass7b_rest32.sh</code>) moves the other
+  11 model keys to 32 windows on the same 66 series so the published table shares one protocol.
+* Shares from an 8-window pass must be published with the window count next to them. The generator now
+  prints <code>win</code> per model in the ranking table, and <code>proto()</code> keys on <code>n_windows</code>, so an 8-window row
+  can never supersede a 32-window one.
+* <code>probes/window_sensitivity.py</code> reproduces every number above
+  (<code>probes/window_sensitivity.py reports/pass5_watson_66/lane.jsonl reports/pass7_watson_win/lane_win32.jsonl</code>),
+  and <code>tests/test_window_sensitivity.py</code> pins that the probe keeps window counts as separate groups
+  and counts flips per cell.</p>
+<h2 id="a-rows-n_windows-is-what-survived-scoring-not-what-was-asked-for">A row's <code>n_windows</code> is what survived scoring, not what was asked for<a class="headerlink" href="#a-rows-n_windows-is-what-survived-scoring-not-what-was-asked-for" title="Permanent link">&para;</a></h2>
+<p>The first version of <code>probes/window_sensitivity.py</code> grouped cells by the row's <code>n_windows</code>, which is
+the obvious field and the wrong one. Three results came out of one 64-window lane: groups at 38, 39,
+40, 49, 50 and 64 windows. Nothing was broken in the sweep - <code>n_windows</code> is the number of windows that
+<strong>survived scoring</strong> (<code>evaluate.py</code> sets it to <code>len(kept)</code> after NaN/blank windows leave the set), and
+a series whose test span holds 39 candidate windows cannot score 64 no matter what was requested. So
+one protocol fragmented into six groups, and a short series scored under a 32-window budget looks
+<em>identical</em> to the same series under an 8-window budget.</p>
+<p>That second half is the dangerous part, and it reaches the merge, not just the probe: if the protocol
+signature only sees the scored count, a 32-window row silently supersedes an 8-window row for a capped
+series, and the corpus changes under the table while every duplicate-classification label stays
+"re-measured on another stack".</p>
+<p>Both are fixed at the source:
+* <code>proto_core()</code> now carries the <strong>requested</strong> budget (<code>max_windows</code>, from the lane meta and stamped on
+  every row by <code>stamp_rows</code>) alongside the scored count. The pinned case: two rows identical in every
+  scored field, requested 8 vs 32 → different <code>proto_core</code>, so different protocol
+  (<code>tests/test_merge_sections.py::test_a_wider_window_request_is_a_different_protocol_even_when_the_series_caps_it</code>).
+* The probe groups by the requested budget (row field, else lane meta, else scored count with a printed
+  note), and a test feeds a lane where one cell scored 39 under a 64-window request and asserts no
+  <code>39 windows:</code> group appears (<code>tests/test_window_sensitivity.py</code>).</p>
+<p>The general rule: a field that records <em>what happened during scoring</em> cannot stand in for <em>what was
+requested</em>. The request is the protocol; the score count is a property of the cell.</p>
+<h2 id="an-untracked-config-file-beside-the-script-outranked-the-operators-own-variable">An untracked config file beside the script outranked the operator's own variable<a class="headerlink" href="#an-untracked-config-file-beside-the-script-outranked-the-operators-own-variable" title="Permanent link">&para;</a></h2>
+<p>Five bridge tests passed on the laptop and failed on trux with no code change between them.
+<code>trux_dispatch.sh</code> sources <code>probes/trux/bridge/bridge.env</code> (untracked: hostnames, keys, the queue
+path) <em>after</em> the caller's environment is set, so on trux that file's <code>BRIDGE=</code> overwrote the fixture
+path a test exported - the test was reading the live inbox. Same script, two machines, two
+behaviours, and the failure looked like a bug in the numbering logic rather than in test isolation.</p>
+<p><code>bridge.env</code> is now defaults only: an exported <code>BRIDGE</code> survives sourcing it, in both
+<code>trux_dispatch.sh</code> and <code>gpu7_generate.sh</code>, pinned by
+<code>tests/test_bridge_generate.py::test_an_explicit_BRIDGE_beats_the_bridge_env_next_to_the_script</code>. The
+same lesson as the hand-written file that pinned a remote clone to old code: config that lives outside
+git changes behaviour per machine, so it must be a default with an explicit override, never the last
+word.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../07_finance_tasks/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Finance tasks">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Finance tasks
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

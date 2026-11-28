@@ -1,0 +1,1884 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Time-series foundation models behind one API — a benchmark and compatibility harness">
+      
+      
+        <meta name="author" content="tsfm-trl maintainers">
+      
+      
+      
+        <link rel="prev" href="../01_install/">
+      
+      
+        <link rel="next" href="../06_matrix/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Benchmark protocol - tsfm-trl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#09-running-this-as-a-benchmark" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="tsfm-trl" class="md-header__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tsfm-trl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Benchmark protocol
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tsfm-trl" class="md-nav__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tsfm-trl
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark protocol
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-two-claims-in-one-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two claims, in one table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-that-exist-all-hand-written-all-nan-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics that exist (all hand-written, all NaN-safe)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-an-effectiveness-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running an effectiveness pass
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running an effectiveness pass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sampling-noise-measured-2026-11-27-four-arena-series-same-bytes-same-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sampling noise (measured 2026-11-27, four arena series, same bytes, same code)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-rules-what-goes-in-a-table-what-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting rules (what goes in a table, what does not)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-pass-1-shows-and-what-it-does-not-license" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What pass 1 shows (and what it does not license)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-pass-3-shows-the-whole-standard-corpus-101-series-3628-cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What pass 3 shows (the whole standard/ corpus: 101 series, 3,628 cells)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What pass 3 shows (the whole standard/ corpus: 101 series, 3,628 cells)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-one-fine-tune-measurement-in-this-benchmark-moment-watson-a6000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The one fine-tune measurement in this benchmark (MOMENT, watson A6000)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-passes-4-6-show-101-series-on-one-data-path-with-intervals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What passes 4-6 show: 101 series on one data path, with intervals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-not-done-yet-so-nobody-reads-it-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is not done yet (so nobody reads it in)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility matrix tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effectiveness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured effectiveness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_forecast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forecasting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TRL — post-training
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    TRL — post-training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_trl_api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RL / reward API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_reward_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reward & RL paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_fine_tune/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fine-tune (capability gate)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_classify_probing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification & probing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_finance_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_known_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-two-claims-in-one-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two claims, in one table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-that-exist-all-hand-written-all-nan-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics that exist (all hand-written, all NaN-safe)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-an-effectiveness-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running an effectiveness pass
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running an effectiveness pass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sampling-noise-measured-2026-11-27-four-arena-series-same-bytes-same-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sampling noise (measured 2026-11-27, four arena series, same bytes, same code)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting-rules-what-goes-in-a-table-what-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting rules (what goes in a table, what does not)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-pass-1-shows-and-what-it-does-not-license" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What pass 1 shows (and what it does not license)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-pass-3-shows-the-whole-standard-corpus-101-series-3628-cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What pass 3 shows (the whole standard/ corpus: 101 series, 3,628 cells)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What pass 3 shows (the whole standard/ corpus: 101 series, 3,628 cells)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-one-fine-tune-measurement-in-this-benchmark-moment-watson-a6000" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The one fine-tune measurement in this benchmark (MOMENT, watson A6000)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-passes-4-6-show-101-series-on-one-data-path-with-intervals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What passes 4-6 show: 101 series on one data path, with intervals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-not-done-yet-so-nobody-reads-it-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is not done yet (so nobody reads it in)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="09-running-this-as-a-benchmark">09 · Running this as a benchmark<a class="headerlink" href="#09-running-this-as-a-benchmark" title="Permanent link">&para;</a></h1>
+<p>The compatibility matrix answers <strong>"does this architecture work here at all"</strong>. A
+benchmark answers a different question: <strong>"how well does it forecast, and how do the
+architectures compare"</strong>. Both run through the same API, and conflating them is the most
+common way to over-claim from this repo, so the two are kept formally separate here.</p>
+<h2 id="the-two-claims-in-one-table">The two claims, in one table<a class="headerlink" href="#the-two-claims-in-one-table" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>question</th>
+<th>command</th>
+<th>what a ✅ / a number means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>compatibility</strong></td>
+<td>can the architecture be loaded, forecast, be scored, and be reached by a training/RL path in <em>this</em> environment</td>
+<td><code>tsfm-trl doctor</code> → <code>COMPATIBILITY.md</code></td>
+<td>the code ran end-to-end at smoke size; nothing about accuracy</td>
+</tr>
+<tr>
+<td><strong>effectiveness</strong></td>
+<td>how accurate is it, and how does it compare across families, horizons, domains</td>
+<td><code>tsfm-trl evaluate</code> (<code>forecast_eval</code>)</td>
+<td>numbers on held-out windows with a defined metric, split and seed</td>
+</tr>
+</tbody>
+</table>
+<p><code>COMPATIBILITY.md</code> deliberately contains <strong>no accuracy numbers</strong>. Its fine-tune column
+carries a two-step loss for one reason only: to prove the objective is differentiable and
+the logging works. Reading it as "fine-tuning helped" is a category error
+(<code>docs/03_fine_tune.md</code>).</p>
+<h2 id="metrics-that-exist-all-hand-written-all-nan-safe">Metrics that exist (all hand-written, all NaN-safe)<a class="headerlink" href="#metrics-that-exist-all-hand-written-all-nan-safe" title="Permanent link">&para;</a></h2>
+<p><code>tsfm_trl/eval/metrics.py</code>, on the canonical <code>LEVELS</code> grid unless stated otherwise:</p>
+<table>
+<thead>
+<tr>
+<th>family</th>
+<th>function</th>
+<th>note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>point</td>
+<td><code>rmse</code>, <code>mae</code>, <code>mape</code>, <code>smape</code>, <code>nd</code></td>
+<td>scale-free ones (<code>nd</code>, <code>smape</code>) for cross-series comparison</td>
+</tr>
+<tr>
+<td>scale-free skill</td>
+<td><code>mase</code>, <code>relative_skill</code></td>
+<td>both need the training span and a <code>season</code> (1 for the finance panels)</td>
+</tr>
+<tr>
+<td>direction</td>
+<td><code>directional_accuracy</code></td>
+<td>anchor-relative: the last observed value by default, which is the version that matters for the finance labels (<code>docs/07_finance_tasks.md</code>)</td>
+</tr>
+<tr>
+<td>ranking</td>
+<td><code>rank_corr</code></td>
+<td>per-window Spearman, useful for signal-style tasks</td>
+</tr>
+<tr>
+<td>probabilistic</td>
+<td><code>pinball</code>, <code>crps_from_quantiles</code>, <code>wql</code>, <code>quantile_coverage</code></td>
+<td>quantile-based; <strong>coverage only counts bands the model actually emits</strong> — a model that ships 9 levels is not scored on 21</td>
+</tr>
+<tr>
+<td>classification</td>
+<td><code>classification_report</code></td>
+<td>PR-AUC (multiclass OVR), ROC-AUC, macro-F1, F2-beta, precision/recall, base rate; hard labels give <code>nan</code> for PR/ROC rather than a fabricated score</td>
+</tr>
+</tbody>
+</table>
+<p><code>forecast_report(y, pred, train)</code> bundles the point + probabilistic set into one dict;
+<code>forecast_eval(...)</code> produces one row per (span, horizon).</p>
+<h2 id="protocol">Protocol<a class="headerlink" href="#protocol" title="Permanent link">&para;</a></h2>
+<p>The library fixes the parts of a protocol that would otherwise differ per family:</p>
+<ul>
+<li><strong>one quantile grid</strong> (<code>LEVELS</code>, 21 levels) — adapters that emit fewer levels are
+  mapped onto their own subset and <code>Pred.meta["levels_emitted"]</code> records it;</li>
+<li><strong>one normalisation of the question</strong> — anchor-relative targets for the finance labels,
+  and the model's own scaler is never re-implemented outside the adapter;</li>
+<li><strong>context handling</strong> — <code>ctx_step</code>/<code>max_context</code> per adapter, left-padding with the
+  model's own pad mask instead of zeros (Moirai, FlowState) — a silent zero-pad changes
+  the score for patch models; and <code>min_context</code> for checkpoints that declare a fixed
+  input length (Granite/TTM): the evaluation window is raised to it, or padded with the
+  oldest observation when the span cannot supply it, because feeding a shorter window
+  makes those models pad themselves and scale the answer by the padded fraction;</li>
+<li><strong>split discipline</strong> — <code>SeriesDataset.splits</code>, and any checkpoint carries
+  <code>split_end</code> so <code>load_finetuned</code> can refuse an evaluation window that overlaps training.</li>
+</ul>
+<p>Budget names in <code>TrainingConfig</code> are also evaluation sizes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">BUDGETS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"fs16"</span><span class="p">:</span> <span class="mi">16</span> <span class="n">windows</span> <span class="o">/</span> <span class="mi">40</span> <span class="n">steps</span> <span class="o">/</span> <span class="n">lr</span> <span class="mf">1e-5</span><span class="p">,</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>           <span class="s2">"fs64"</span><span class="p">:</span> <span class="mi">64</span> <span class="n">windows</span> <span class="o">/</span> <span class="mi">120</span> <span class="n">steps</span> <span class="o">/</span> <span class="n">lr</span> <span class="mf">1e-5</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>           <span class="s2">"full"</span><span class="p">:</span> <span class="nb">all</span> <span class="n">windows</span> <span class="o">/</span> <span class="mi">3</span> <span class="n">epochs</span> <span class="o">/</span> <span class="n">lr</span> <span class="mf">5e-6</span><span class="p">}</span>
+</code></pre></div>
+<h2 id="running-an-effectiveness-pass">Running an effectiveness pass<a class="headerlink" href="#running-an-effectiveness-pass" title="Permanent link">&para;</a></h2>
+<p>One model, several horizons, JSON rows out (stdout is a data channel — progress lines go
+to stderr):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tsfm-trl<span class="w"> </span>evaluate<span class="w"> </span>--model<span class="w"> </span>chronos-2<span class="w"> </span>--series<span class="w"> </span>px.csv<span class="w"> </span>--horizons<span class="w"> </span><span class="m">21</span>,63,126<span class="w"> </span>--ctx<span class="w"> </span><span class="m">512</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>tsfm-trl<span class="w"> </span>evaluate<span class="w"> </span>--model<span class="w"> </span>chronos-2<span class="w"> </span>--adaptation<span class="w"> </span>reports/ft/chronos-2__…/model.pt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">                  </span>--series<span class="w"> </span>px.csv<span class="w"> </span>--horizons<span class="w"> </span><span class="m">21</span>,63
+</code></pre></div>
+<p>The second form is the zero-shot-vs-adapted comparison: the checkpoint's provenance
+(base id, peft level, trained parameter names, <code>split_end</code>) is validated on load, so the
+comparison cannot silently swap a TimesFM head onto a Moirai trunk or evaluate on
+windows the run trained on.</p>
+<p>The whole registry at once, one interpreter per family, one row per model per series per
+horizon — this is what produced <code>EFFECTIVENESS.md</code> (rendered as the site's <em>Measured effectiveness</em> page):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># canonical series: fev-style directories with real train/validation/test splits and</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># OHLCV covariates (panel-consuming models such as Kronos need them)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>scripts/sweep_evaluate.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span>--series<span class="w"> </span>data/open/sp500_long<span class="w"> </span>--series<span class="w"> </span>data/open/audusd<span class="w"> </span>--series<span class="w"> </span>data/open/btc_crypto<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span>--horizons<span class="w"> </span><span class="m">21</span>,63,126<span class="w"> </span>--max-windows<span class="w"> </span><span class="m">12</span><span class="w"> </span>--spans<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span>--out<span class="w"> </span>reports/effectiveness_dgx.jsonl<span class="w"> </span>--fresh
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># merge several machines/runs; merging is per (model, series, span, horizon), so partial</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>coverage<span class="w"> </span>from<span class="w"> </span>different<span class="w"> </span>machines<span class="w"> </span>unions<span class="w"> </span>instead<span class="w"> </span>of<span class="w"> </span>overwriting,<span class="w"> </span>and<span class="w"> </span>every<span class="w"> </span>row<span class="w"> </span>keeps<span class="w"> </span>the
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>machine/interpreter/torch<span class="w"> </span>stamp<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>run<span class="w"> </span>that<span class="w"> </span>produced<span class="w"> </span>it
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>scripts/sweep_evaluate.py<span class="w"> </span>--report<span class="w"> </span>reports/effectiveness_dgx.jsonl,<span class="se">\</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>reports/effectiveness_watson.jsonl,reports/effectiveness_laptop_vendor.jsonl<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span>--md<span class="w"> </span>EFFECTIVENESS.md
+</code></pre></div>
+<p>The sweep refuses to run a model in an environment the registry does not name for it (a
+missing env is a recorded skip, not a <code>core</code> fallback), writes rows to JSONL as they
+land, and stamps each run with its machine, series, spans and window count — so a
+published table can always be traced to the interpreter that produced each row.</p>
+<p>Reward runs get the same treatment: <code>scripts/reward_seeds.py --model … --seeds 0,1,2</code>
+reports the spread of the late-minus-early reward delta instead of one curve.</p>
+<p>Through the API, which is what a sweep should use:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelHub</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl.eval.evaluate</span><span class="w"> </span><span class="kn">import</span> <span class="n">forecast_eval</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">m</span> <span class="o">=</span> <span class="n">ModelHub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"moirai-1.1-R-small"</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">,</span> <span class="n">ctx_cap</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">batch</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">rows</span> <span class="o">=</span> <span class="n">forecast_eval</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"panels/px.csv"</span><span class="p">,</span> <span class="n">horizons</span><span class="o">=</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">126</span><span class="p">),</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>                     <span class="n">spans</span><span class="o">=</span><span class="p">(</span><span class="s2">"test"</span><span class="p">,),</span> <span class="n">ctx</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">max_windows</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>Across environments, use the same subprocess dispatch the matrix uses — one interpreter
+per family (<code>envs/local.json</code>), because the family pins are mutually contradictory
+(<code>docs/01_install.md</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>tsfm-trl<span class="w"> </span>doctor<span class="w"> </span>--all-envs<span class="w"> </span>--tasks<span class="w"> </span>load,predict,quantiles<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">                </span>--json<span class="w"> </span>reports/matrix_bench_core.json
+</code></pre></div>
+<p><code>predict</code> is the benchmark's inference half: every row that is ✅ there can be dropped
+into <code>forecast_eval</code> without further adaptation work.</p>
+<h3 id="sampling-noise-measured-2026-11-27-four-arena-series-same-bytes-same-code">Sampling noise (measured 2026-11-27, four arena series, same bytes, same code)<a class="headerlink" href="#sampling-noise-measured-2026-11-27-four-arena-series-same-bytes-same-code" title="Permanent link">&para;</a></h3>
+<p><code>--max-windows</code> draws the test windows <strong>uniformly at random</strong>; same seed, same windows. At the
+fleet default of 8 windows per cell, seed 0 vs seed 1 moves naive's own MASE by ~55% median
+(max 100%), a model's MASE by ~54%, and the paired model/naive ratio by ~12% (max 25%). At 32
+windows: ~21%, ~13%, ~7%. So aggregate shares over hundreds of cells are trustworthy, a single
+cell within ~12% of parity is not a win or a loss, and <code>n_windows</code> + lane <code>seed</code> are part of the
+merge protocol signature (<code>proto</code>) and a hard precondition in <code>cross_machine_check.py</code>.</p>
+<p><strong>The noise does not average out symmetrically, because the headline statistic is a threshold.</strong>
+Pass 7 re-scored the same 66 series on the same node at 32 windows: <em>every</em> model's beat-naive share
+fell (<code>chronos-bolt-small</code> 42.4% -&gt; 15.2%, <code>arima</code> 56.1% -&gt; 40.9%), the head-to-head
+<code>chronos-bolt-small &gt; chronos-2</code> moved 53.8% -&gt; 40.2%, and <strong>32.3% of cells change winner</strong> between
+the two window counts. Cause: the per-cell model/naive ratio is centred just <em>above</em> 1 with a wide
+spread at 8 windows, so counting cells below 1.0 collects more false wins than true ones. Table and
+mechanism in docs/08 ("The beat-naive share is a threshold on a noisy number"); reproduce with
+<code>probes/window_sensitivity.py</code>. The 64-window pass says where it stops: 32w vs 64w shares differ by at
+most 8 pp, so 32 is enough. Consequence for this document: <strong>every share in the tables below is an
+8-window number and is labelled as such</strong>; any pass whose numbers will be quoted runs at
+<code>--max-windows 32</code> (now the default of <code>sweep_evaluate.py</code>).</p>
+<h2 id="reporting-rules-what-goes-in-a-table-what-does-not">Reporting rules (what goes in a table, what does not)<a class="headerlink" href="#reporting-rules-what-goes-in-a-table-what-does-not" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Report the metric family the model can serve.</strong> A point-only head (TTM r2/r3) has no
+   CRPS; write <code>—</code>, do not integrate a degenerate distribution. Same reason TiRex's
+   NPP and Chronos-Bolt's samples both get empirical quantiles first: different routes to
+   the same grid, then the same metric.</li>
+<li><strong>Report coverage per emitted band</strong> and say which bands (<code>Pred.meta</code>).</li>
+<li><strong>One row per (model, environment)</strong>; a model that is ✅ on one machine and OOM on
+   another is a fact about the machine, and the matrix keeps both under <em>other machine</em>.</li>
+<li><strong>State the parameter budget for adapted rows</strong> — <code>peft="lora"</code> now means a frozen
+   trunk, and <code>TrainResult.trainable_parameters</code> is the number to print
+   (<code>docs/08_known_issues.md</code> explains why that sentence exists).</li>
+<li><strong>Multiple seeds and windows.</strong> A single 16-window pass is a smoke test; the harness
+   defaults are deliberately smoke-sized (<code>fs16</code>/<code>fs64</code>) so an accidental 10-hour run is
+   impossible by default.</li>
+<li><strong>Baselines in the same table.</strong> <code>naive</code>, <code>seasonal_naive</code>, <code>theta</code>, <code>arima</code>,
+   <code>moving_average</code> are registered models with their own rows, so every effectiveness
+   table can carry skill relative to them (<code>relative_skill</code>, MASE) rather than raw loss.</li>
+</ol>
+<h2 id="what-pass-1-shows-and-what-it-does-not-license">What pass 1 shows (and what it does not license)<a class="headerlink" href="#what-pass-1-shows-and-what-it-does-not-license" title="Permanent link">&para;</a></h2>
+<p>43 of 46 registry models have rows; the three that do not are named in the table with
+their reason (TimeMoE ran out of a 6 GB laptop GPU, TiRex-2's mLSTM kernels fail on this
+toolchain, VisionTS++ ships weights with no installable package). All numbers are
+zero-shot, one seed, 12 windows per pass, on three daily series.</p>
+<ul>
+<li><strong>No published checkpoint beats the trivial scaler on point accuracy at these
+  horizons.</strong> On <code>sp500_long</code> every model — statistical baseline or foundation model —
+  has MASE above ~4 at h=21 and above ~9 at h=126. MASE normalises by the in-sample mean
+  |Δ| of the training span, so this says: at three-week and half-year horizons on a daily
+  index, the level scale dominates and none of these weights produce point-forecast skill
+  over "tomorrow ≈ today".</li>
+<li><strong>Directional accuracy sits at 0.5.</strong> The best cells in the <code>dir-acc</code> column are
+  ~0.53–0.59 and many are below 0.5, which is what noise looks like. For a finance
+  benchmark that is the headline result, not a caveat.</li>
+<li><strong>What does separate the models is calibration.</strong> On <code>sp500_long</code> at h=21 TiRex's
+  nominal 80% band covers 0.81 (close to nominal), Chronos-T5-base's covers 0.74, and
+  ARIMA's covers 0.98 — ARIMA's intervals are simply too wide. At h=126 on
+  <code>btc_crypto</code>, coverage collapses for the same models (TiRex 0.27, ARIMA 0.30): long
+  crypto bands from these weights are not usable as stated. A point-only model cannot
+  even be charged with this failure, which is why the <code>pt</code> marker matters.</li>
+<li><strong>Ranking is not stable across series or horizon.</strong> TiRex and Moirai-1.1-R-base lead on
+  the index; Moirai-2.0-R-small and t0-gamma lead on crypto at h=126. Anyone quoting "X
+  is the best TSFM" from one dataset is quoting noise.</li>
+<li><strong>The benchmark found a library bug the compatibility matrix could not.</strong> TiRex's
+  roll-forward path for horizons longer than one vendor output block mixed the batch axis
+  into a 1-D context and raised — at <code>h ≤ 63</code> (the matrix grid) that code never ran, so
+  the model "worked". It is now fixed and measurable, and it happens to be the best
+  zero-shot point model on the index. A green <code>✅</code> in a capability matrix is evidence the
+  call returned, not that the numbers are right.</li>
+</ul>
+<p>What this does <strong>not</strong> license: any statement about a family being better in general
+(12 windows, one seed, three daily series), anything about <em>adapted</em> checkpoints (not
+run), or the word "significant" (no variance estimate exists for a forecast row).</p>
+<h2 id="what-pass-3-shows-the-whole-standard-corpus-101-series-3628-cells">What pass 3 shows (the whole <code>standard/</code> corpus: 101 series, 3,628 cells)<a class="headerlink" href="#what-pass-3-shows-the-whole-standard-corpus-101-series-3628-cells" title="Permanent link">&para;</a></h2>
+<p>Scope: every one of the 101 independent per-instrument series in <code>standard/</code>, 19 models,
+horizons 21 and 63, 8 windows per series, one seed, zero-shot. Series were split 66/35
+between trux (2× RTX 6000 Ada, <code>core</code>+<code>moment</code>+<code>timemoe</code> envs) and watson (one A6000 via
+SLURM, <code>core</code> only), disjoint, allocated 2:1 inside every dataset family so neither
+machine's table is confounded with one family. Merged per <code>(model, series, span, horizon)</code>.</p>
+<p>Median MASE relative to the naive scaler on the same cell (1.00 = equal), share of cells
+where the model beat naive:</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th style="text-align: right;">cells</th>
+<th style="text-align: right;">beat naive</th>
+<th style="text-align: right;">med MASE/naive</th>
+<th style="text-align: right;">med MASE</th>
+<th style="text-align: right;">cov@40</th>
+<th style="text-align: right;">ctx</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>arima</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;"><strong>55%</strong></td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">4.50</td>
+<td style="text-align: right;">0.47</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>chronos-2</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">40%</td>
+<td style="text-align: right;">1.02</td>
+<td style="text-align: right;">4.66</td>
+<td style="text-align: right;">0.38</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-small</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">41%</td>
+<td style="text-align: right;">1.03</td>
+<td style="text-align: right;">4.73</td>
+<td style="text-align: right;">0.38</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>theta</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">30%</td>
+<td style="text-align: right;">1.04</td>
+<td style="text-align: right;">4.79</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-base</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">32%</td>
+<td style="text-align: right;">1.04</td>
+<td style="text-align: right;">4.99</td>
+<td style="text-align: right;">0.39</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>chronos-t5-base</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">35%</td>
+<td style="text-align: right;">1.05</td>
+<td style="text-align: right;">4.99</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>chronos-t5-small</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">35%</td>
+<td style="text-align: right;">1.05</td>
+<td style="text-align: right;">4.90</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>timesfm-2.5-200m</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">29%</td>
+<td style="text-align: right;">1.06</td>
+<td style="text-align: right;">4.89</td>
+<td style="text-align: right;">0.36</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>timesfm-3.0</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">29%</td>
+<td style="text-align: right;">1.07</td>
+<td style="text-align: right;">4.95</td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>seasonal_naive</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">19%</td>
+<td style="text-align: right;">1.08</td>
+<td style="text-align: right;">4.82</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>flowstate-r1</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">20%</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">5.01</td>
+<td style="text-align: right;">0.21</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>patchtst-fm-r2</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">20%</td>
+<td style="text-align: right;">1.14</td>
+<td style="text-align: right;">5.37</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>moving_average</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">13%</td>
+<td style="text-align: right;">1.21</td>
+<td style="text-align: right;">5.42</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>ttm-r2</code></td>
+<td style="text-align: right;">202</td>
+<td style="text-align: right;">27%</td>
+<td style="text-align: right;">1.25</td>
+<td style="text-align: right;">5.70</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;"><strong>512</strong></td>
+</tr>
+<tr>
+<td><code>timemoe-50m</code></td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">6%</td>
+<td style="text-align: right;">1.47</td>
+<td style="text-align: right;">6.56</td>
+<td style="text-align: right;">0.38</td>
+<td style="text-align: right;">256</td>
+</tr>
+<tr>
+<td><code>moment-1-small</code></td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">1%</td>
+<td style="text-align: right;">2.64</td>
+<td style="text-align: right;">12.13</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">256 (head untrained)</td>
+</tr>
+<tr>
+<td><code>moment-1-large</code></td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">1%</td>
+<td style="text-align: right;">2.66</td>
+<td style="text-align: right;">12.02</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">256 (head untrained)</td>
+</tr>
+<tr>
+<td><code>ttm-r3</code></td>
+<td style="text-align: right;">168</td>
+<td style="text-align: right;">1%</td>
+<td style="text-align: right;">3.75</td>
+<td style="text-align: right;">17.60</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;"><strong>512</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>On 101 financial series, no foundation model beats a well-tuned ARIMA at h=21/63.</strong>
+  ARIMA leads the corpus (55% of cells better than naive, median ratio 1.00); the strongest
+  transformers are at parity or slightly worse (Chronos-2 40%, Chronos-Bolt-small 41%,
+  TimesFM 29%). This is the headline of the benchmark, and it is a statement about
+  <em>zero-shot</em> weights on <em>daily/hourly price data at three-week and quarter horizons</em>.</li>
+<li><strong>A green matrix cell and a correct number are different things, twice over.</strong> MOMENT
+  scored because we rebuild its task head, but the checkpoint never trained one (flagged,
+  <code>head_from_checkpoint: false</code>). TTM was scored at ctx 256 while its checkpoint declares
+  512 and pads shorter input with zeros, which scaled its whole forecast by the fraction of
+  real history and produced a median MASE of 13x naive. Honouring the contract moved r2
+  from 1.51 to 1.25 and made r3's real weakness visible instead of hiding it behind the
+  artifact.</li>
+<li><strong><code>ttm-r3</code> is unstable on this corpus, and the harness now says so in the row.</strong> 272 of
+  3,232 forecast windows came back non-finite (416 on CPU lanes, 272 on CUDA - so not a
+  device artifact), and 34 of 202 cells scored nothing. Those cells report
+  <code>pred_nan_windows</code> and an <code>error</code>, <code>n_windows</code> counts only what was scored, and no metric
+  column carries a NaN.</li>
+<li>
+<p><strong>Model coverage differs across the corpus and the table shows it</strong>: MOMENT and TimeMoE
+  ran only on trux's 66 series (no <code>moment</code>/<code>timemoe</code> env on watson), <code>chronos-t5-base</code> has
+  33 CUDA cells plus 33 CPU cells after a shared-card OOM. <code>ctx</code> and device are per-row
+  facts, not footnotes.</p>
+</li>
+<li>
+<p><strong>These numbers are reproducible - across machines and across re-runs.</strong> On unscaled
+  metrics the machines agree bit-for-bit: RMSE matched to ~1e-8 and directional accuracy was
+  identical when gpu7 (DGX Spark, GB10) re-scored watson's series (<code>probes/trux/
+  cross_machine_check.py</code>), and 254 repeated cell comparisons on one machine - pass-3 lanes
+  at code sha <code>1d2f3ae</code> re-scored at <code>28fd7e7</code> - agree to within 0.143%. That is the first
+  time this benchmark has had a consistency check rather than an assumption.</p>
+</li>
+<li>
+<p><strong>Cross-machine, same data path: bit-exact for ten of eleven families.</strong> gpu7 (GB10, CUDA,
+  torch 2.9.1+cu130) vs watson (RTX A6000, CUDA, torch 2.7.1+cu128) over <strong>1,452 shared cells</strong>
+  (66 series x 2 horizons x 11 models, same arena parquet bytes): ten families agree at 0.000%
+  median and 0.000% max on all 132 cells each; <code>chronos-t5-small</code> is the only outlier (median
+  5.73%, max 17.4%, 109 of 132 cells). A third machine (trux, x86 CPU) reproduces the same
+  numbers bit-exactly for the same families. The exception tracks the <em>decoding path</em> (T5 samples
+  tokens; nothing else in the fleet does), not the hardware.</p>
+</li>
+<li>
+<p><strong>Scaled metrics are only comparable within a data path.</strong> The 12-series GB10 overlap
+  looked like 212 machine disagreements: MASE off by 15%-123% while RMSE agreed to the
+  eighth decimal. Cause: watson's pass-3 lane read exported CSVs (so <code>SeriesDataset</code>
+  synthesized a 70/15/15 split) and the trux/gpu7 lanes read arena directories (the
+  publisher's split), and MASE is divided by the naive error of whichever train split was
+  loaded. For <code>std_equity_1d_10104</code>: 0.375671 vs 0.431936, reciprocal ratio 1.1498 - exactly
+  the observed MASE ratio, to four decimals. Rows now carry <code>data_hash</code> (values + split
+  boundaries) and <code>data_kind</code>, the lane meta carries <code>data_kinds</code>, the merge files such a
+  repeat under supersessions, and the cross-machine check exits "inconclusive" instead of
+  "disagreement". <code>beats naive</code> per cell survives this (the baseline shares the denominator);
+  absolute MASE columns across the watson block (CSV) and the trux block (arena dirs) do not.</p>
+</li>
+<li><strong>Repeated cell keys are mostly a protocol being replaced, not noise.</strong> The pass-3 merge
+  inputs carry 404 <code>(model, series, span, horizon)</code> keys measured more than once. Scored by
+  protocol signature (ctx, ctx_note, device, code_sha, torch), they are overwhelmingly
+  supersessions - a TTM cell at ctx 256 (the zero-padding artifact, MASE 30.1) and the same
+  cell at its contract ctx 512 (MASE 4.3). Reading that spread as run variance would blame
+  the noise floor for the bug we removed. The merge now splits the two readings and reports
+  each separately; only identical-signature repeats are quoted as variance.</li>
+<li><strong>A row's <code>model</code> field is the adapter's family key, not the registry key</strong>, and ten
+  checkpoints collide on it (<code>chronos-bolt-base</code> and <code>-small</code> both write <code>chronos-bolt</code>;
+  <code>kronos-base</code>/<code>-mini</code>/<code>-small</code> all write <code>kronos-small</code>). Grouping results by that field
+  merges different checkpoints and manufactures disagreement — it is exactly how a
+  "3-40% cross-machine discrepancy" appeared and disappeared in this session's notes.
+  Rows now carry <code>model_key</code>; the merge always keyed on the registry key.</li>
+</ul>
+<p>What this does <strong>not</strong> license: any variance claim (one seed, 8 windows per cell), any
+statement about fine-tuned checkpoints, or cross-context comparison of TTM against the
+256-point models without reading the <code>ctx</code> column. Reproduce the table with
+<code>probes/trux/rank_pass3.py</code> over the merged JSONL files.</p>
+<h3 id="the-one-fine-tune-measurement-in-this-benchmark-moment-watson-a6000">The one fine-tune measurement in this benchmark (MOMENT, watson A6000)<a class="headerlink" href="#the-one-fine-tune-measurement-in-this-benchmark-moment-watson-a6000" title="Permanent link">&para;</a></h3>
+<p>The matrix says which families <em>can</em> be fine-tuned; only MOMENT has zero-shot and
+fine-tuned cells on the same series, because its zero-shot forecast head is randomly
+initialised and fine-tuning is the only way it becomes a forecaster. 12 series, ctx 256,
+120 fit steps from the train span, scored on the test span
+(<code>reports/moment_ft_watson/lane_ft.jsonl</code>, read it with
+<code>probes/watson/moment_ft_report.py</code>). MASE as a ratio to naive, median over the 12:</p>
+<table>
+<thead>
+<tr>
+<th>adaptation</th>
+<th>lr</th>
+<th>h=21</th>
+<th>h=63</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>zero-shot (head untrained)</td>
+<td>-</td>
+<td>2.56</td>
+<td>2.14</td>
+</tr>
+<tr>
+<td>heads_only</td>
+<td>1e-6</td>
+<td>2.42</td>
+<td>2.12</td>
+</tr>
+<tr>
+<td>heads_only</td>
+<td>default</td>
+<td>2.18</td>
+<td>1.71</td>
+</tr>
+<tr>
+<td>heads_only</td>
+<td><strong>1e-4</strong></td>
+<td><strong>1.67</strong></td>
+<td><strong>1.55</strong></td>
+</tr>
+<tr>
+<td>full fine-tune</td>
+<td>default</td>
+<td>1.70</td>
+<td>1.54</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Fine-tuning the head closes about a third of the gap and no more: MOMENT goes from 2.6x
+  naive to 1.67x naive and still loses to naive on 11 of 12 series. Some individual cells
+  do beat it (best 0.72 of naive at h=63), which is what you would expect on the few
+  series with structure a reconstruction-trained encoder can see.</li>
+<li><strong>Learning rate mattered more than which weights were trainable.</strong> lr 1e-6 barely moved
+  the number (2.42, close to zero-shot); lr 1e-4 with only the head trainable matched full
+  fine-tuning of the whole model. A fine-tune comparison that leaves lr at a framework
+  default can conclude "this family does not adapt" when the truth is "this lr does
+  nothing".</li>
+<li>Every fine-tuned row carries <code>head_from_checkpoint: false, head_trained_here: true</code>, so
+  the table cannot be misread as a pretrained forecast head.</li>
+</ul>
+<h2 id="what-passes-4-6-show-101-series-on-one-data-path-with-intervals">What passes 4-6 show: 101 series on one data path, with intervals<a class="headerlink" href="#what-passes-4-6-show-101-series-on-one-data-path-with-intervals" title="Permanent link">&para;</a></h2>
+<p>Pass 4 scored the corpus on a single arena-parquet data path (<code>gpu7</code> 66 series + <code>watson</code> the other
+35, horizons 21/63). Pass 5 had <code>watson</code> re-score <code>gpu7</code>'s 66 series; pass 6 added the two families
+that had never been cross-checked (<code>moment-1-small</code>, <code>moment-1-large</code>, <code>timemoe-50m</code>: <code>watson</code> on an
+A6000, <code>trux</code> on CPU) and scored the five families <code>gpu7</code> had skipped (<code>chronos-t5-base</code>,
+<code>flowstate-r1</code>, <code>timesfm-3.0</code>, <code>ttm-r3</code>, <code>patchtst-fm-r2</code>). The merged table is now
+<strong>3,628 rows over 101 series from 8 lane files on 4 machines</strong>, and <strong>1,980 of those cells</strong> were
+measured twice on two stacks that share nothing (66 series x 2 horizons x 15 model keys). That is what
+turns the corpus from a partition into a sample with replication: the merge report classifies all
+2,064 repeated pairs as "same bytes, same protocol, different stack", with no protocol changes hiding
+inside them.</p>
+<p>The ranking lives in <code>EFFECTIVENESS.md</code>; what belongs here is the uncertainty around it
+(<code>probes/pass4_share_bootstrap.py</code>, cluster bootstrap over <em>series</em>, each series moving as a block
+because its two horizons are not independent):</p>
+<table>
+<thead>
+<tr>
+<th>model</th>
+<th style="text-align: right;">cells</th>
+<th>beat naive</th>
+<th>95% CI</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>arima</code></td>
+<td style="text-align: right;">202</td>
+<td>55.4%</td>
+<td>48.0 .. 62.9 (101 series)</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-small</code></td>
+<td style="text-align: right;">202</td>
+<td>41.1%</td>
+<td>34.7 .. 47.5 (101 series)</td>
+</tr>
+<tr>
+<td><code>chronos-2</code></td>
+<td style="text-align: right;">202</td>
+<td>39.6%</td>
+<td>33.2 .. 45.5 (101 series)</td>
+</tr>
+<tr>
+<td><code>chronos-bolt-base</code></td>
+<td style="text-align: right;">202</td>
+<td>32.2%</td>
+<td>25.7 .. 39.1 (101 series)</td>
+</tr>
+<tr>
+<td><code>chronos-t5-small</code></td>
+<td style="text-align: right;">202</td>
+<td>31.7%</td>
+<td>24.8 .. 38.6 (101 series)</td>
+</tr>
+<tr>
+<td><code>chronos-t5-base</code></td>
+<td style="text-align: right;">202</td>
+<td>30.7%</td>
+<td>24.3 .. 37.1 (101 series)</td>
+</tr>
+<tr>
+<td><code>theta</code></td>
+<td style="text-align: right;">202</td>
+<td>30.2%</td>
+<td>24.3 .. 36.6 (101 series)</td>
+</tr>
+<tr>
+<td><code>timesfm-2.5-200m</code></td>
+<td style="text-align: right;">202</td>
+<td>29.2%</td>
+<td>23.3 .. 34.7 (101 series)</td>
+</tr>
+<tr>
+<td><code>timesfm-3.0</code></td>
+<td style="text-align: right;">202</td>
+<td>29.2%</td>
+<td>23.8 .. 34.7 (101 series)</td>
+</tr>
+<tr>
+<td><code>ttm-r2</code></td>
+<td style="text-align: right;">202</td>
+<td>26.7%</td>
+<td>20.3 .. 33.7 (101 series)</td>
+</tr>
+<tr>
+<td><code>seasonal_naive</code></td>
+<td style="text-align: right;">202</td>
+<td>19.3%</td>
+<td>14.4 .. 24.3 (101 series)</td>
+</tr>
+<tr>
+<td><code>flowstate-r1</code></td>
+<td style="text-align: right;">202</td>
+<td>19.3%</td>
+<td>13.4 .. 25.2 (101 series)</td>
+</tr>
+<tr>
+<td><code>patchtst-fm-r2</code></td>
+<td style="text-align: right;">202</td>
+<td>18.8%</td>
+<td>13.9 .. 24.3 (101 series)</td>
+</tr>
+<tr>
+<td><code>moving_average</code></td>
+<td style="text-align: right;">202</td>
+<td>12.9%</td>
+<td>8.4 .. 17.8 (101 series)</td>
+</tr>
+<tr>
+<td><code>timemoe-50m</code></td>
+<td style="text-align: right;">132</td>
+<td>6.1%</td>
+<td>2.3 .. 9.8 (66 series)</td>
+</tr>
+<tr>
+<td><code>ttm-r3</code></td>
+<td style="text-align: right;">126</td>
+<td>0.8%</td>
+<td>0.0 .. 2.4 (63 series)</td>
+</tr>
+<tr>
+<td><code>moment-1-small</code></td>
+<td style="text-align: right;">132</td>
+<td>0.8%</td>
+<td>0.0 .. 2.3 (66 series)</td>
+</tr>
+<tr>
+<td><code>moment-1-large</code></td>
+<td style="text-align: right;">132</td>
+<td>0.8%</td>
+<td>0.0 .. 2.3 (66 series)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>These shares are 8-window numbers, and that is a level error, not just noise.</strong> Pass 7 re-scored
+the 8-model tie cluster on the same 66 series and node at 32 and 64 windows: every share falls
+(<code>arima</code> 56.1% -&gt; 40.9% -&gt; 44.7%, <code>chronos-bolt-small</code> 42.4% -&gt; 15.2% -&gt; 15.9%, <code>chronos-2</code> 39.4% -&gt;
+22.0% -&gt; 13.6%), 33.0% of cells change winner between 8 and 64 windows, and 32 is already the
+plateau (32w -&gt; 64w moves shares by &lt;= 8 pp while 8w -&gt; 32w moves them by 10-27 pp). Head-to-head on
+the same cells: <code>arima &gt; chronos-bolt-small</code> 58.3% -&gt; 83.3%, <code>chronos-2 &gt; chronos-t5-small</code> 55.3% -&gt;
+70.5%, and the "tie" <code>chronos-bolt-small</code> vs <code>chronos-2</code> resolves <em>against</em> bolt-small (53.8% -&gt;
+38.6%). Only <code>chronos-bolt-base</code> vs <code>chronos-t5-small</code> stays a tie at every window count (48.5/50.0/
+47.0). The intervals below measure corpus sampling, not window sampling; the two errors are
+independent and both are in the number. Pass 7b (<code>probes/watson/watson_pass7b_rest32.sh</code> plus a trux lane run) moves the
+other 11 model keys to 32 windows so the whole table shares one protocol; until it lands the ranks
+below are 8-window ranks, and <code>probes/pass7_merge_files.txt</code> is the merge that replaces them (it
+deliberately excludes the 8-window lanes - a share at 8 windows is a different measurement, not an
+earlier draft of the same one). See docs/08 and <code>probes/window_sensitivity.py</code>.</p>
+<p>What that says, and what it does not:</p>
+<ul>
+<li><strong><code>arima</code> over every foundation model is real.</strong> It wins the paired comparison against
+  <code>chronos-bolt-small</code> in 99.9% of resamples and <code>chronos-2</code> in 100.0%. Intervals barely touch.</li>
+<li><strong><code>chronos-bolt-small</code> vs <code>chronos-2</code> is a tie, not 41% &gt; 40%.</strong> Pairwise 61.6% - a mildly
+  favoured coin flip. Publishing them as ranks 2 and 3 is over-precision.</li>
+<li><strong><code>chronos-bolt-base</code> vs <code>chronos-t5-small</code> is 53.8%</strong> at 8 windows and stays a tie at 32 and 64
+  (50.0%, 47.0% head-to-head): this one is a real tie, which is why it survives the protocol change.</li>
+</ul>
+<p>A model whose interval overlaps a neighbour's is tied <em>as far as this pass can see</em>. Raising
+<code>--max-windows</code> narrows these intervals roughly as <code>1/sqrt(windows)</code>; scoring more series narrows the
+series-level part, which is the part the bootstrap measures.</p>
+<h2 id="what-is-not-done-yet-so-nobody-reads-it-in">What is <em>not</em> done yet (so nobody reads it in)<a class="headerlink" href="#what-is-not-done-yet-so-nobody-reads-it-in" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The effectiveness sweep that <em>has</em> been run is zero-shot only: 46 registry models ×
+  3 canonical series (<code>sp500_long</code>, <code>audusd</code>, <code>btc_crypto</code>) × horizons 21/63/126, 12
+  windows per pass, one seed, on three machines (DGX Spark aarch64, an x86 node with an
+  RTX A6000, and a 6 GB laptop for the vendor-family models). The result lives in
+  <code>EFFECTIVENESS.md</code> (rendered as the site's <em>Measured effectiveness</em> page).</li>
+<li>What that does <strong>not</strong> cover: more than one seed (so no confidence intervals on any
+  cell), more datasets or frequencies (three daily series is a start, not GIFT-Eval),
+  adapted checkpoints (<code>--spans test</code> + <code>--adaptation &lt;ckpt&gt;</code>, never <code>all</code>), and any
+  statement that a family is "better" — with one seed and twelve windows a MASE ordering
+  is a measurement, not a verdict.</li>
+<li>No multi-seed confidence intervals, no Diebolt–Mariano / MZ statistics, no horizon-grid
+  plots.</li>
+<li>The finance label set (<code>dir5</code>, <code>extreme</code>) and a tiny public UEA/UCR subset are wired for
+  classification; external-validity classification numbers across all 46 models are not
+  in the repo either.</li>
+<li>Fine-tune effectiveness (does adaptation improve out-of-sample skill, per family, at a
+  stated parameter budget) is a separate experiment that the checkpoint provenance format
+  is designed to make auditable, and has not been run at benchmark scale.</li>
+</ul>
+<p>If a paper table is the goal, the honest structure is: <strong>compatibility matrix</strong> (this
+repo, complete), <strong>effectiveness table</strong> (to run: <code>evaluate</code> across families × horizons ×
+budgets, with baselines), <strong>adaptation table</strong> (zero-shot vs LoRA at a stated budget, for
+the 29 families where the training path exists).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../01_install/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Install">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Install
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../06_matrix/" class="md-footer__link md-footer__link--next" aria-label="Next: Compatibility matrix tool">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Compatibility matrix tool
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

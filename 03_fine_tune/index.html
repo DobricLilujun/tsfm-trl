@@ -1,0 +1,1289 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Time-series foundation models behind one API — a benchmark and compatibility harness">
+      
+      
+        <meta name="author" content="tsfm-trl maintainers">
+      
+      
+      
+        <link rel="prev" href="../05_reward_rl/">
+      
+      
+        <link rel="next" href="../04_classify_probing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Fine-tune (capability gate) - tsfm-trl</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#3-fine-tuning" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="tsfm-trl" class="md-header__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tsfm-trl
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Fine-tune (capability gate)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tsfm-trl" class="md-nav__button md-logo" aria-label="tsfm-trl" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    tsfm-trl
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmark
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility matrix tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../effectiveness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Measured effectiveness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_forecast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Forecasting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TRL — post-training
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    TRL — post-training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_trl_api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RL / reward API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_reward_rl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reward & RL paths
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fine-tune (capability gate)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fine-tune (capability gate)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-much-to-train-budgets-not-step-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How much to train: budgets, not step counts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#three-levels-of-invasiveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three levels of invasiveness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-not-fine-tunable-means-honestly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What "not fine-tunable" means, honestly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#three-rows-that-used-to-be-wrong-in-the-other-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three rows that used to be wrong in the other direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ladder-memory-and-numerics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The ladder: memory and numerics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-ladder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory ladder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoints-and-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpoints and provenance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vendor-training-loops-have-no-curve-at-smoke-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vendor training loops have no curve at smoke size
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_classify_probing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification & probing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_finance_tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finance tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08_known_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-much-to-train-budgets-not-step-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How much to train: budgets, not step counts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#three-levels-of-invasiveness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three levels of invasiveness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-not-fine-tunable-means-honestly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What "not fine-tunable" means, honestly
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#three-rows-that-used-to-be-wrong-in-the-other-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three rows that used to be wrong in the other direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ladder-memory-and-numerics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The ladder: memory and numerics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-ladder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory ladder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checkpoints-and-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpoints and provenance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vendor-training-loops-have-no-curve-at-smoke-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vendor training loops have no curve at smoke size
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="3-fine-tuning">3 · Fine-tuning<a class="headerlink" href="#3-fine-tuning" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Why this exists in a benchmark harness.</strong> Fine-tuning is not the deliverable and the
+matrix's fine-tune column is not a result. It is a <strong>capability gate</strong>: for each
+architecture we prove there is a differentiable objective — the vendor's own where one
+exists — that gradients flow through, that a trainable subset can be selected, and that
+the run is checkpointable with provenance. That gate is what makes adapted rows in a
+benchmark table auditable (which base, which PEFT level, which parameters, which split
+boundary). Accuracy comparisons live in <code>docs/09_benchmark.md</code>; nothing in this file or
+in the matrix claims fine-tuning improves out-of-sample skill.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl</span><span class="w"> </span><span class="kn">import</span> <span class="n">ForecastTrainer</span><span class="p">,</span> <span class="n">ModelHub</span><span class="p">,</span> <span class="n">TrainingConfig</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl.data.fixtures</span><span class="w"> </span><span class="kn">import</span> <span class="n">tiny_finance</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">m</span>   <span class="o">=</span> <span class="n">ModelHub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"moirai-2.0-R-small"</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">cfg</span> <span class="o">=</span> <span class="n">TrainingConfig</span><span class="p">(</span><span class="n">budget</span><span class="o">=</span><span class="s2">"fs16"</span><span class="p">,</span> <span class="n">peft</span><span class="o">=</span><span class="s2">"lora"</span><span class="p">,</span> <span class="n">ctx</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">horizon</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">res</span> <span class="o">=</span> <span class="n">ForecastTrainer</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">tiny_finance</span><span class="p">())</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">res</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">loss_first</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">loss_last</span>   <span class="c1"># 'smoke', 8, 3.027, 3.111</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">res</span><span class="o">.</span><span class="n">checkpoint</span>                                          <span class="c1"># written path</span>
+</code></pre></div>
+<p>CLI equivalent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tsfm-trl<span class="w"> </span>fit<span class="w"> </span>--model<span class="w"> </span>moirai-2.0-R-small<span class="w"> </span>--series<span class="w"> </span>px.csv<span class="w"> </span>--peft<span class="w"> </span>lora<span class="w"> </span>--budget<span class="w"> </span>fs16<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">             </span>--ctx<span class="w"> </span><span class="m">256</span><span class="w"> </span>--horizon<span class="w"> </span><span class="m">16</span><span class="w"> </span>--ckpt<span class="w"> </span>reports/ft/px
+</code></pre></div>
+<h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h2>
+<p><code>fit</code> accepts any of:</p>
+<ul>
+<li>a <code>SeriesDataset</code> (or a CSV/Parquet path, or a DataFrame) — windows are built for you
+  with a train/val/test split,</li>
+<li><code>{"windows": [(ctx, y), ...], "info": {...}}</code> — pre-cut windows, what the matrix uses,</li>
+<li><code>{"dataset": ds}</code> — explicit.</li>
+</ul>
+<p>Windows come from <code>data.series.windows(values, horizon, ctx, stride=…)</code>; the split
+index is stored in the checkpoint so an evaluation can never accidentally train on the
+test span.</p>
+<h2 id="how-much-to-train-budgets-not-step-counts">How much to train: budgets, not step counts<a class="headerlink" href="#how-much-to-train-budgets-not-step-counts" title="Permanent link">&para;</a></h2>
+<p><code>TrainingConfig(budget=...)</code> picks a size, and the trainer keeps the <em>shape</em> of the run
+stable across families:</p>
+<table>
+<thead>
+<tr>
+<th>budget</th>
+<th>windows</th>
+<th>steps</th>
+<th>lr</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fs16</code> (default for the matrix)</td>
+<td>16</td>
+<td>40 (≤ that)</td>
+<td>1e-5</td>
+</tr>
+<tr>
+<td><code>fs64</code></td>
+<td>64</td>
+<td>120</td>
+<td>1e-5</td>
+</tr>
+<tr>
+<td><code>full</code></td>
+<td>all</td>
+<td>3 epochs</td>
+<td>5e-6</td>
+</tr>
+</tbody>
+</table>
+<p><code>smoke=True</code> caps steps to 3 — that is what <code>doctor</code> uses, because the matrix checks
+that a fine-tune <strong>runs</strong>, not that it converges. Losses are still reported
+(<code>✅ (0.587→0.612)</code>), so a diverging run is visible rather than hidden.</p>
+<h2 id="three-levels-of-invasiveness">Three levels of invasiveness<a class="headerlink" href="#three-levels-of-invasiveness" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">TrainingConfig</span><span class="p">(</span><span class="n">peft</span><span class="o">=</span><span class="s2">"heads_only"</span><span class="p">)</span>   <span class="c1"># only the forecast head(s) train</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">TrainingConfig</span><span class="p">(</span><span class="n">peft</span><span class="o">=</span><span class="s2">"lora"</span><span class="p">,</span> <span class="n">lora_r</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">lora_targets</span><span class="o">=</span><span class="p">[</span><span class="s2">"q"</span><span class="p">,</span> <span class="s2">"v"</span><span class="p">])</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">TrainingConfig</span><span class="p">(</span><span class="n">peft</span><span class="o">=</span><span class="s2">"full"</span><span class="p">)</span>         <span class="c1"># everything (fine on ≤300 M at smoke size)</span>
+</code></pre></div>
+<ul>
+<li><code>heads_only</code> uses the adapter's <code>head_prefixes</code> (e.g. <code>("decoder", "projection",
+  "head", "p21")</code> for Kairos) — the names come from the vendor modules, and the list
+  that actually became trainable is stored in the checkpoint.</li>
+<li><code>lora</code> goes through <code>training.peft.apply_lora</code>, and it <strong>freezes the trunk first</strong>.
+  It did not always: <code>_inject</code> froze only the <code>nn.Linear</code>s it wrapped, while every HF
+  checkpoint loads with <code>requires_grad=True</code>, so <code>peft="lora"</code> had been "full fine-tune
+  plus a few adapters" for most families — <code>t0-gamma</code> reported 156 M trainable
+  parameters, which is its trunk, not an adapter budget. A frozen trunk plus adapters is
+  what a LoRA budget means; the current counts are 1.08 M for <code>chronos-t5-small</code>,
+  2.57 M for <code>MOMENT-1-large</code>, 59.6 k for <code>TTM-r2</code>. <code>merge_lora</code> folds adapters into the
+  base weights for export.</li>
+<li><code>full</code> is refused for families where the backbone cannot take a gradient (see below).</li>
+</ul>
+<p>Loss follows the model: <code>loss_kind = "quantile"</code> families are trained with pinball on
+their own head, <code>"token"</code> families (Chronos-T5, Time-MoE, Kronos) with cross-entropy on
+their discrete tokens, and vendor-loop families (Kronos) delegate to the vendor's own
+trainer via <code>vendor_fit</code>. Two families train on an objective that is neither:</p>
+<ul>
+<li><strong>Sundial</strong> trains its <strong>TimeFlow head</strong> — the checkpoint repo's own <code>FlowLoss</code>
+  (velocity matching over patches), fed teacher-forced hidden states so that the state
+  after patch <em>i</em> supervises patch <em>i+1</em>, which is what <code>generate</code> actually consumes.
+  One thing has to be said plainly: the released checkpoint ships
+  <code>output_token_lens=[720]</code>, a <em>generation</em> setting — <code>forward(labels=…)</code> trims its
+  labels to a length an input window never reaches, so the shipped 720-wide flow MLP
+  cannot supervise a short window. Fine-tuning therefore rebuilds the flow head at the
+  training patch length (<strong>re-initialised, ~11.4 M params</strong>) while the 12-layer trunk
+  carries over. The trunk transfers; the head does not. That is a real limitation of
+  the public checkpoint, not of the harness, and it is why <code>prepare_training</code> logs it.</li>
+<li><strong>t0 (α/β/γ)</strong> supervises the vendor's own differentiable pass: <code>_single_pass</code> is
+  <code>scaler.scale_input → forward → scaler.rescale_predictions</code>, so its output is in data
+  space and carries a graph, and <code>forward</code> is documented as "predict per-patch quantiles
+  for every patch position (one differentiable pass)". The alignment is t0's own —
+  <code>_predict_step</code> reads <code>predictions[:, context_patches - 1]</code>, i.e. the patch <em>after</em> the
+  last observed one — so the step scores the model on the steps that follow the context,
+  with the future never fed. Its layers are named nothing like the usual ones (<code>wQKV</code>,
+  <code>wO</code>, positional <code>mlp.0</code>/<code>mlp.2</code>), so the adapter declares <code>lora_targets</code> and
+  <code>head_prefixes=("head","decoder")</code>; <code>T0Forecaster</code> is itself the <code>nn.Module</code> (there is
+  no <code>.model</code> attribute, which is why this family used to report no trainable module).</li>
+<li><strong>Kairos</strong> uses the supervised forward's own loss, which comes back as <strong>one value per
+  window</strong>; the trainer reduces it to its mean. (Before that reduction existed, the
+  trainer's own <code>if not torch.isfinite(loss)</code> took the truthiness of the vector, and the
+  resulting <em>"Boolean value of Tensor with more than one value is ambiguous"</em> was filed
+  in the matrix as a Kairos limitation. It never was one.)</li>
+</ul>
+<h2 id="what-not-fine-tunable-means-honestly">What "not fine-tunable" means, honestly<a class="headerlink" href="#what-not-fine-tunable-means-honestly" title="Permanent link">&para;</a></h2>
+<p>Some families cannot be fine-tuned through an HF-style <code>forward</code> at all. They report
+<code>— (skipped)</code> with the reason, and it is a statement about the model:</p>
+<ul>
+<li><strong>TimesFM 2.0/2.5/3.0, TiRex, FlowState inference builds</strong> — no public training code;
+  <code>trainable()</code> returns <code>None</code>, so the fine-tune column is <code>—</code>.</li>
+<li><strong>Kronos</strong> — the vendor loop only <em>prepares</em> the CSV unless
+  <code>extra={"run_training": True}</code>; the matrix records <code>prepared</code>, not <code>ok</code>.</li>
+<li><strong>MOMENT</strong> — trainable, but its gradient checkpointing is non-deterministic, so the
+  adapter disables it (otherwise torch aborts with <em>"different number of tensors was
+  saved"</em>).</li>
+</ul>
+<h2 id="three-rows-that-used-to-be-wrong-in-the-other-direction">Three rows that used to be wrong in the other direction<a class="headerlink" href="#three-rows-that-used-to-be-wrong-in-the-other-direction" title="Permanent link">&para;</a></h2>
+<p>The matrix refused Moirai 1.1, Moirai-MoE and Sundial fine-tunes for a while, and on
+inspection all three refusals were ours, not the models'. They are worth keeping in the
+docs because each is a trap that looks like a model limitation:</p>
+<ul>
+<li><strong>Moirai 1.1 / Moirai-MoE</strong>: reading quantiles off <code>forward()</code>'s samples gave a
+  gradient-free "fine-tune", so the honest answer at the time was <em>no differentiable
+  head</em>. The head <em>is</em> differentiable — it returns a distribution, and sampling is what
+  <code>predict</code> does with it afterwards. The supervised step is uni2ts' own packed loss:
+  <code>MoiraiForecast._convert(patch_size, past…, future_target=truth…)</code> → module →
+  <code>PackedNLLLoss</code> over the prediction-masked patches, i.e. the objective the checkpoint
+  was pretrained on. No dataset pipeline, no Lightning trainer, ~20 lines.
+  One caution: <code>MoiraiForecast.per_sample_loss_func</code> is <code>SampleNLLLoss</code> (an evaluation
+  loss); <code>MoiraiFinetune</code>'s default is <code>PackedNLLLoss</code>. Both came back with the same
+  number in testing, so don't assume the cheap one is a sampling estimator — check which
+  tensor in the graph is stochastic before blaming the estimator for a noisy curve.</li>
+<li><strong>Sundial</strong>: the first attempt called <code>forward(labels=…)</code> with the checkpoint's own
+  config and correctly reported "needs the vendor's training-script packing". What the
+  vendor's fine-tune config actually does is <em>choose the output token length for the
+  run</em>. Do that (rebuild <code>flow_loss.FlowLoss</code> at <code>input_token_len</code>) and the objective is
+  theirs, the shapes are ours.</li>
+<li><strong>Kairos</strong>: see above — a scalar-reduction bug in our own trainer, mistaken for a
+  gradient-unsafe vendor forward.</li>
+</ul>
+<p>The lesson the ladder and the reason strings exist for: a fine-tune refusal must name
+the missing piece ("no target kwarg in <code>forward</code>", "labels trimmed to <code>output_token_lens</code>")
+so it can be checked rather than believed.</p>
+<h2 id="the-ladder-memory-and-numerics">The ladder: memory <em>and</em> numerics<a class="headerlink" href="#the-ladder-memory-and-numerics" title="Permanent link">&para;</a></h2>
+<p>The fine-tune ladder walks <code>keep → bf16 → fp16 → fp32 → lr×0.1 → ctx/2 → bs=1 → CPU</code>.
+The first rungs are memory; the <code>fp32</code> and <code>lr×0.1</code> rungs are numerical, because a
+non-finite loss on step 1 is a property of that profile, not of the family (Toto-2.0-313m
+trains at a tenth of the fine-tuning rate). A run that fell off the ladder says which
+profile it actually trained on.</p>
+<h2 id="memory-ladder">Memory ladder<a class="headerlink" href="#memory-ladder" title="Permanent link">&para;</a></h2>
+<p><code>ForecastTrainer.fit</code> (and <code>RewardTrainer.fit</code>) retry on OOM with progressively
+cheaper profiles, and record which one was used:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>(bs, amp, peft) = (given) → (1, bf16, given) → (1, bf16, heads_only)
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                          → (1, bf16, lora)  → (1, fp32, heads_only)
+</code></pre></div>
+<p>CUDA <em>toolchain</em> failures (nvrtc, arch mismatch) are treated the same way — a CPU retry
+is an environment fallback, not a silent downgrade; the checkpoint meta says
+<code>fallbacks: [...]</code>.</p>
+<h2 id="checkpoints-and-provenance">Checkpoints and provenance<a class="headerlink" href="#checkpoints-and-provenance" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_finetuned</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tsfm_trl.training.checkpoints</span><span class="w"> </span><span class="kn">import</span> <span class="n">describe</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">describe</span><span class="p">(</span><span class="s2">"reports/ft/moirai-2.0-R-small__tiny_fin.pt"</span><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">m2</span> <span class="o">=</span> <span class="n">ModelHub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"moirai-2.0-R-small"</span><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">load_finetuned</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span> <span class="s2">"reports/ft/moirai-2.0-R-small__tiny_fin.pt"</span><span class="p">)</span>
+</code></pre></div>
+<p>A checkpoint is a state dict plus the provenance needed to refuse a wrong pairing:
+base registry id, <code>trainable</code> parameter list, config, split index, loss curve, budget,
+smoke flag, and any fallbacks. <code>load_finetuned</code> raises if the target model's base id
+differs — a Chronos head loaded onto a Moirai is a silent nonsense machine otherwise.
+<code>tsfm-trl ckpt &lt;path&gt;</code> prints the same record.</p>
+<h2 id="vendor-training-loops-have-no-curve-at-smoke-size">Vendor training loops have no curve at smoke size<a class="headerlink" href="#vendor-training-loops-have-no-curve-at-smoke-size" title="Permanent link">&para;</a></h2>
+<p>Two families fine-tune through the vendor's own loop (<code>loss_kind = "vendor"</code>): Chronos-2
+(<code>Chronos2Pipeline.fit</code>, an HF <code>Trainer</code>) and Kronos (its <code>finetune_csv</code>). The adapter
+attaches a <code>TrainerCallback</code> so real runs surface their loss, but a vendor loop logs on
+<em>its</em> interval — at smoke size (a handful of steps) it never fires, so the matrix cell is
+a bare ✅ with no <code>(a→b)</code> pair. That is a logging gap in their loop, not a missing
+objective; the run's own stdout shows <code>train_loss</code>. Anything that must be compared
+side-by-side should be run with <code>--budget fs64</code> or larger.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../05_reward_rl/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Reward &amp; RL paths">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Reward & RL paths
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../04_classify_probing/" class="md-footer__link md-footer__link--next" aria-label="Next: Classification &amp; probing">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Classification & probing
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
