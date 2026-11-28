@@ -954,3 +954,84 @@ on another stack** (gap = reproducibility), **superseded by a protocol change** 
 that change), **identical signature** (gap = run variance). Two tests pin the direction: the same
 bytes on two machines must not say "protocol change", and 8-vs-32 windows on one machine must not say
 "another stack".
+
+## The GPU floor was written as a verdict, and it would have put a 200M sweep on CPU
+
+`gpu7_050_extra5.sh` picks its device once, at launch: if torch reports less than 4 GiB free, the
+lane runs on CPU and says so. That was the right fix for `nvidia-smi` answering `[N/A]` on a GB10,
+but pass 7 exposed the other half of the problem. The audit before job_023 showed **1.1 GiB free**,
+and this lane is 8 models x 66 series x 2 horizons at 32 and then 64 windows: ~2,100 cells of
+Chronos inference. On 20 CPU cores that is most of a day, on the GPU it is under an hour, and the
+free memory on that box swings from 1 GiB to 40 GiB within minutes because it is shared.
+
+So the floor became a **wait**: `pick_device` polls torch every `GPU_RETRY_SECS` (default 120 s) for
+up to `GPU_WAIT_SECS` (default 45 min), and only then falls back to CPU - with a `WARN` in the log,
+because the `device` column of every row in that lane file depends on which branch was taken. The
+choice is also re-made **per lane file**, not once per job: a lane is one device for all its cells,
+so a decision made before a 10-hour lane would mislabel the second half of it.
+
+Two traps this surfaced, both now tested:
+
+* `DEV=$(pick_device)` captures **stdout**, so the `waiting for the GPU: 1173 MiB free` progress line
+  became the device string, and the sweep would have run with
+  `--device '  waiting for the GPU: 1173 MiB free ...'`. A function whose return value is captured
+  may narrate only on stderr - `test_the_device_chooser_returns_only_a_device_name` runs the real
+  chooser against a stub interpreter and asserts the stdout is exactly `cuda` or `cpu`.
+* A **queued bridge job is still yours until the worker claims it.** The Spark worker only learns a
+  job exists by moving it from `inbox/` to `inbox_done/`, so until that move, `mv` it back and it
+  never ran. `trux_dispatch.sh --hold` makes that deliberate: stage a generated job in `hold/`
+  (no number allocated, stamp still validated), release it later with the same command. job_023 was
+  withdrawn this way after the memory audit; job_024 is the version above.
+
+And while wiring the `--hold` test: `trux_dispatch.sh --hold job.sh` read `--hold` as the **job
+path** and rejected it for missing a GENERATED stamp, and the repo's own `bridge.env.example` still
+carried the unquoted-ssh-value bug that killed job_021 (`TRUX_SSH=ssh -i ...` assigns `ssh`, then the
+shell tries to run `-i`). Both are pinned: flags are now parsed positionally with an explicit
+unknown-flag failure, and every multi-word value in the example is quoted and sourced by a test.
+
+## The beat-naive share is a threshold on a noisy number, and 32 windows lowers every model's share
+
+Pass 7 re-scored the same 66 arena series on the same watson node at 32 windows instead of 8 (`reports/pass7_watson_win`, 8 models, same bytes, same seed, `n_windows` in the protocol signature so nothing merges across the two). The headline result is not a tie resolving - it is that **every model's beat-naive share falls**, and the ordering moves with it:
+
+| model | beat naive @ 8w | beat naive @ 32w | Δ |
+|---|--:|--:|--:|
+| `arima` | 56.1% | 40.9% | -15.2 pp |
+| `chronos-bolt-small` | 42.4% | 15.2% | -27.3 pp |
+| `chronos-2` | 39.4% | 22.0% | -17.4 pp |
+| `theta` | 34.1% | 15.9% | -18.2 pp |
+| `chronos-bolt-base` | 32.6% | 12.1% | -20.5 pp |
+| `seasonal_naive` | 17.4% | 6.8% | -10.6 pp |
+
+Head-to-head on the same cells: `arima > chronos-bolt-small` goes **58.3% → 84.1%**, and
+`chronos-bolt-small > chronos-2` goes **53.8% → 40.2%** - the pair the 8-window pass left ambiguous
+is not a coin flip at 32 windows, it goes the *other* way.
+
+Why: the share counts a cell as a win when `mase_model < mase_naive`, i.e. when a **noisy ratio lands
+below 1.0**. The ratio distributions show both halves of the problem at once - the 8-window draws are
+wider *and* sit closer to parity:
+
+| model | median ratio @8w | IQR @8w | within ±10% of parity @8w | median @32w | IQR @32w | within ±10% @32w |
+|---|--:|--:|--:|--:|--:|--:|
+| `chronos-bolt-small` | 1.029 | [0.956, 1.134] | 60.6% | 1.053 | [1.012, 1.086] | 81.1% |
+| `chronos-2` | 1.023 | [0.975, 1.076] | 78.8% | 1.032 | [1.004, 1.066] | 84.1% |
+| `chronos-bolt-base` | 1.037 | [0.978, 1.136] | 62.1% | 1.076 | [1.026, 1.126] | 62.1% |
+| `arima` | 1.000 | [0.997, 1.002] | 100% | 1.001 | [0.998, 1.003] | 100% |
+
+Centre the noise on a value that is already just **above** 1, and a threshold at 1.0 counts far more
+false wins than true ones: at 8 windows 60.6% of `chronos-bolt-small`'s cells are inside ±10% of
+parity, and **32.3% of all cells (256/792) change winner between 8 and 32 windows**. A single cell at
+this resolution was never a measurement of model quality; it was a measurement of that window draw.
+`arima` is the extreme case and also the reason it tops the table: its fitted forecasts are
+indistinguishable from persistence on these series (median ratio 1.000, IQR 0.005), so it neither
+wins nor loses - it is naive with extra steps, and its "share" is pure coin-toss mass around parity.
+
+What this changes:
+* **The default window count for any pass whose numbers get quoted is 32, not 8.** 8 windows is fine
+  for a smoke test of whether a family runs at all (which is what it was used for).
+* Shares from an 8-window pass must be published with the window count next to them. The generator now
+  prints `win` per model in the ranking table, and `proto()` keys on `n_windows`, so an 8-window row
+  can never supersede a 32-window one.
+* `probes/window_sensitivity.py` reproduces every number above
+  (`probes/window_sensitivity.py reports/pass5_watson_66/lane.jsonl reports/pass7_watson_win/lane_win32.jsonl`),
+  and `tests/test_window_sensitivity.py` pins that the probe keeps window counts as separate groups
+  and counts flips per cell.

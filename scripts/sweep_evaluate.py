@@ -83,8 +83,9 @@ def sweep(args) -> int:
     # A published table has to say which machine and which code produced each row;
     # without this line the same model measured in two venvs is one indistinguishable
     # number. Written once, as the first record of the file.
-    if fh.tell() == 0:
-        fh.write(json.dumps({"meta": {
+    # Built whether or not it gets written: a resumed lane keeps its original meta line,
+    # but every row it appends still names the machine and commit that produced it.
+    lane_meta = {
             "started": time.strftime("%Y-%m-%d %H:%M:%S"), "machine": socket.gethostname(),
             "code_sha": _sha(), "python": sys.version.split()[0],
             "series": [os.path.basename(x) for x in series],
@@ -99,7 +100,9 @@ def sweep(args) -> int:
             "horizons": [int(h) for h in args.horizons.split(",")],
             "spans": args.spans, "max_windows": int(args.max_windows),
             "ctx": int(args.ctx), "batch": int(args.batch), "seed": int(args.seed),
-            "device": args.device}}, default=float) + "\n")
+            "device": args.device}
+    if fh.tell() == 0:
+        fh.write(json.dumps({"meta": lane_meta}, default=float) + "\n")
         fh.flush()
     # Does this env's torch even see a GPU? Recording it turns "device auto" into a
     # claim: a family env built from a lock that resolved a CPU wheel silently runs the
@@ -205,7 +208,7 @@ def sweep(args) -> int:
         # which venv produced which row.
         rec = {"model": k, "env": spec.env, "tier": spec.tier, "family": spec.family,
                "interpreter": py, "device": args.device, "torch": tt,
-               "rows": stamp_rows(rows, k), "error": err,
+               "rows": stamp_rows(rows, k, lane_meta), "error": err,
                "series_errors": series_err}
         fh.write(json.dumps(rec, default=float) + "\n")
         fh.flush()
@@ -235,7 +238,7 @@ def proto(row: dict) -> tuple:
             pr.get("seed"))
 
 
-def stamp_rows(rows: list, key: str) -> list:
+def stamp_rows(rows: list, key: str, lane: dict | None = None) -> list:
     """Put the registry key on every row.
 
     An adapter writes its *family* key into a row's `model` field, so `chronos-bolt-small`
@@ -248,6 +251,15 @@ def stamp_rows(rows: list, key: str) -> list:
     for r in rows:
         if isinstance(r, dict):
             r.setdefault("model_key", key)
+    # Machine and commit belong on the row, not only on the lane's meta line. Lanes get
+    # filtered, split, and merged by hand; a row that has lost its header is a number with
+    # no origin, and "which machine ran this" is the first question a reviewer asks.
+    if lane:
+        for r in rows:
+            if isinstance(r, dict):
+                for f in ("machine", "code_sha"):
+                    if lane.get(f) is not None:
+                        r.setdefault(f, lane[f])
     return rows
 
 
@@ -461,9 +473,13 @@ def report(args) -> int:
             "test span, so the window count is part of the measurement, not a knob: switching "
             "seed at 8 windows moves naive's own MASE ~55% median (max 100%) and the paired "
             "model/naive ratio ~12% (max 25%); at 32 windows those fall to ~21% and ~7% "
-            "(measured 2026-11-27 on four arena series, same bytes, same code). A single cell "
-            "within ~12% of parity is neither a win nor a loss - read aggregate shares, not "
-            "cells. `no measurement` counts cells whose windows were all non-finite or "
+            "(measured 2026-11-27 on four arena series, same bytes, same code). Worse than "
+            "noise: the share is a **threshold on that noisy ratio**, and the ratio sits just "
+            "above 1, so a small window count inflates it. Re-scoring the same 66 series at 32 "
+            "windows instead of 8 lowered every model's share (`chronos-bolt-small` 42.4% -> "
+            "15.2%, `arima` 56.1% -> 40.9%) and moved one pairwise ordering; 32.3% of cells "
+            "change winner between 8 and 32 windows. A single cell within ~12% of parity is "
+            "neither a win nor a loss - read aggregate shares at 32 windows or more, not cells. `no measurement` counts cells whose windows were all non-finite or "
             "unscored; those never enter a median.", "",
             "| model_key | cells | beat naive | med MASE/naive | median MASE | median RMSE | ctx | win | no measurement |",
             "|---|--:|--:|--:|--:|--:|---|--:|--:|"]
@@ -671,7 +687,11 @@ def main() -> int:
     ap.add_argument("--series", action="append", default=[],
                     help="CSV with timestamp,close (repeatable)")
     ap.add_argument("--horizons", default="21,63,126")
-    ap.add_argument("--max-windows", type=int, default=16)
+    # 32, not 8: the beat-naive share is a threshold on a noisy per-cell ratio, and at 8 windows
+    # the noise is wide enough - and centred on the wrong side of parity - to inflate every model's
+    # share by 10-27 pp (measured 2026-11-27/28, same bytes, same seed, docs/08). Rows record
+    # `n_windows`, so older 8-window lanes stay honest as their own protocol.
+    ap.add_argument("--max-windows", type=int, default=32)
     # protocol knobs the child inherits, so the file states what was actually asked for
     ap.add_argument("--ctx", type=int, default=256)
     ap.add_argument("--batch", type=int, default=16)
